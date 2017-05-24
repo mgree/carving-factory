@@ -5,6 +5,7 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -98,7 +99,36 @@ public class DrawingActivity extends AppCompatActivity {
         mContentView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                toggle();
+                Log.d("UI","clicked");
+            }
+        });
+
+        mContentView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                Log.d("UI",event.toString());
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        for (int h = 0; h < event.getHistorySize(); h += 1) {
+                            addTouchCoordinate(event.getHistoricalEventTime(h),
+                                    event.getHistoricalX(h),
+                                    event.getHistoricalY(h));
+                        }
+                        addTouchCoordinate(event.getEventTime(),
+                                event.getX(),
+                                event.getY());
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        for (int h = 0; h < event.getHistorySize(); h += 1) {
+
+                        }
+                        break;
+                    case MotionEvent.ACTION_UP:
+                        break;
+                    default:
+                        break;
+                }
+                return false;
             }
         });
 
@@ -116,6 +146,10 @@ public class DrawingActivity extends AppCompatActivity {
         // created, to briefly hint to the user that UI controls
         // are available.
         delayedHide(100);
+    }
+
+    protected void addTouchCoordinate(long time, float x, float y) {
+        Log.d("TOUCH", "(" + x + ", " + y + ") @ " + time);
     }
 
     private void toggle() {
