@@ -1,6 +1,7 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
 import android.annotation.SuppressLint;
+import android.graphics.Path;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -8,6 +9,8 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+
+import java.sql.Time;
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -33,6 +36,9 @@ public class DrawingActivity extends AppCompatActivity {
     private static final int UI_ANIMATION_DELAY = 300;
     private final Handler mHideHandler = new Handler();
     private View mContentView;
+    private long timex;
+    private float xFloat,yFloat;
+
     private final Runnable mHidePart2Runnable = new Runnable() {
         @SuppressLint("InlinedApi")
         @Override
@@ -84,6 +90,9 @@ public class DrawingActivity extends AppCompatActivity {
         }
     };
 
+    public DrawingActivity() {
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -120,10 +129,23 @@ public class DrawingActivity extends AppCompatActivity {
                         break;
                     case MotionEvent.ACTION_MOVE:
                         for (int h = 0; h < event.getHistorySize(); h += 1) {
-
+                            addTouchCoordinate(event.getHistoricalEventTime(h),
+                                    event.getHistoricalX(h),
+                                    event.getHistoricalY(h));
                         }
+                        addTouchCoordinate(event.getEventTime(),
+                                event.getX(),
+                                event.getY());
                         break;
                     case MotionEvent.ACTION_UP:
+                        for (int h = 0; h < event.getHistorySize(); h+= 1) {
+                            addTouchCoordinate(event.getHistoricalEventTime(h),
+                                    event.getHistoricalX(h),
+                                    event.getHistoricalY(h));
+                        }
+                        addTouchCoordinate(event.getEventTime(),
+                                event.getX(),
+                                event.getY());
                         break;
                     default:
                         break;
@@ -150,8 +172,16 @@ public class DrawingActivity extends AppCompatActivity {
 
     protected void addTouchCoordinate(long time, float x, float y) {
         Log.d("TOUCH", "(" + x + ", " + y + ") @ " + time);
+        timex = time;
+        xFloat = x;
+        yFloat = y;
+
     }
 
+//    protected void createPath() {
+//        Path path = new Path();
+//        path.add
+//    }
     private void toggle() {
         if (mVisible) {
             hide();
