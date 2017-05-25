@@ -6,6 +6,7 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
+import android.transition.PathMotion;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -16,7 +17,7 @@ import java.sql.Time;
  * An example full-screen activity that shows and hides the system UI (i.e.
  * status bar and navigation/system bar) with user interaction.
  */
-public class DrawingActivity extends AppCompatActivity {
+public class DrawingActivity extends AppCompatActivity extends PathMotion{
     /**
      * Whether or not the system UI should be auto-hidden after
      * {@link #AUTO_HIDE_DELAY_MILLIS} milliseconds.
@@ -38,6 +39,8 @@ public class DrawingActivity extends AppCompatActivity {
     private View mContentView;
     private long timex;
     private float xFloat,yFloat;
+    private float histFloatX,histFloatY,eventX,eventY;
+
 
     private final Runnable mHidePart2Runnable = new Runnable() {
         @SuppressLint("InlinedApi")
@@ -122,30 +125,45 @@ public class DrawingActivity extends AppCompatActivity {
                             addTouchCoordinate(event.getHistoricalEventTime(h),
                                     event.getHistoricalX(h),
                                     event.getHistoricalY(h));
+                            histFloatX = event.getHistoricalX(h);
+                            histFloatY = event.getHistoricalY(h);
                         }
                         addTouchCoordinate(event.getEventTime(),
                                 event.getX(),
                                 event.getY());
+                            eventX = event.getX();
+                            eventY = event.getY();
+                        getPath(histFloatX,histFloatY,eventX,eventY);
                         break;
                     case MotionEvent.ACTION_MOVE:
                         for (int h = 0; h < event.getHistorySize(); h += 1) {
                             addTouchCoordinate(event.getHistoricalEventTime(h),
                                     event.getHistoricalX(h),
                                     event.getHistoricalY(h));
+                            histFloatX = event.getHistoricalX(h);
+                            histFloatY = event.getHistoricalY(h);
                         }
                         addTouchCoordinate(event.getEventTime(),
                                 event.getX(),
                                 event.getY());
+                            eventX = event.getX();
+                            eventY = event.getY();
+                        getPath(histFloatX,histFloatY,eventX,eventY);
                         break;
                     case MotionEvent.ACTION_UP:
                         for (int h = 0; h < event.getHistorySize(); h+= 1) {
                             addTouchCoordinate(event.getHistoricalEventTime(h),
                                     event.getHistoricalX(h),
                                     event.getHistoricalY(h));
+                            histFloatX = event.getHistoricalX(h);
+                            histFloatY = event.getHistoricalY(h);
                         }
                         addTouchCoordinate(event.getEventTime(),
                                 event.getX(),
                                 event.getY());
+                            eventX = event.getX();
+                            eventY = event.getY();
+                        getPath(histFloatX,histFloatY,eventX,eventY);
                         break;
                     default:
                         break;
@@ -178,10 +196,15 @@ public class DrawingActivity extends AppCompatActivity {
 
     }
 
+    @Override
+    public Path getPath(float startX, float startY, float endX, float endY) {
+        return getPath(startX,startY,endX,endY);
+    }
+
 //    protected void createPath() {
 //        Path path = new Path();
-//        path.add
-//    }
+//        path.getPath(histFloatX,histFloatY,eventX,eventY);
+    }
     private void toggle() {
         if (mVisible) {
             hide();
