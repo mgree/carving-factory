@@ -1,6 +1,5 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
-import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PointF;
 import android.os.Parcel;
@@ -10,13 +9,15 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
+ * Custom pseudo-wrapper on paths, so we can actually save them. (android.os.Path isn't Parcelable!)
+ *
  * Created by edinameshietedoho on 5/25/17.
  */
 
 public class Stroke extends Path implements Parcelable {
 
-    private int color;
-    private List<PointF> points = new LinkedList<PointF>();
+    private final int color;
+    private final List<PointF> points = new LinkedList<>();
 
     public Stroke(int color) {
         this.color = color;
@@ -36,7 +37,7 @@ public class Stroke extends Path implements Parcelable {
         return path;
     }
 
-    public void addPoint(long time, float x, float y) {
+    public void addPoint(@SuppressWarnings("UnusedParameters") long time, float x, float y) {
         points.add(new PointF(x, y));
     }
 

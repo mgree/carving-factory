@@ -14,13 +14,15 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
+ * Full-screen drawing view.
+ *
  * Created by edinameshietedoho on 5/25/17.
  */
 
 public class DrawingView extends View {
     private Stroke curStroke;
-    private List<Stroke> strokes = new LinkedList<Stroke>();
-    private Paint brush = new Paint();
+    private List<Stroke> strokes = new LinkedList<>();
+    private final Paint brush = new Paint();
 
     public DrawingView(Context ctx) {
         super(ctx);
@@ -91,7 +93,7 @@ public class DrawingView extends View {
         invalidate();
     }
 
-    protected void addMotionEvent(MotionEvent event) {
+    private void addMotionEvent(MotionEvent event) {
         for (int h = 0; h < event.getHistorySize(); h+= 1) {
             curStroke.addPoint(event.getHistoricalEventTime(h),
                     event.getHistoricalX(h),
@@ -126,8 +128,8 @@ public class DrawingView extends View {
     }
 
     public static class DrawingSavedState extends View.BaseSavedState {
-        private List<Stroke> strokes;
-        private int color;
+        private final List<Stroke> strokes;
+        private final int color;
 
         public DrawingSavedState(Parcelable superState, List<Stroke> strokes, int color) {
             super(superState);
@@ -137,7 +139,7 @@ public class DrawingView extends View {
 
         private DrawingSavedState(Parcel in) {
             super(in);
-            strokes = new LinkedList<Stroke>();
+            strokes = new LinkedList<>();
             in.readList(strokes, null);
             color = in.readInt();
         }

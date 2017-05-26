@@ -1,18 +1,12 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
 import android.annotation.SuppressLint;
-import android.graphics.Path;
-import android.graphics.PorterDuff;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
-import android.transition.PathMotion;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-
-import java.sql.Time;
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -127,14 +121,7 @@ public class DrawingActivity extends AppCompatActivity {
         delayedHide(100);
     }
 
-    private void toggle() {
-        if (mVisible) {
-            hide();
-        } else {
-            show();
-        }
-    }
-
+    // TODO: not possible to show system bars without drawing
 
     private void hide() {
         // Hide UI first
@@ -148,18 +135,6 @@ public class DrawingActivity extends AppCompatActivity {
         // Schedule a runnable to remove the status and navigation bar after a delay
         mHideHandler.removeCallbacks(mShowPart2Runnable);
         mHideHandler.postDelayed(mHidePart2Runnable, UI_ANIMATION_DELAY);
-    }
-
-    @SuppressLint("InlinedApi")
-    private void show() {
-        // Show the system bar
-        mContentView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
-        mVisible = true;
-
-        // Schedule a runnable to display UI elements after a delay
-        mHideHandler.removeCallbacks(mHidePart2Runnable);
-        mHideHandler.postDelayed(mShowPart2Runnable, UI_ANIMATION_DELAY);
     }
 
     /**
