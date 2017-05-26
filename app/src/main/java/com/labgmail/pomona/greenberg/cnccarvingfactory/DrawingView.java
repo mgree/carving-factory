@@ -1,13 +1,17 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Button;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -17,29 +21,39 @@ import java.util.List;
  */
 
 public class DrawingView extends View {
-    private Path curPath;
-    private List<Path> strokes = new LinkedList<Path>();
+    private Stroke curStroke;
+    private List<Stroke> strokes = new LinkedList<Stroke>();
+    private Paint brush = new Paint();
 
+    public DrawingView(Context ctx) {
+        super(ctx);
 
-    public DrawingView(Context ctx) { super(ctx); }
+        initializeBrush();
+    }
 
-    public DrawingView(Context ctx, AttributeSet attrs) { super(ctx, attrs); }
+    public DrawingView(Context ctx, AttributeSet attrs) {
+        super(ctx, attrs);
+
+        initializeBrush();
+    }
+
+    private void initializeBrush() {
+        brush.setStyle(Paint.Style.STROKE);
+        brush.setStrokeWidth(5);
+        brush.setARGB(255, 0, 0, 0);
+        brush.setAntiAlias(true);
+    }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        Paint brush = new Paint();
-        brush.setStyle(Paint.Style.STROKE);
-        brush.setStrokeWidth(5);
-        brush.setARGB(255, 0, 0, 0);
-
-        for (Path p : strokes) {
-            canvas.drawPath(p, brush);
+        for (Stroke s : strokes) {
+            canvas.drawPath(s.getPath(), s.getPaint());
         }
 
-        if (curPath != null) {
-            canvas.drawPath(curPath, brush);
+        if (curStroke != null) {
+            canvas.drawPath(curStroke.getPath(), brush);
         }
     }
 
@@ -49,7 +63,7 @@ public class DrawingView extends View {
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                curPath = new Path();
+                curStroke = new Stroke(brush);
                 addMotionEvent(event);
                 break;
             case MotionEvent.ACTION_MOVE:
@@ -57,9 +71,9 @@ public class DrawingView extends View {
                 break;
             case MotionEvent.ACTION_UP:
                 addMotionEvent(event);
-                Log.d("TOUCH", curPath.toString());
-                strokes.add(curPath);
-                curPath = null;
+                Log.d("TOUCH", curStroke.toString());
+                strokes.add(curStroke);
+                curStroke = null;
                 break;
             default:
                 break;
@@ -68,22 +82,21 @@ public class DrawingView extends View {
         return true;
     }
 
-    protected void addTouchCoordinate(long time, float x, float y) {
-        if (curPath.isEmpty()) {
-            curPath.moveTo(x,y);
-        } else {
-            curPath.lineTo(x,y);
-        }
+
+    public void clear() {
+        curStroke = null;
+        strokes.clear();
+        invalidate();
     }
 
     protected void addMotionEvent(MotionEvent event) {
         for (int h = 0; h < event.getHistorySize(); h+= 1) {
-            addTouchCoordinate(event.getHistoricalEventTime(h),
+            curStroke.addPoint(event.getHistoricalEventTime(h),
                     event.getHistoricalX(h),
                     event.getHistoricalY(h));
         }
 
-        addTouchCoordinate(event.getEventTime(),
+        curStroke.addPoint(event.getEventTime(),
                 event.getX(),
                 event.getY());
 

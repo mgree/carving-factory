@@ -10,17 +10,33 @@
          TextureView, etc. -->
     <com.labgmail.pomona.greenberg.cnccarvingfactory.DrawingView
         android:id="@+id/fullscreen_content"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_width="wrap_content"
+        android:layout_height="1141dp"
         android:gravity="center"
         android:keepScreenOn="true"
         android:visibility="visible" />
 
     <!-- This FrameLayout insets its children based on system windows using
          android:fitsSystemWindows. -->
+    <LinearLayout
+        android:id="@+id/fullscreen_controls"
+        android:layout_width="80dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="right"
+        android:gravity="right"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/clear_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/clear" />
+    </LinearLayout>
+
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="1141dp"
         android:fitsSystemWindows="true"
         android:persistentDrawingCache="all">
 
@@ -43,6 +59,7 @@
                 android:text="@string/dummy_button" />
 
         </LinearLayout>
+
     </FrameLayout>
 
 </FrameLayout>

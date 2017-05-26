@@ -2,6 +2,7 @@ package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
 import android.annotation.SuppressLint;
 import android.graphics.Path;
+import android.graphics.PorterDuff;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -36,8 +37,8 @@ public class DrawingActivity extends AppCompatActivity {
      */
     private static final int UI_ANIMATION_DELAY = 300;
     private final Handler mHideHandler = new Handler();
-    private View mContentView;
-    private Path curPath;
+    private DrawingView mContentView;
+
 
 
     private final Runnable mHidePart2Runnable = new Runnable() {
@@ -102,12 +103,18 @@ public class DrawingActivity extends AppCompatActivity {
 
         mVisible = true;
         mControlsView = findViewById(R.id.fullscreen_content_controls);
-        mContentView = findViewById(R.id.fullscreen_content);
+        mContentView = (DrawingView) findViewById(R.id.fullscreen_content);
 
         // Upon interacting with UI controls, delay any scheduled hide()
         // operations to prevent the jarring behavior of controls going away
         // while interacting with the UI.
         findViewById(R.id.dummy_button).setOnTouchListener(mDelayHideTouchListener);
+        findViewById(R.id.clear_button).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                mContentView.clear();
+            }
+        });
+
     }
 
     @Override
@@ -127,6 +134,7 @@ public class DrawingActivity extends AppCompatActivity {
             show();
         }
     }
+
 
     private void hide() {
         // Hide UI first
