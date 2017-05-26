@@ -1,17 +1,14 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.graphics.Path;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.Button;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -48,9 +45,14 @@ public class DrawingView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
+        int curColor = brush.getColor();
+
         for (Stroke s : strokes) {
-            canvas.drawPath(s.getPath(), s.getPaint());
+            brush.setColor(s.getColor());
+            canvas.drawPath(s.getPath(), brush);
         }
+
+        brush.setColor(curColor);
 
         if (curStroke != null) {
             canvas.drawPath(curStroke.getPath(), brush);
@@ -63,7 +65,7 @@ public class DrawingView extends View {
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                curStroke = new Stroke(brush);
+                curStroke = new Stroke(brush.getColor());
                 addMotionEvent(event);
                 break;
             case MotionEvent.ACTION_MOVE:
@@ -101,5 +103,60 @@ public class DrawingView extends View {
                 event.getY());
 
         invalidate();
+    }
+
+    // TODO: we don't actually need all of this mess---we should implement onPause and onResume in DrawingActivity
+
+    @Override
+    public Parcelable onSaveInstanceState() {
+        Log.d("SAVE", String.format("saving with %d strokes", strokes.size()));
+        return new DrawingSavedState(super.onSaveInstanceState(),
+                strokes,
+                brush.getColor());
+    }
+
+    @Override
+    public void onRestoreInstanceState(Parcelable rawState) {
+        super.onRestoreInstanceState(rawState);
+
+        DrawingSavedState state = (DrawingSavedState) rawState;
+        this.strokes = state.strokes;
+        brush.setColor(state.color);
+        Log.d("SAVE", String.format("restoring with %d strokes", strokes.size()));
+    }
+
+    public static class DrawingSavedState extends View.BaseSavedState {
+        private List<Stroke> strokes;
+        private int color;
+
+        public DrawingSavedState(Parcelable superState, List<Stroke> strokes, int color) {
+            super(superState);
+            this.strokes = strokes;
+            this.color = color;
+        }
+
+        private DrawingSavedState(Parcel in) {
+            super(in);
+            strokes = new LinkedList<Stroke>();
+            in.readList(strokes, null);
+            color = in.readInt();
+        }
+
+        public void writeToParcel(Parcel out, int flags) {
+            super.writeToParcel(out, flags);
+
+            out.writeList(strokes);
+            out.writeInt(color);
+        }
+
+        public static Parcelable.Creator<DrawingSavedState> CREATOR = new Parcelable.Creator<DrawingSavedState>() {
+            public DrawingSavedState createFromParcel(Parcel source) {
+                return new DrawingSavedState(source);
+            }
+
+            public DrawingSavedState[] newArray(int size) {
+                return new DrawingSavedState[size];
+            }
+        };
     }
 }
