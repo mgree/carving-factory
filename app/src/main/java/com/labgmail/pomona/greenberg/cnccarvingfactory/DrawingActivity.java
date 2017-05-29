@@ -10,6 +10,7 @@ import android.view.View;
 
 /**
  * Central drawing activity for (eventual) output to a CNC machine.
+ * More test comments.
  */
 public class DrawingActivity extends AppCompatActivity {
     /**
