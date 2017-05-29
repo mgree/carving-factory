@@ -33,8 +33,6 @@ public class DrawingActivity extends AppCompatActivity {
     private final Handler mHideHandler = new Handler();
     private DrawingView mContentView;
 
-
-
     private final Runnable mHidePart2Runnable = new Runnable() {
         @SuppressLint("InlinedApi")
         @Override
