@@ -5,8 +5,12 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -103,12 +107,30 @@ public class DrawingActivity extends AppCompatActivity {
         // operations to prevent the jarring behavior of controls going away
         // while interacting with the UI.
         findViewById(R.id.dummy_button).setOnTouchListener(mDelayHideTouchListener);
+        findViewById(R.id.undo_button).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {mContentView.undo();}
+        });
         findViewById(R.id.clear_button).setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                mContentView.clear();
-            }
+            public void onClick(View v) {mContentView.clear();}
         });
 
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        try {
+            FileOutputStream state = openFileOutput("carving_state", MODE_PRIVATE);
+        } catch (FileNotFoundException e) {
+            Log.e("PAUSE", "FNFE saving state");
+        }
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
     }
 
     @Override

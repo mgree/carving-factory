@@ -24,14 +24,22 @@
         android:layout_height="match_parent"
         android:layout_gravity="right"
         android:gravity="right"
-        android:orientation="horizontal">
+        android:orientation="vertical">
 
         <Button
             android:id="@+id/clear_button"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/clear" />
+
+        <Button
+            android:id="@+id/undo_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/Undo" />
+
     </LinearLayout>
 
     <FrameLayout

@@ -3,4 +3,5 @@
 
     <string name="dummy_button">dummy_button</string>
     <string name="clear" >clear</string>
+    <string name="Undo" >undo</string>
 </resources>

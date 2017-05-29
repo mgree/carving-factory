@@ -23,6 +23,7 @@ public class DrawingView extends View {
     private Stroke curStroke;
     private List<Stroke> strokes = new LinkedList<>();
     private final Paint brush = new Paint();
+    private int lStroke;
 
     public DrawingView(Context ctx) {
         super(ctx);
@@ -90,6 +91,11 @@ public class DrawingView extends View {
     public void clear() {
         curStroke = null;
         strokes.clear();
+        invalidate();
+    }
+
+    public void undo() {
+        strokes.remove(strokes.size() - 1);
         invalidate();
     }
 
