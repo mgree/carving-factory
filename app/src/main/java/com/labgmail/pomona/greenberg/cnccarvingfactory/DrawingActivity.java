@@ -13,8 +13,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 
 /**
- * An example full-screen activity that shows and hides the system UI (i.e.
- * status bar and navigation/system bar) with user interaction.
+ * Central drawing activity for (eventual) output to a CNC machine.
  */
 public class DrawingActivity extends AppCompatActivity {
     /**
@@ -36,8 +35,6 @@ public class DrawingActivity extends AppCompatActivity {
     private static final int UI_ANIMATION_DELAY = 300;
     private final Handler mHideHandler = new Handler();
     private DrawingView mContentView;
-
-
 
     private final Runnable mHidePart2Runnable = new Runnable() {
         @SuppressLint("InlinedApi")
