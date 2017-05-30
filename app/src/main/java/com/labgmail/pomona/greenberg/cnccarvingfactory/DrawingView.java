@@ -1,5 +1,7 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
+import android.app.DialogFragment;
+import android.app.FragmentManager;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -23,7 +25,9 @@ public class DrawingView extends View {
     private Stroke curStroke;
     private List<Stroke> strokes = new LinkedList<>();
     private final Paint brush = new Paint();
-    private int lStroke;
+    private FragmentManager manager;
+    private String alphas;
+    private int aC;
 
     public DrawingView(Context ctx) {
         super(ctx);
@@ -99,6 +103,11 @@ public class DrawingView extends View {
             strokes.remove(strokes.size() - 1);
             invalidate();
         }
+    }
+
+    public void setAlpha(int alpha) {
+        brush.setAlpha(alpha);
+        // ??? Do anything about the current stroke?
     }
 
     private void addMotionEvent(MotionEvent event) {

@@ -1,4 +1,5 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -26,6 +27,27 @@
         android:gravity="right"
         android:orientation="vertical">
 
+        <ImageView
+            android:id="@+id/alpha_swatch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            app:srcCompat="?android:attr/colorBackground" />
+
+        <SeekBar
+            android:id="@+id/alpha_picker"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:max="255"
+            android:progress="255"
+            android:verticalScrollbarPosition="defaultPosition" />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
         <Button
             android:id="@+id/clear_button"
             android:layout_width="match_parent"
@@ -39,14 +61,6 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/Undo" />
-
-        <Button
-            android:id="@+id/color_button"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/color"
-            tools:text="@string/cancel" />
 
     </LinearLayout>
 

@@ -1,6 +1,7 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
 import android.annotation.SuppressLint;
+import android.graphics.drawable.ColorDrawable;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -8,6 +9,8 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.ImageView;
+import android.widget.SeekBar;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -37,6 +40,7 @@ public class DrawingActivity extends AppCompatActivity {
     private static final int UI_ANIMATION_DELAY = 300;
     private final Handler mHideHandler = new Handler();
     private DrawingView mContentView;
+    private ImageView swatch;
 
     private final Runnable mHidePart2Runnable = new Runnable() {
         @SuppressLint("InlinedApi")
@@ -101,20 +105,35 @@ public class DrawingActivity extends AppCompatActivity {
         mVisible = true;
         mControlsView = findViewById(R.id.fullscreen_content_controls);
         mContentView = (DrawingView) findViewById(R.id.fullscreen_content);
+        swatch = (ImageView) findViewById(R.id.alpha_swatch);
 
         // Upon interacting with UI controls, delay any scheduled hide()
         // operations to prevent the jarring behavior of controls going away
         // while interacting with the UI.
         findViewById(R.id.dummy_button).setOnTouchListener(mDelayHideTouchListener);
         findViewById(R.id.undo_button).setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {mContentView.undo();}
+            public void onClick(View v) { mContentView.undo(); }
         });
         findViewById(R.id.clear_button).setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {mContentView.clear();}
+            public void onClick(View v) { mContentView.clear(); }
         });
+        ((SeekBar) findViewById(R.id.alpha_picker)).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            public void onProgressChanged(SeekBar picker, int alpha, boolean user ) { setAlpha(alpha); }
 
+            public void onStartTrackingTouch(SeekBar seekBar) { }
+
+            public void onStopTrackingTouch(SeekBar seekBar) { }
+        });
+        setAlpha(255);
     }
 
+
+    private void setAlpha(int alpha) {
+        mContentView.setAlpha(alpha);
+        ColorDrawable c = new ColorDrawable(getResources().getColor(android.R.color.black, null));
+        c.setAlpha(alpha);
+        swatch.setImageDrawable(c);
+    }
 
     @Override
     protected void onPause() {
