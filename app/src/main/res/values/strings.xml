@@ -4,4 +4,8 @@
     <string name="dummy_button">dummy_button</string>
     <string name="clear" >clear</string>
     <string name="Undo" >undo</string>
+    <string name="color" >color</string>
+    <string name="alpha" >pick an alpha value</string>
+    <string name="set" >set</string>
+    <string name="cancel" >cancel</string>
 </resources>

@@ -16,6 +16,8 @@ import java.util.List;
 
 public class Stroke extends Path implements Parcelable {
 
+    // TODO: Colors!
+
     private final int color;
     private final List<PointF> points = new LinkedList<>();
 

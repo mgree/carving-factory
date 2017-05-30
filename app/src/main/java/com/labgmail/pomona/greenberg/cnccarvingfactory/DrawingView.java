@@ -95,8 +95,10 @@ public class DrawingView extends View {
     }
 
     public void undo() {
-        strokes.remove(strokes.size() - 1);
-        invalidate();
+        if(strokes.size() > 0){
+            strokes.remove(strokes.size() - 1);
+            invalidate();
+        }
     }
 
     private void addMotionEvent(MotionEvent event) {
@@ -114,6 +116,10 @@ public class DrawingView extends View {
     }
 
     // TODO: we don't actually need all of this mess---we should implement onPause and onResume in DrawingActivity
+    // TODO: work on onPause() and onResume() Write alist of strokes to the file (output) and
+
+
+
 
     @Override
     public Parcelable onSaveInstanceState() {

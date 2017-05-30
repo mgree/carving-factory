@@ -40,6 +40,14 @@
             android:layout_weight="1"
             android:text="@string/Undo" />
 
+        <Button
+            android:id="@+id/color_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/color"
+            tools:text="@string/cancel" />
+
     </LinearLayout>
 
     <FrameLayout

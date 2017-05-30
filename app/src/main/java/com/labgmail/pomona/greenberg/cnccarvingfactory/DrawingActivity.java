@@ -12,6 +12,8 @@ import android.view.View;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 
+import static android.app.PendingIntent.getActivity;
+
 /**
  * Central drawing activity for (eventual) output to a CNC machine.
  */
@@ -112,6 +114,7 @@ public class DrawingActivity extends AppCompatActivity {
         });
 
     }
+
 
     @Override
     protected void onPause() {
