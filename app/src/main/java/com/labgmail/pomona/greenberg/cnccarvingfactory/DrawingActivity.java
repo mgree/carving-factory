@@ -12,8 +12,10 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 
 import static android.app.PendingIntent.getActivity;
 
@@ -141,15 +143,28 @@ public class DrawingActivity extends AppCompatActivity {
 
         try {
             FileOutputStream state = openFileOutput("carving_state", MODE_PRIVATE);
+            mContentView.saveState(state);
+            state.close();
         } catch (FileNotFoundException e) {
             Log.e("PAUSE", "FNFE saving state");
+        } catch (IOException e) {
+            Log.e("PAUSE", "ioe saving state");
         }
-
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+
+        try {
+            FileInputStream state = openFileInput("carving_state");
+            mContentView.loadState(state);
+            state.close();
+        } catch (FileNotFoundException e) {
+            Log.e("PAUSE", "FNFE loading state");
+        } catch (IOException e) {
+            Log.e("PAUSE", "ioe loading state");
+        }
     }
 
     @Override

@@ -2,9 +2,12 @@ package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
 import android.graphics.Path;
 import android.graphics.PointF;
-import android.os.Parcel;
-import android.os.Parcelable;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamException;
+import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -14,12 +17,12 @@ import java.util.List;
  * Created by edinameshietedoho on 5/25/17.
  */
 
-public class Stroke extends Path implements Parcelable {
+public class Stroke extends Path implements Serializable {
 
     // TODO: Colors!
 
-    private final int color;
-    private final List<PointF> points = new LinkedList<>();
+    private int color;
+    private List<PointF> points = new LinkedList<>();
 
     public Stroke(int color) {
         this.color = color;
@@ -47,27 +50,34 @@ public class Stroke extends Path implements Parcelable {
         return color;
     }
 
-    public void writeToParcel(Parcel out, int flags) {
-        out.writeList(points);
+    private void writeObject(ObjectOutputStream out) throws IOException {
         out.writeInt(color);
+
+        out.writeInt(points.size());
+        for (PointF p : points) {
+            out.writeFloat(p.x);
+            out.writeFloat(p.y);
+        }
+
+        out.flush();
     }
 
-    public static final Parcelable.Creator<Stroke> CREATOR = new Parcelable.Creator<Stroke>() {
-        public Stroke createFromParcel(Parcel in) {
-            return new Stroke(in);
-        }
-
-        public Stroke[] newArray(int size) {
-            return new Stroke[size];
-        }
-    };
-
-    private Stroke(Parcel in) {
-        in.readList(points, null);
+    private void readObject(ObjectInputStream in) throws IOException {
         color = in.readInt();
+
+        int size = in.readInt();
+        points = new LinkedList<>();
+        for (int i = 0; i < size; i++) {
+            float x = in.readFloat();
+            float y = in.readFloat();
+            points.add(new PointF(x,y));
+        }
     }
 
-    public int describeContents() {
-        return 0;
+    private void readObjectNoData() throws ObjectStreamException {
+
     }
+
+    public static final long serialVersionUID = 42L;
+
 }

@@ -12,6 +12,13 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -68,7 +75,7 @@ public class DrawingView extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        Log.d("UI",event.toString());
+        Log.d("UI", event.toString());
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
@@ -99,7 +106,7 @@ public class DrawingView extends View {
     }
 
     public void undo() {
-        if(strokes.size() > 0){
+        if (strokes.size() > 0) {
             strokes.remove(strokes.size() - 1);
             invalidate();
         }
@@ -111,7 +118,7 @@ public class DrawingView extends View {
     }
 
     private void addMotionEvent(MotionEvent event) {
-        for (int h = 0; h < event.getHistorySize(); h+= 1) {
+        for (int h = 0; h < event.getHistorySize(); h += 1) {
             curStroke.addPoint(event.getHistoricalEventTime(h),
                     event.getHistoricalX(h),
                     event.getHistoricalY(h));
@@ -124,62 +131,23 @@ public class DrawingView extends View {
         invalidate();
     }
 
-    // TODO: we don't actually need all of this mess---we should implement onPause and onResume in DrawingActivity
-    // TODO: work on onPause() and onResume() Write alist of strokes to the file (output) and
+    public void saveState(OutputStream state) throws IOException {
+        ObjectOutputStream out = new ObjectOutputStream(state);
 
-
-
-
-    @Override
-    public Parcelable onSaveInstanceState() {
-        Log.d("SAVE", String.format("saving with %d strokes", strokes.size()));
-        return new DrawingSavedState(super.onSaveInstanceState(),
-                strokes,
-                brush.getColor());
+        out.writeInt(brush.getColor());
+        out.writeObject(strokes);
+        out.flush();
     }
 
-    @Override
-    public void onRestoreInstanceState(Parcelable rawState) {
-        super.onRestoreInstanceState(rawState);
+    public void loadState(InputStream state) throws IOException {
+        ObjectInputStream in = new ObjectInputStream(state);
 
-        DrawingSavedState state = (DrawingSavedState) rawState;
-        this.strokes = state.strokes;
-        brush.setColor(state.color);
-        Log.d("SAVE", String.format("restoring with %d strokes", strokes.size()));
+        brush.setColor(in.readInt());
+        try {
+            strokes = (LinkedList) in.readObject();
+        } catch (ClassNotFoundException e) {
+            throw new IOException(e);
+        }
     }
 
-    public static class DrawingSavedState extends View.BaseSavedState {
-        private final List<Stroke> strokes;
-        private final int color;
-
-        public DrawingSavedState(Parcelable superState, List<Stroke> strokes, int color) {
-            super(superState);
-            this.strokes = strokes;
-            this.color = color;
-        }
-
-        private DrawingSavedState(Parcel in) {
-            super(in);
-            strokes = new LinkedList<>();
-            in.readList(strokes, null);
-            color = in.readInt();
-        }
-
-        public void writeToParcel(Parcel out, int flags) {
-            super.writeToParcel(out, flags);
-
-            out.writeList(strokes);
-            out.writeInt(color);
-        }
-
-        public static Parcelable.Creator<DrawingSavedState> CREATOR = new Parcelable.Creator<DrawingSavedState>() {
-            public DrawingSavedState createFromParcel(Parcel source) {
-                return new DrawingSavedState(source);
-            }
-
-            public DrawingSavedState[] newArray(int size) {
-                return new DrawingSavedState[size];
-            }
-        };
-    }
 }
