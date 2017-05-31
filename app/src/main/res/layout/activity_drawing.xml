@@ -40,13 +40,11 @@
             android:layout_weight="1"
             app:srcCompat="?android:attr/colorBackground" />
 
-        <SeekBar
-            android:id="@+id/alpha_picker"
+        <NumberPicker
+            android:id="@+id/number_picker"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:max="255"
-            android:progress="255" />
+            android:layout_weight="1" />
 
         <Button
             android:id="@+id/clear_button"

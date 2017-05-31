@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.NumberPicker;
 import android.widget.SeekBar;
 
 import java.io.FileInputStream;
@@ -108,7 +109,9 @@ public class DrawingActivity extends AppCompatActivity {
         mControlsView = findViewById(R.id.fullscreen_content_controls);
         mContentView = (DrawingView) findViewById(R.id.fullscreen_content);
         swatch = (ImageView) findViewById(R.id.alpha_swatch);
-
+        NumberPicker nPicker = (NumberPicker) findViewById(R.id.number_picker);
+        nPicker.setMaxValue(255);
+        nPicker.setMinValue(0);
         // Upon interacting with UI controls, delay any scheduled hide()
         // operations to prevent the jarring behavior of controls going away
         // while interacting with the UI.
@@ -119,13 +122,13 @@ public class DrawingActivity extends AppCompatActivity {
         findViewById(R.id.clear_button).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { mContentView.clear(); }
         });
-        ((SeekBar) findViewById(R.id.alpha_picker)).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            public void onProgressChanged(SeekBar picker, int alpha, boolean user ) { setAlpha(alpha); }
-
-            public void onStartTrackingTouch(SeekBar seekBar) { }
-
-            public void onStopTrackingTouch(SeekBar seekBar) { }
+        ((NumberPicker) findViewById(R.id.number_picker)).setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
+            @Override
+            public void onValueChange(NumberPicker npicker, int oldVal, int newVal) {
+                newVal = npicker.getValue();
+                setAlpha(newVal); }
         });
+
         setAlpha(255);
     }
 
