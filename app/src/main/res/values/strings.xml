@@ -8,4 +8,5 @@
     <string name="alpha" >pick an alpha value</string>
     <string name="set" >set</string>
     <string name="cancel" >cancel</string>
+    <string name="settings" >settings</string>
 </resources>

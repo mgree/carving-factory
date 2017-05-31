@@ -1,19 +1,13 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
-import android.app.DialogFragment;
-import android.app.FragmentManager;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.os.Parcel;
-import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -32,9 +26,6 @@ public class DrawingView extends View {
     private Stroke curStroke;
     private List<Stroke> strokes = new LinkedList<>();
     private final Paint brush = new Paint();
-    private FragmentManager manager;
-    private String alphas;
-    private int aC;
 
     public DrawingView(Context ctx) {
         super(ctx);
@@ -112,6 +103,12 @@ public class DrawingView extends View {
         }
     }
 
+    // ??? Is a redo button possible?
+//    public void redo() {
+    // get the state of the list before the last stroke was deleted than revert to the old state
+    // way we're doing it now decreases the size of the array, doesn't really save anything.
+//    }
+
     public void setAlpha(int alpha) {
         brush.setAlpha(alpha);
         // ??? Do anything about the current stroke?
@@ -130,6 +127,7 @@ public class DrawingView extends View {
 
         invalidate();
     }
+
 
     public void saveState(OutputStream state) throws IOException {
         ObjectOutputStream out = new ObjectOutputStream(state);

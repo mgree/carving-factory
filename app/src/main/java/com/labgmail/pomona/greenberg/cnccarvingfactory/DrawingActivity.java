@@ -1,6 +1,7 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.graphics.drawable.ColorDrawable;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -11,14 +12,12 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.NumberPicker;
-import android.widget.SeekBar;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import static android.app.PendingIntent.getActivity;
 
 /**
  * Central drawing activity for (eventual) output to a CNC machine.
@@ -128,8 +127,11 @@ public class DrawingActivity extends AppCompatActivity {
                 newVal = npicker.getValue();
                 setAlpha(newVal); }
         });
-
         setAlpha(255);
+    }
+
+    public void configureSettings() {
+//     Intent intent = new Intent(this,DisplaySettingsActivity.class);
     }
 
 

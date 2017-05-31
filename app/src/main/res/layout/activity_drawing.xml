@@ -11,7 +11,7 @@
          TextureView, etc. -->
     <com.labgmail.pomona.greenberg.cnccarvingfactory.DrawingView
         android:id="@+id/fullscreen_content"
-        android:layout_width="1198dp"
+        android:layout_width="1201dp"
         android:layout_height="1134dp"
         android:gravity="center"
         android:keepScreenOn="true"
