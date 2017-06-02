@@ -1,7 +1,9 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.drawable.ColorDrawable;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -95,11 +97,9 @@ public class DrawingActivity extends AppCompatActivity {
         }
     };
 
-    public DrawingActivity() {
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_drawing);
@@ -127,11 +127,17 @@ public class DrawingActivity extends AppCompatActivity {
                 newVal = npicker.getValue();
                 setAlpha(newVal); }
         });
-        setAlpha(255);
-    }
 
-    public void configureSettings() {
-//     Intent intent = new Intent(this,DisplaySettingsActivity.class);
+        final Activity self = this;
+        findViewById(R.id.settings_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(self, DisplaySettingsActivity.class);
+                startActivity(intent);
+            }
+        }) ;
+
+        setAlpha(255);
     }
 
 
