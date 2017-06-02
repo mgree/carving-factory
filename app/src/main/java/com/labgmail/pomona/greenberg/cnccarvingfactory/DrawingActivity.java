@@ -9,6 +9,7 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v7.preference.PreferenceManager;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -134,8 +135,13 @@ public class DrawingActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent = new Intent(self, DisplaySettingsActivity.class);
                 startActivity(intent);
+
+
+
             }
         }) ;
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+//        String syncConnPref = sharedPref.getString(DisplaySettingsActivity.KEY_PREF_SYNC_CONN, "");
 
         setAlpha(255);
     }

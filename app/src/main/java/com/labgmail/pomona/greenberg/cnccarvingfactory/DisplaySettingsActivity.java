@@ -7,6 +7,7 @@ import android.preference.PreferenceFragment;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.preference.PreferenceManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,23 +18,30 @@ import android.view.ViewGroup;
 
 public class DisplaySettingsActivity extends AppCompatActivity  {
 
-    public static final String KEY_PREF_SYNC_CONN = "pref_syncConnectionType";
-    SharedPreferences.OnSharedPreferenceChangeListener listener = new SharedPreferences.OnSharedPreferenceChangeListener() {
-        public void onSharedPreferenceChanged(SharedPreferences prefs,String key){
-            prefs.registerOnSharedPreferenceChangeListener(this);
-        }
-    };
+    public static final String KEY_LENGTH = "pref_length";
+    public static final String KEY_WIDTH = "pref_width";
+    public static final String KEY_DEPTH = "pref_depth";
 
     public static class SettingsFragment extends PreferenceFragment implements SharedPreferences.OnSharedPreferenceChangeListener {
+
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             addPreferencesFromResource(R.xml.preferences);
+            
+            SharedPreferences prefs = getPreferenceManager().getSharedPreferences();
+            for (String key : new String[] { KEY_LENGTH, KEY_WIDTH, KEY_DEPTH }) {
+                findPreference(key).setSummary(prefs.getString(key, null));
+            }
         }
+
         @Override
         public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-            if(key.equals(KEY_PREF_SYNC_CONN)) {
-                Preference connectionPref = findPreference(key);
+            Preference pref = findPreference(key);
+            if (pref != null) {
+                String val = sharedPreferences.getString(key,null);
+                Log.d("PREF",String.format("updated %s to %s",key,val));
+                pref.setSummary(val);
             }
         }
 
@@ -49,16 +57,24 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
         @Override
         public void onResume() {
             super.onResume();
-            getPreferenceScreen().getSharedPreferences()
+            getPreferenceManager().getSharedPreferences()
                     .registerOnSharedPreferenceChangeListener(this);
         }
 
         @Override
         public void onPause() {
             super.onPause();
-            getPreferenceScreen().getSharedPreferences()
+            getPreferenceManager().getSharedPreferences()
                     .unregisterOnSharedPreferenceChangeListener(this);
         }
+
+
+        SharedPreferences.OnSharedPreferenceChangeListener listener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+            public void onSharedPreferenceChanged(SharedPreferences prefs,String key){
+                // Wants this line to live outside of the brackets. Why?
+                prefs.registerOnSharedPreferenceChangeListener(this);
+            }
+        };
     }
 
     @Override
@@ -68,12 +84,7 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
         getFragmentManager().beginTransaction()
                 .replace(android.R.id.content, new SettingsFragment())
                 .commit();
-
-        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-        String syncConnPref = sharedPref.getString(DisplaySettingsActivity.KEY_PREF_SYNC_CONN, "");
-
     }
-
 
     // So what has to happen is a preference needs to be made (a custom preference that extends Preference with a NumberPicker)
     // That needs to be run in a PreferenceFragment
