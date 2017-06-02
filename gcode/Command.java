@@ -1,5 +1,3 @@
-package GCodeReader2;
-
 import java.lang.Object;
 import java.util.*;
 

@@ -1,8 +1,12 @@
-package GCodeReader2;
-
-
-
 /*
+    More formal parser
+    ANTLR
+    separate machine state
+        Hashmap (Type and Value)
+
+
+
+
     THINGS IT CAN'T DEAL WITH:
         COMMENTS
         multiple G commands on one line
@@ -11,15 +15,7 @@ package GCodeReader2;
 
 
 
-   read file and create commands
-   analyze
-   process commands
-    iterate through params setting appropriate values
-    According to the mode, execute something
-
-
-
-    Eventually)
+    (Eventually)
     Think about how to implement arcs, report feedrates, etc
     Do so
     clean up char[] ?
@@ -132,8 +128,8 @@ public static void main(String[] args) {
 
 
                         System.err.println ("X Range: (" + minX + ", " + maxX +
-                              ") \nY Range: (" + minY + ", " + maxY +
-                              ") \nZ Range: (" + minZ + ", " + maxZ +")");
+                                            ") \nY Range: (" + minY + ", " + maxY +
+                                            ") \nZ Range: (" + minZ + ", " + maxZ +")");
                         //Clean up
                         fileReader.close();
 
@@ -256,8 +252,8 @@ public static void processCommand(Command c){
                         updateParameters(theParams);
                         lines.add(new Line (oldx, oldy, X, Y));
                         System.err.println("Line drawn: ("+ oldx + ", " + oldy + ", " +
-                                            oldz + "), (" + X + ", " + Y + ", " + Z +
-                                            ") at feed rate " + F );
+                                           oldz + "), (" + X + ", " + Y + ", " + Z +
+                                           ") at feed rate " + F );
                         oldx = X;
                         oldy = Y;
                         oldz = Z;
@@ -266,8 +262,8 @@ public static void processCommand(Command c){
                         updateParameters(theParams);
                         lines.add(new Line (oldx, oldy, X, Y));
                         System.err.println("Line drawn: ("+ oldx + ", " + oldy + ", " +
-                                            oldz + "), (" + X + ", " + Y + ", " + Z +
-                                            ") at feed rate " + F );
+                                           oldz + "), (" + X + ", " + Y + ", " + Z +
+                                           ") at feed rate " + F );
                         oldx = X;
                         oldy = Y;
                         oldz = Z;
@@ -281,17 +277,27 @@ public static void processCommand(Command c){
                         break;
                 case 4:
                         System.err.println("Dwell for " + P + "time");
+                        break;
+
                 case 20:
                         System.err.println("Change units to inches");
+                        break;
+
                 case 21:
                         System.err.println("Change units to millimeters");
+                        break;
+
                 case 30:
                         System.err.println("Return Home");
                         X = 0.0;
                         Y = 0.0;
                         Z = 0.0;
+                        break;
+
                 case 49:
                         System.err.println("Cancel tool length offset");
+                        break;
+
                 default:
                         System.err.println ("Command not processed. Command: " + type + mode);
                 }
