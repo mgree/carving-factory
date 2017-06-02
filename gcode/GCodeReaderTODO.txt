@@ -1,0 +1,66 @@
+Greenberg GCodeReader Tasks:
+
+//command class
+//G or M
+//number for mode
+//other access parameters
+//hashmap (each parameter to another)
+//only lets you set specific parameters
+
+//parse routine
+//series of parse line calls
+//some list of commands (parsed each line)
+//separate routine which simulates or draws program
+//command line to give parameters (dimensions and drill bit size and maximum error -- derive scaling factor)
+//output min max of each coordinate
+
+//parse in whole thing
+//analysis
+  //dimensions, window size, is it ok
+  //maximum (exceed depth, bounds)
+  //eventually machine limitations
+//simulate
+
+
+
+//one day
+//command knows what to do given surface and current info
+//command class/interface
+//separate classes for different commands
+
+
+Thoughts for later:
+can modes in command class be lowercase vs uppercase
+just use tochararray once and then pass that instead of passing strings in GCodeReader??
+
+
+
+
+My GCodeReader Tasks:
+
+    //TODO:
+      //handle various spaces
+      //handle (or ignore) other letters
+          //create method that scans for the next letter or next number
+          //Use these to find next relevant section of the string (instead of
+          //    index of x/y/z)
+          //find next letter, switch on that letter (if one var isn't given, retain from last line)
+              // g00 / g01 draw line
+              // g02 clockwise arc
+              // g03 counterclockwise arc
+              // g04 dwell
+              // g12 clockwise circle
+              // g13 counterclockwise circle
+              // g51 scale axes
+              // g81 hole drilling
+              // g94 feed per minute
+              // F is feed rate
+              // N line number (skip)
+          //start is first letter of string, process rest (in some cases recursive, others not)
+
+      //Do different colors for z (pick a range and process Z as a percentage of that range)
+          //search for all z's, get max and min, translate this to a 0-1 scale, set
+          //Z as that number * 255
+      //Output information for other letters
+      //Draw curves
+      //Create file that is a play-by-play of what was executed (with the unprocessed lines)
