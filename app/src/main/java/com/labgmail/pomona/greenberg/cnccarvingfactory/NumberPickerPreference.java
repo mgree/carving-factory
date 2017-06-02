@@ -26,7 +26,7 @@ public class NumberPickerPreference extends DialogPreference {
         super(context, attrs);
 
         // ! Will probably have to create own layout but lets pretend this will work for a while
-        setDialogLayoutResource(R.layout.pref_dialog_npicker);
+//        setDialogLayoutResource(R.layout.pref_dialog_npicker);
         setPositiveButtonText (android.R.string.ok);
         setNegativeButtonText(android.R.string.cancel);
     }

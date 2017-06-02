@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-    <NumberPickerPreference
-        android:title="@string/select_dimensions"
-        android:defaultValue=""
+    <EditTextPreference
+        android:key="pref_width"
+        android:title="@string/pref_width"
+        android:defaultValue="24" />
+    <EditTextPreference
+        android:key="pref_length"
+        android:title="@string/pref_length"
+        android:defaultValue="48" />
+    <EditTextPreference
+        android:key="pref_depth"
+        android:title="@string/pref_depth"
+        android:defaultValue="0.5" />
 </PreferenceScreen>

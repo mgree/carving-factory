@@ -1,12 +1,15 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.drawable.ColorDrawable;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v7.preference.PreferenceManager;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -95,11 +98,9 @@ public class DrawingActivity extends AppCompatActivity {
         }
     };
 
-    public DrawingActivity() {
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_drawing);
@@ -127,11 +128,22 @@ public class DrawingActivity extends AppCompatActivity {
                 newVal = npicker.getValue();
                 setAlpha(newVal); }
         });
-        setAlpha(255);
-    }
 
-    public void configureSettings() {
-//     Intent intent = new Intent(this,DisplaySettingsActivity.class);
+        final Activity self = this;
+        findViewById(R.id.settings_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(self, DisplaySettingsActivity.class);
+                startActivity(intent);
+
+
+
+            }
+        }) ;
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+//        String syncConnPref = sharedPref.getString(DisplaySettingsActivity.KEY_PREF_SYNC_CONN, "");
+
+        setAlpha(255);
     }
 
 
