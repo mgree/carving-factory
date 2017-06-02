@@ -6,7 +6,7 @@ public class Params {
   private Character type;
   private double value;
 
-  public Params (Character t, int v){
+  public Params (Character t, double v){
     type = t;
     value = v;
   }
@@ -20,7 +20,7 @@ public class Params {
   }
 
   public String toString() {
-    return type + ": " + value;
+    return "(" + type + ", " + value + ")";
   }
 
 

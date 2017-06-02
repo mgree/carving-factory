@@ -62,18 +62,13 @@ public static void main(String[] args) {
           CommonTokenStream tokens = new CommonTokenStream(lexer);
           PrgParser parser = new PrgParser(tokens);
 
-
           PrgParser.ProgramContext ctx = parser.program();
-          //System.out.println("Program Info: " + ctx.toInfoString(parser) + "\n");
-
-
 
           List<PrgParser.CommandContext> commandList = ctx.command();
           for (PrgParser.CommandContext c : commandList){
-              //System.out.println("Command Info: " + c.toInfoString(parser));
 
               PrgParser.TypeContext type = c.type();
-              //System.out.println("Type Info: " + type.toInfoString(parser));
+
               Token t = type.getToken(Token.MIN_USER_TOKEN_TYPE,0).getSymbol();
               System.out.println(t.getText());
 
@@ -81,30 +76,9 @@ public static void main(String[] args) {
 
               List<PrgParser.ArgContext> argList = c.arg();
               for (PrgParser.ArgContext a : argList) {
-                //Token paramCharacter = a.paramChar().getToken(Token.MIN_USER_TOKEN_TYPE,0).getSymbol();
-
                 System.out.println("(" + a.paramChar().getText() + ", " + toFloat(a.paramArg().floatNum()) + ")");
               }
-
-
-              List<TerminalNode> theTokens = c.getTokens(0);
-              for (TerminalNode n : theTokens){
-                System.out.println(n.getSymbol().getText());
-              }
           }
-
-
-
-
-          //
-          // String src = CharStreams.fromFileName(args[0]);
-          // PrgLexer lexer = new PrgLexer(src);
-          // PrgParser parser = new PrgParser(new CommonTokenStream(lexer));
-          // CommonTree tree = (CommonTree)parser.parse().getTree();
-          // DOTTreeGenerator gen = new DOTTreeGenerator();
-          // StringTemplate st = gen.toDOT(tree);
-          // System.out.println(st);
-
 
 
 
