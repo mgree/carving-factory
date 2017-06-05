@@ -1,10 +1,6 @@
 /*
-
-    Things to fix in addition
-        don't use a switch statement, make it a hashmap (type, value)
-
     More features
-        Think about how to implement arcs, report feedrates, etc
+        Think about how to implement arcs, etc
         add extra command line arguments for drill size and dimensions
         add this into the swing panel
         Deal with scaling and errors
@@ -16,13 +12,10 @@
             dimensions can't be used to create an image of high enough fidelity
 
 
-
-
    Check these cases:
         multiple G commands on one line
         Weird start commands (s, t)
         Negative x and y values
-
  */
 
 /*
@@ -47,7 +40,7 @@ import java.lang.System;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.io.*;
-import java.lang.Object;
+import java.lang.*;
 import java.util.*;
 
 import javax.swing.SwingUtilities;
@@ -65,31 +58,8 @@ public class GCodeReader {
 public static ArrayList<Line> lines = new ArrayList<Line> ();
 private static final int SCALE = 1;
 private static final int MAX_LINE_SIZE = 300;
-
-//SET UP DEFAULT VALUES
-//Note: I have no idea what these should be whatsoever.
-private static double A = 0.0;     //A-axis of machine
-private static double B = 0.0;     //B-axis of machine
-private static double C = 0.0;     //C-axis of machine
-private static double D = 0.0;     //tool radius compensation number
-private static double F = 1.0;     //feedrate
-private static double H = 0.0;     //tool length offset index
-private static double I = 0.0;     //X-axis offset for arcs
-private static double J = 0.0;     //Y-axis offset for arcs
-private static double K = 0.0;     //Z-axis offset for arcs
-private static double L = 0.0;     //Numer of repetitions in canned cycles, key for G10
-private static double O = 0.0;     //Subroutine label number
-private static double P = 0.0;     //Dwell time, key for G10
-private static double Q = 0.0;     //Feed increment in G83 canned cycle, repetitions of subroutine call
-private static double R = 1.0;     //arc radius
-private static double S = 1.0;     //spindle speed
-private static double T = 0.0;     //tool selection
-//private static double U = 0.0; synonymous with A
-//private static double V = 0.0; synonymous with B
-//private static double W = 0.0; synonymous with C
-private static double X = 0.0;     //X-axis of machine
-private static double Y = 0.0;     //Y-axis of machine
-private static double Z = 0.0;     //Z-axis
+private static HashMap<Character,Double> parameters = new HashMap<Character,Double>();
+private static HashMap<String,Boolean> processable = new HashMap<String,Boolean>();
 
 
 private static double maxX = 0.0;
@@ -98,7 +68,9 @@ private static double maxY = 0.0;
 private static double minY = 0.0;
 private static double maxZ = 0.0;
 private static double minZ = 0.0;
-
+private static double prevX = 0.0;
+private static double prevY = 0.0;
+private static double prevZ = 0.0;
 
 
 
@@ -115,11 +87,13 @@ public static void main(String[] args) {
                 CommonTokenStream tokens = new CommonTokenStream(lexer);
                 PrgParser parser = new PrgParser(tokens);
 
+                //Set up parameters / processable commands
+                addAllParams(parameters);
+                addAllProcessable(processable);
+
                 //Get the program context and create a series of commands from it
                 //Process each of these commands in turn
-                //Could separate this into two steps easily
                 PrgParser.ProgramContext ctx = parser.program();
-
                 List<PrgParser.CommandContext> commandList = ctx.command();
                 for (PrgParser.CommandContext c : commandList) {
                         Command nextCommand = createCommand(c);
@@ -130,8 +104,6 @@ public static void main(String[] args) {
                 System.err.println ("X Range: (" + minX + ", " + maxX +
                                     ") \nY Range: (" + minY + ", " + maxY +
                                     ") \nZ Range: (" + minZ + ", " + maxZ +")");
-
-
 
         } catch (IOException e) {
                 System.err.println("IOException: " + e);
@@ -144,6 +116,40 @@ public static void main(String[] args) {
                                 createAndShowGUI();
                         }
                 });
+}
+
+
+//Add all parameters to the hashmap with their default values
+public static void addAllParams(HashMap<Character,Double> hm){
+        //SET UP DEFAULT VALUES
+        //Note: I have no idea what these should be whatsoever.
+        hm.put('A', 0.0); //A-axis of machine
+        hm.put('B', 0.0); //B-axis of machine
+        hm.put('C', 0.0); //C-axis of machine
+        hm.put('D', 0.0); //tool radius compensation number
+        hm.put('F', 1.0); //feedrate
+        hm.put('H', 0.0); //tool length offset index
+        hm.put('I', 0.0); //X-axis offset for arcs
+        hm.put('J', 0.0); //Y-axis offset for arcs
+        hm.put('K', 0.0); //Z-axis offset for arcs
+        hm.put('L', 0.0); //Numer of repetitions in canned cycles, key for G10
+        hm.put('O', 0.0); //Subroutine label number
+        hm.put('P', 0.0); //Dwell time, key for G10
+        hm.put('Q', 0.0); //Feed increment in G83 canned cycle, repetitions of subroutine call
+        hm.put('R', 1.0); //arc radius
+        hm.put('S', 1.0); //spindle speed
+        hm.put('T', 0.0); //tool selection
+        hm.put('X', 0.0); //X-axis of machine
+        hm.put('Y', 0.0); //Y-axis of machine
+        hm.put('Z', 0.0); //Z-axis of machine
+}
+
+//Add all processable commands to the hashmap for easy access
+//In the future, all commands will be processable so this will be
+//unnecessary
+public static void addAllProcessable(HashMap<String,Boolean> hm){
+        hm.put("G0", true);
+        hm.put("G1", true);
 }
 
 
@@ -161,67 +167,96 @@ public static Command createCommand(PrgParser.CommandContext c){
         //get the mode and set it
         newCommand.setMode(toNum(c.natural()));
 
-        //For all the arguments, create a new parameter pairing and add it to the list
-        List<PrgParser.ArgContext> argList = c.arg();
-        for (PrgParser.ArgContext a : argList) {
-                Params newParam = new Params(Character.toUpperCase(a.paramChar().getText().charAt(0)),
-                                             (double)toFloat(a.paramArg().floatNum()));
-                newCommand.addParam(newParam);
+        prevX = parameters.get('X');
+        prevY = parameters.get('Y');
+        prevZ = parameters.get('Z');
+
+        //Get TypeMode string
+        StringBuilder s = new StringBuilder();
+        s.append (Character.toUpperCase(type.getText().charAt(0)));
+        s.append (toNum(c.natural()));
+
+        //ONLY PROCESS A COMMAND (change params, etc) IF IT IS KNOWN
+        if (processable.containsKey(s.toString())) {
+                //For all the arguments, update that parameter in the hashmap
+                List<PrgParser.ArgContext> argList = c.arg();
+                for (PrgParser.ArgContext a : argList) {
+
+                        Character charCode = Character.toUpperCase(a.paramChar().getText().charAt(0));
+                        Double paramValue = (double)toFloat(a.paramArg().floatNum());
+
+                        parameters.put (charCode, paramValue);
+
+                        //in the case of x, y, and z
+                        //keep track of maximum and minimum values
+                        if(charCode == 'X') {
+                                if (paramValue < minX) {
+                                        minX = paramValue;
+                                } else if (paramValue > maxX) {
+                                        maxX = paramValue;
+                                }
+                        }
+
+                        if(charCode == 'Y') {
+                                if (paramValue < minY) {
+                                        minY = paramValue;
+                                } else if (paramValue > maxY) {
+                                        maxY = paramValue;
+                                }
+                        }
+
+                        if(charCode == 'Z') {
+                                if (paramValue < minZ) {
+                                        minZ = paramValue;
+                                } else if (paramValue > maxZ) {
+                                        maxZ = paramValue;
+                                }
+                        }
+                }
         }
 
         return newCommand;
 }
 
 
-//Processes the command, setting the parameters to the appropriate values
+//Processes the command
+//(adds lines to the list of lines to be drawn and prints out updates of what
+//each command does)
 public static void processCommand(Command c){
 
-        ArrayList<Params> theParams = c.getParams();
         char type = c.getType();
         int mode = c.getMode();
 
-        //for lines, save original x and y, then update
-        double oldx = X;
-        double oldy = Y;
-        double oldz = Z;
-
+        double X = parameters.get('X');
+        double Y = parameters.get('Y');
+        double Z = parameters.get('Z');
 
         //execute something according to the type and mode
-        //Only update the parameters if it's a type you know how to process
-        //use a switch statement allowing for additional commands to be added later
         //here write to a file or print an update (added line from (x,y) to (x,y))
-
         if (type == 'G') {
                 switch (mode) {
                 case 0:
-                        updateParameters(theParams);
-                        lines.add(new Line (oldx, oldy, X, Y));
-                        System.err.println("Line drawn: ("+ oldx + ", " + oldy + ", " +
-                                           oldz + "), (" + X + ", " + Y + ", " + Z +
-                                           ") at feed rate " + F );
-                        oldx = X;
-                        oldy = Y;
-                        oldz = Z;
+                        lines.add(new Line (prevX, prevY, X, Y));
+                        System.err.println("Line drawn: ("+ prevX + ", " + prevY + ", " +
+                                           prevZ + "), (" + X + ", " + Y + ", " + Z +
+                                           ") at feed rate " + parameters.get('F') );
                         break;
                 case 1:
-                        updateParameters(theParams);
-                        lines.add(new Line (oldx, oldy, X, Y));
-                        System.err.println("Line drawn: ("+ oldx + ", " + oldy + ", " +
-                                           oldz + "), (" + X + ", " + Y + ", " + Z +
-                                           ") at feed rate " + F );
-                        oldx = X;
-                        oldy = Y;
-                        oldz = Z;
+                        lines.add(new Line (prevX, prevY, X, Y));
+                        System.err.println("Line drawn: ("+ prevX + ", " + prevY + ", " +
+                                           prevZ + "), (" + X + ", " + Y + ", " + Z +
+                                           ") at feed rate " + parameters.get('F') );
                         break;
                 case 2:
-                        //Should I update the params here even if I'm not yet drawing arcs?
-                        System.err.println("A clockwise arc should be drawn with radius " + R);
+                        System.err.println("A clockwise arc should be drawn with radius "
+                                           + parameters.get('R'));
                         break;
                 case 3:
-                        System.err.println ("A counterclockwise arc should be drawn with radius " + R);
+                        System.err.println ("A counterclockwise arc should be drawn with radius "
+                                            + parameters.get('R'));
                         break;
                 case 4:
-                        System.err.println("Dwell for " + P + "time");
+                        System.err.println("Dwell for " + parameters.get('P') + "time");
                         break;
 
                 case 20:
@@ -234,9 +269,9 @@ public static void processCommand(Command c){
 
                 case 30:
                         System.err.println("Return Home");
-                        X = 0.0;
-                        Y = 0.0;
-                        Z = 0.0;
+                        parameters.put ('X', 0.0);
+                        parameters.put('Y', 0.0);
+                        parameters.put ('Z', 0.0);
                         break;
 
                 case 49:
@@ -256,121 +291,7 @@ public static void processCommand(Command c){
         } else {
                 System.err.println ("Error. Type: " + type);
         }
-
-
-
 }
-
-
-
-//Method updates the parameters according to an arraylist of new parameters
-//Hopefully this will get scrapped and replaced with a simple hashmap
-private static void updateParameters (ArrayList<Params> theParams) {
-        //for all the parameters in the command, set those appropriately
-        for (Params p : theParams) {
-                char type = p.getType();
-                double value = p.getValue();
-
-                switch (type) {
-
-                case 'A':
-                        A = value;
-                        break;
-                case 'B':
-                        B = value;
-                        break;
-                case 'C':
-                        C = value;
-                        break;
-                case 'D':
-                        D = value;
-                        break;
-                case 'F':
-                        F = value;
-                        break;
-                case 'H':
-                        H = value;
-                        break;
-                case 'I':
-                        I = value;
-                        break;
-                case 'J':
-                        J = value;
-                        break;
-                case 'K':
-                        K = value;
-                        break;
-                case 'L':
-                        L = value;
-                        break;
-                case 'O':
-                        O = value;
-                        break;
-                case 'P':
-                        P = value;
-                        break;
-                case 'Q':
-                        Q = value;
-                        break;
-                case 'R':
-                        R = value;
-                        break;
-                case 'S':
-                        S = value;
-                        break;
-                case 'T':
-                        T = value;
-                        break;
-                case 'U':
-                        A = value;
-                        break;
-                case 'V':
-                        B = value;
-                        break;
-                case 'W':
-                        C = value;
-                        break;
-                case 'X':
-                        X = value;
-                        break;
-                case 'Y':
-                        Y = value;
-                        break;
-                case 'Z':
-                        Z = value;
-                        break;
-                default:
-                        System.err.println("Parameter type not found. Type: " + type);
-                }
-
-
-                //in the case of x, y, and z
-                //keep track of maximum and minimum values
-                if(X < minX) {
-                        minX = X;
-                } else if (X > maxX) {
-                        maxX = X;
-                }
-
-                if(Y < minY) {
-                        minY = Y;
-                } else if (Y > maxY) {
-                        maxY = Y;
-                }
-
-                if(Z < minZ) {
-                        minZ = Z;
-                } else if (Z > maxZ) {
-                        maxZ = Z;
-                }
-
-
-        }
-
-}
-
-
-
 
 //Create the GUI
 private static void createAndShowGUI() {
@@ -380,8 +301,6 @@ private static void createAndShowGUI() {
         f.pack();
         f.setVisible(true);
 }
-
-
 
 /*
  * Private helpers for the command context to command transformation
@@ -416,11 +335,6 @@ private static float toFloat(PrgParser.FloatNumContext fnc) {
                         digits.append(f.getSymbol().getText());
                 }
         }
-
-
-
-
-
         return Float.parseFloat(digits.toString());
 }
 
