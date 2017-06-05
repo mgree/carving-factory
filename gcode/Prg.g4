@@ -2,7 +2,9 @@ grammar Prg;
 
 program : command+ ;
 
-command : type natural arg* returnChar*;
+command : returnChar* linenum? type natural arg* returnChar*;
+
+linenum: 'N' natural | 'n' natural ;
 
 type : 'G' | 'M' | 'g' | 'm' ;
 

@@ -69,8 +69,8 @@ public static void main(String[] args) {
 
               PrgParser.TypeContext type = c.type();
 
-              Token t = type.getToken(Token.MIN_USER_TOKEN_TYPE,0).getSymbol();
-              System.out.println(t.getText());
+              //Token t = type.getToken(Token.MIN_USER_TOKEN_TYPE,0).getSymbol();
+              System.out.println(type.getText());
 
               System.out.println("Modal number: " + toNum(c.natural()));
 

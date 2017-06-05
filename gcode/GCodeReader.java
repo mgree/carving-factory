@@ -1,7 +1,4 @@
 /*
-    Things the parser has trouble with:
-        line numbers
-        floats that without decimals
 
     Things to fix in addition
         don't use a switch statement, make it a hashmap (type, value)
@@ -21,14 +18,23 @@
 
 
 
-  Check these cases:
+   Check these cases:
         multiple G commands on one line
         Weird start commands (s, t)
         Negative x and y values
 
  */
 
-
+/*
+ * Gcode Reader -- designed to take a GCode file and display a GUI of
+ * the expected pattern to be drawn. It also outputs all instructions
+ * it processes in an easy to read format in the terminal window
+ *
+ * @author Sonia Grunwald
+ * @version June 5th, 2017
+ * Michael Greenberg Lab
+ *
+ */
 
 import org.antlr.v4.runtime.atn.*;
 import org.antlr.v4.runtime.dfa.DFA;
@@ -56,42 +62,42 @@ import java.awt.Graphics;
 
 
 public class GCodeReader {
-    public static ArrayList<Line> lines = new ArrayList<Line> ();
-    private static final int SCALE = 1;
-    private static final int MAX_LINE_SIZE = 300;
+public static ArrayList<Line> lines = new ArrayList<Line> ();
+private static final int SCALE = 1;
+private static final int MAX_LINE_SIZE = 300;
 
-    //SET UP DEFAULT VALUES
-    //Note: I have no idea what these should be whatsoever.
-    private static double A = 0.0; //A-axis of machine
-    private static double B = 0.0; //B-axis of machine
-    private static double C = 0.0; //C-axis of machine
-    private static double D = 0.0; //tool radius compensation number
-    private static double F = 1.0; //feedrate
-    private static double H = 0.0; //tool length offset index
-    private static double I = 0.0; //X-axis offset for arcs
-    private static double J = 0.0; //Y-axis offset for arcs
-    private static double K = 0.0; //Z-axis offset for arcs
-    private static double L = 0.0; //Numer of repetitions in canned cycles, key for G10
-    private static double O = 0.0; //Subroutine label number
-    private static double P = 0.0; //Dwell time, key for G10
-    private static double Q = 0.0; //Feed increment in G83 canned cycle, repetitions of subroutine call
-    private static double R = 1.0; //arc radius
-    private static double S = 1.0; //spindle speed
-    private static double T = 0.0; //tool selection
-    //private static double U = 0.0; synonymous with A
-    //private static double V = 0.0; synonymous with B
-    //private static double W = 0.0; synonymous with C
-    private static double X = 0.0; //X-axis of machine
-    private static double Y = 0.0; //Y-axis of machine
-    private static double Z = 0.0; //Z-axis
+//SET UP DEFAULT VALUES
+//Note: I have no idea what these should be whatsoever.
+private static double A = 0.0;     //A-axis of machine
+private static double B = 0.0;     //B-axis of machine
+private static double C = 0.0;     //C-axis of machine
+private static double D = 0.0;     //tool radius compensation number
+private static double F = 1.0;     //feedrate
+private static double H = 0.0;     //tool length offset index
+private static double I = 0.0;     //X-axis offset for arcs
+private static double J = 0.0;     //Y-axis offset for arcs
+private static double K = 0.0;     //Z-axis offset for arcs
+private static double L = 0.0;     //Numer of repetitions in canned cycles, key for G10
+private static double O = 0.0;     //Subroutine label number
+private static double P = 0.0;     //Dwell time, key for G10
+private static double Q = 0.0;     //Feed increment in G83 canned cycle, repetitions of subroutine call
+private static double R = 1.0;     //arc radius
+private static double S = 1.0;     //spindle speed
+private static double T = 0.0;     //tool selection
+//private static double U = 0.0; synonymous with A
+//private static double V = 0.0; synonymous with B
+//private static double W = 0.0; synonymous with C
+private static double X = 0.0;     //X-axis of machine
+private static double Y = 0.0;     //Y-axis of machine
+private static double Z = 0.0;     //Z-axis
 
 
-    private static double maxX = 0.0;
-    private static double minX = 0.0;
-    private static double maxY = 0.0;
-    private static double minY = 0.0;
-    private static double maxZ = 0.0;
-    private static double minZ = 0.0;
+private static double maxX = 0.0;
+private static double minX = 0.0;
+private static double maxY = 0.0;
+private static double minY = 0.0;
+private static double maxZ = 0.0;
+private static double minZ = 0.0;
 
 
 
@@ -147,10 +153,10 @@ public static Command createCommand(PrgParser.CommandContext c){
 
         Command newCommand = new Command();
 
-        //get the type token and set the type to that character
+        //get the type and set the type to that character
+        //(For unclear reasons, using tokens here made things mor difficult)
         PrgParser.TypeContext type = c.type();
-        Token t = type.getToken(Token.MIN_USER_TOKEN_TYPE,0).getSymbol();
-        newCommand.setType(Character.toUpperCase(t.getText().charAt(0)));
+        newCommand.setType(Character.toUpperCase(type.getText().charAt(0)));
 
         //get the mode and set it
         newCommand.setMode(toNum(c.natural()));
@@ -184,8 +190,6 @@ public static void processCommand(Command c){
         //Only update the parameters if it's a type you know how to process
         //use a switch statement allowing for additional commands to be added later
         //here write to a file or print an update (added line from (x,y) to (x,y))
-        //in the future, may paint directly from here. May allow painting of arcs to
-        //be somewhat simpler
 
         if (type == 'G') {
                 switch (mode) {
@@ -382,7 +386,7 @@ private static void createAndShowGUI() {
 /*
  * Private helpers for the command context to command transformation
  */
- //Creates an int from a NaturalContext
+//Creates an int from a NaturalContext
 private static int toNum(PrgParser.NaturalContext nc) {
         List<TerminalNode> dcs = nc.DIGIT();
 
@@ -396,18 +400,26 @@ private static int toNum(PrgParser.NaturalContext nc) {
 
 //Creates a float from a FloatNumContext
 private static float toFloat(PrgParser.FloatNumContext fnc) {
+
         List<TerminalNode> dcs = fnc.DIGIT(); //first part of num
-        PrgParser.DecimalContext decctx = fnc.decimal();
-        List<TerminalNode> fracdcs = decctx.DIGIT();
 
         StringBuffer digits = new StringBuffer(dcs.size());
         for (TerminalNode d : dcs) {
                 digits.append(d.getSymbol().getText());
         }
-        digits.append(".");
-        for (TerminalNode f : fracdcs) {
-                digits.append(f.getSymbol().getText());
+
+        PrgParser.DecimalContext decctx = fnc.decimal();
+        if (decctx != null) {
+                List<TerminalNode> fracdcs = decctx.DIGIT(); //second part of num
+                digits.append(".");
+                for (TerminalNode f : fracdcs) {
+                        digits.append(f.getSymbol().getText());
+                }
         }
+
+
+
+
 
         return Float.parseFloat(digits.toString());
 }
