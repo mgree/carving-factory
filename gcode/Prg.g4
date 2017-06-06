@@ -2,7 +2,7 @@ grammar Prg;
 
 program : command+ ;
 
-command : returnChar* linenum? type natural arg* returnChar*;
+command : returnChar* linenum? type natural arg* returnChar* ;
 
 linenum: 'N' natural | 'n' natural ;
 
@@ -36,3 +36,5 @@ DIGIT : ('0' .. '9')  ;
 WS  :  [ \t\u000C]+ -> skip ;
 
 COMMENT : '(' .*? ')' -> skip ;
+
+ENDCHAR : '%' -> skip ;

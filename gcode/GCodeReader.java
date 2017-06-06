@@ -1,21 +1,31 @@
 /*
     More features
         Think about how to implement arcs, etc
-        add extra command line arguments for drill size and dimensions
-        add this into the swing panel
         Deal with scaling and errors
-          calculate the existing error
-          create error threshold var
-          from there calculate required scale factor
-          compare to dimensions
-          output results with scale if able, else report that these
-            dimensions can't be used to create an image of high enough fidelity
+              calculate the existing error
+              create error threshold var
+              from there calculate required scale factor
+              compare to dimensions
+              output results with scale if able, else report that these
+                dimensions can't be used to create an image of high enough fidelity
+        Color of Z
+          gradient lines
+
+        proportional line size detected
+
 
 
    Check these cases:
         multiple G commands on one line
         Weird start commands (s, t)
         Negative x and y values
+        u,v,w
+
+
+   Parser still can't handle:
+      G91.1
+      returns in the middle of lines
+
  */
 
 /*
@@ -43,40 +53,104 @@ import java.io.*;
 import java.lang.*;
 import java.util.*;
 
-import javax.swing.SwingUtilities;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.BorderFactory;
+import javax.swing.*;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.BasicStroke;
 
 
 
 
 public class GCodeReader {
 public static ArrayList<Line> lines = new ArrayList<Line> ();
-private static final int SCALE = 1;
-private static final int MAX_LINE_SIZE = 300;
+private static int SCALE = 1;
 private static HashMap<Character,Double> parameters = new HashMap<Character,Double>();
 private static HashMap<String,Boolean> processable = new HashMap<String,Boolean>();
 
+//default window dimensions are 300 X 300
+private static int dimX = 300;
+private static int dimY = 300;
 
+//default stroke width for the drawing pane
+private static int strokeWidth = 1;
+
+//Initialize min and max values
 private static double maxX = 0.0;
 private static double minX = 0.0;
 private static double maxY = 0.0;
 private static double minY = 0.0;
 private static double maxZ = 0.0;
 private static double minZ = 0.0;
+
+//Initialize starting point
 private static double prevX = 0.0;
 private static double prevY = 0.0;
 private static double prevZ = 0.0;
 
 
-
 public static void main(String[] args) {
-        if (args.length != 1) {
-                System.err.println("Error: Please enter one file.");
+        //Wrong number of arguments
+        if (args.length > 5 || args.length < 1) {
+                System.err.println("Error: Please enter one file and two optional dimensions, an optional line width, and/or an optional scale factor");
+                System.exit(-1);
+        }
+        try{
+                //if there is 1 additional arg
+                //either a stroke or scale is entered
+                if (args.length == 2) {
+                        if (args[1].charAt(0) == 's' || args[1].charAt(0) == 'S') {
+                                SCALE = (int)Double.parseDouble(args[1].substring(1));
+                        } else {
+                                strokeWidth = (int)Double.parseDouble(args[1]);
+                        }
+                }
+                //if there are 2 args
+                //only dimensions are inputted or
+                //stroke and scale both entered
+                if (args.length == 3) {
+                        if (args[2].charAt(0) == 's' || args[2].charAt(0) == 'S') {
+                                SCALE = (int)Double.parseDouble(args[2].substring(1));
+                                strokeWidth = (int)Double.parseDouble(args[1]);
+                        } else if (args[1].charAt(0) == 's' || args[1].charAt(0) == 'S') {
+                                SCALE = (int)Double.parseDouble(args[1].substring(1));
+                                strokeWidth = (int)Double.parseDouble(args[2]);
+                        } else {
+                                dimX = (int)Double.parseDouble(args[1]);
+                                dimY = (int)Double.parseDouble(args[2]);
+                        }
+
+                }
+                //if there are 3 args
+                //the dimensions and a stroke width is inputted or
+                //the dimensions and a scale is entered
+                if (args.length == 4) {
+                        dimX = (int)Double.parseDouble(args[1]);
+                        dimY = (int)Double.parseDouble(args[2]);
+
+                        if (args[3].charAt(0) == 's' || args[3].charAt(0) == 'S') {
+                                SCALE = (int)Double.parseDouble(args[3].substring(1));
+                        } else {
+                                strokeWidth = (int)Double.parseDouble (args[3]);
+                        }
+                }
+                //if there are 4 args
+                //the dimensions, stroke, and scale are entered
+                if (args.length == 5) {
+                        dimX = (int)Double.parseDouble(args[1]);
+                        dimY = (int)Double.parseDouble(args[2]);
+                        if (args[3].charAt(0) == 's' || args[3].charAt(0) == 'S') {
+                                SCALE = (int)Double.parseDouble(args[3].substring(1));
+                                strokeWidth = (int)Double.parseDouble (args[4]);
+                        } else {
+                                strokeWidth = (int)Double.parseDouble (args[3]);
+                                SCALE = (int)Double.parseDouble(args[4].substring(1));
+                        }
+
+                }
+        }  catch (NumberFormatException e) {
+                System.err.println("A number was entered incorrectly");
                 System.exit(-1);
         }
 
@@ -101,14 +175,15 @@ public static void main(String[] args) {
                 }
 
                 //Print the X, Y, and Z ranges
-                System.err.println ("X Range: (" + minX + ", " + maxX +
-                                    ") \nY Range: (" + minY + ", " + maxY +
-                                    ") \nZ Range: (" + minZ + ", " + maxZ +")");
+                System.err.println ("X Range: (" + minX*SCALE + ", " + maxX*SCALE +
+                                    ") \nY Range: (" + minY*SCALE + ", " + maxY*SCALE +
+                                    ") \nZ Range: (" + minZ*SCALE + ", " + maxZ*SCALE +")");
 
         } catch (IOException e) {
                 System.err.println("IOException: " + e);
                 System.exit(-1);
         }
+
 
         //Show the GUI
         SwingUtilities.invokeLater(new Runnable() {
@@ -167,6 +242,7 @@ public static Command createCommand(PrgParser.CommandContext c){
         //get the mode and set it
         newCommand.setMode(toNum(c.natural()));
 
+        //For x, y, and z, get existing values for starting point of the line
         prevX = parameters.get('X');
         prevY = parameters.get('Y');
         prevZ = parameters.get('Z');
@@ -176,7 +252,7 @@ public static Command createCommand(PrgParser.CommandContext c){
         s.append (Character.toUpperCase(type.getText().charAt(0)));
         s.append (toNum(c.natural()));
 
-        //ONLY PROCESS A COMMAND (change params, etc) IF IT IS KNOWN
+        //ONLY IF A COMMAND IS KNOWN update params and min/maxes
         if (processable.containsKey(s.toString())) {
                 //For all the arguments, update that parameter in the hashmap
                 List<PrgParser.ArgContext> argList = c.arg();
@@ -237,14 +313,14 @@ public static void processCommand(Command c){
                 switch (mode) {
                 case 0:
                         lines.add(new Line (prevX, prevY, X, Y));
-                        System.err.println("Line drawn: ("+ prevX + ", " + prevY + ", " +
-                                           prevZ + "), (" + X + ", " + Y + ", " + Z +
+                        System.err.println("Line drawn: ("+ prevX*SCALE + ", " + prevY*SCALE + ", " +
+                                           prevZ*SCALE + "), (" + X*SCALE + ", " + Y*SCALE + ", " + Z +
                                            ") at feed rate " + parameters.get('F') );
                         break;
                 case 1:
                         lines.add(new Line (prevX, prevY, X, Y));
-                        System.err.println("Line drawn: ("+ prevX + ", " + prevY + ", " +
-                                           prevZ + "), (" + X + ", " + Y + ", " + Z +
+                        System.err.println("Line drawn: ("+ prevX*SCALE + ", " + prevY*SCALE + ", " +
+                                           prevZ*SCALE + "), (" + X*SCALE + ", " + Y*SCALE + ", " + Z +
                                            ") at feed rate " + parameters.get('F') );
                         break;
                 case 2:
@@ -257,6 +333,15 @@ public static void processCommand(Command c){
                         break;
                 case 4:
                         System.err.println("Dwell for " + parameters.get('P') + "time");
+                        break;
+                case 17:
+                        System.err.println("XY plane selected");
+                        break;
+                case 18:
+                        System.err.println("ZX plane selected");
+                        break;
+                case 19:
+                        System.err.println("YZ plane selected");
                         break;
 
                 case 20:
@@ -278,13 +363,78 @@ public static void processCommand(Command c){
                         System.err.println("Cancel tool length offset");
                         break;
 
+                case 90:
+                        System.err.println("Absolute distance mode");
+                        break;
+
+                case 91:
+                        System.err.println("Incremental distance mode");
+                        break;
+
                 default:
                         System.err.println ("Command not processed. Command: " + type + mode);
                 }
 
-
         } else if (type == 'M') {
                 switch (mode) {
+
+                case 0:
+                        System.err.println ("Programmed stop");
+                        break;
+
+                case 1:
+                        System.err.println ("Optional stop");
+                        break;
+
+                case 2:
+                        System.err.println ("End of main program");
+                        break;
+
+                case 3:
+                        System.err.println ("Spindle on");
+                        break;
+
+                case 5:
+                        System.err.println ("Spindle off");
+                        break;
+
+                case 6:
+                        System.err.println ("Tool Change");
+                        break;
+                case 8:
+                        System.err.println ("Dust hood up on");
+                        break;
+
+                case 9:
+                        System.err.println ("Dust hood up off");
+                        break;
+
+                case 10:
+                        System.err.println ("Open grip on");
+                        break;
+                case 11:
+                        System.err.println ("Open grip off with check for tool in spindle");
+                        break;
+
+                case 12:
+                        System.err.println ("Open grip off with no check for tool in spindle");
+                        break;
+
+                case 20:
+                        System.err.println ("Turns on mister output");
+                        break;
+                case 21:
+                        System.err.println ("Turns off mister output");
+                        break;
+
+                case 30:
+                        System.err.println ("Program end and rewind");
+                        break;
+
+                case 102:
+                        System.err.println ("Rotates rack to new tool position");
+                        break;
+
                 default:
                         System.err.println ("Command not processed. Command: " + type + mode);
                 }
@@ -297,7 +447,8 @@ public static void processCommand(Command c){
 private static void createAndShowGUI() {
         JFrame f = new JFrame("GCode Results");
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        f.add(new MyPanel(lines));
+        f.add(new MyPanel(lines, SCALE, strokeWidth));
+        f.setPreferredSize(new Dimension(dimX, dimY));
         f.pack();
         f.setVisible(true);
 }
@@ -347,10 +498,14 @@ private static float toFloat(PrgParser.FloatNumContext fnc) {
 //The panel sets up adn displays the GUI in the end
 class MyPanel extends JPanel {
 ArrayList<Line> theLines;
+int scale;
+int strokeWidth;
 
-public MyPanel(ArrayList<Line> j) {
+public MyPanel(ArrayList<Line> j, int scaleFactor, int stroke) {
         setBorder(BorderFactory.createLineBorder(Color.black));
         theLines = j;
+        scale = scaleFactor;
+        strokeWidth = stroke;
 }
 
 public Dimension getPreferredSize() {
@@ -360,8 +515,12 @@ public Dimension getPreferredSize() {
 protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
+        Graphics2D g2 = (Graphics2D) g;
+        g2.setStroke(new BasicStroke(strokeWidth));
+
         for (Line l : theLines) {
-                g.drawLine((int)l.getStartX(), (int)l.getStartY(), (int)l.getEndX(), (int)l.getEndY());
+                g.drawLine((int)(l.getStartX()*scale), (int)(l.getStartY()*scale),
+                           (int)(l.getEndX()*scale), (int)(l.getEndY())*scale);
         }
 
 }
