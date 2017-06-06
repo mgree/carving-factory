@@ -18,6 +18,7 @@
         Weird start commands (s, t)
         Negative x and y values
         u,v,w
+        G0 IS A MOVE WITHOUT DRAWING
 
 
    Parser still can't handle:
@@ -57,6 +58,7 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.BasicStroke;
+import java.awt.geom.*;
 
 
 
@@ -334,8 +336,8 @@ public static void processCommand(Command c){
         if (type == 'G') {
                 switch (mode) {
                 case 0:
-                        lines.add(new Line (prevX, prevY, X, Y));
-                        System.err.println("Line drawn: ("+ prevX*scale + ", " + prevY*scale + ", " +
+                        //lines.add(new Line (prevX, prevY, X, Y));
+                        System.err.println("MOVE: ("+ prevX*scale + ", " + prevY*scale + ", " +
                                            prevZ*scale + "), (" + X*scale + ", " + Y*scale + ", " + Z +
                                            ") at feed rate " + parameters.get('F') );
                         break;
@@ -547,6 +549,46 @@ protected void paintComponent(Graphics g) {
                 g.drawLine((int)Math.round(l.getStartX()*scale * auxScale), (int)Math.round(l.getStartY()*scale * auxScale),
                            (int)Math.round(l.getEndX()*scale * auxScale), (int)Math.round(l.getEndY()*scale * auxScale));
         }
+
+        //draws a counterclockwise arc starting at pos x side
+        //rect top left x, rect top left y, rect width, rect height,
+        // starting degree (0 is positive x side), num degrees on arc
+        //("length" of arc in degrees) going counterclockwise, arc type
+        // g2.draw(new Arc2D.Double(40, 40, 50, 50, 180, 135, Arc2D.OPEN));
+        // g.drawLine(40,40,40,40);
+
+        /*start and end points, its radius or center point, a direction, and a plane.
+        Direction is determined by G02, clockwise, and G03, counterclockwise, when viewed from the plane’s positive direction
+        (If XY plane is selected look down so that the X axis positive direction is pointing to the right, and the Y axis
+        positive direction is pointing forward)
+        The start point is the current position of the machine.
+        Specify the end point with X, Y, and Z.
+          The values input for the end point will depend on the current G90/G91 (abs/inc) setting of the machine.
+          Only the two points in the current plane are required for an arc. Adding in the third point will create a helical interpolation.
+        Next is to specify the radius or the center point of the arc, only one or the other, not both.
+          Radius:
+          To specify the radius, use R and input the actual radius of the desired arc
+          When an arc is created knowing only start and end points and a radius there are two possible solutions,
+          an arc with a sweep less than 180° and one with sweep greater than 180°. The sign of the radius value,
+          positive or negative, determines which arc will be cut, see figure 3. A positive value for R cuts an arc
+          with sweep less than 180°. A negative value for R cuts an arc with sweep greater than 180°.
+          Center:
+          A more accurate and reliable way to define an arc is by specifying the center point, this is done with arguments I, J, and K
+          The center point must be defined in the current plane. I, J, and K correspond to X, Y, Z respectively; the current plane
+          selection will determine which two are used. XY plane (G17) would use I and J for example.
+          Mach has two settings for how I, J, and K should be specified, absolute and incremental.
+          This setting can be changed by G code, G90.1 and G91.1, or in the general tab in the Mach configuration.
+          This setting is independent of the G90/G91 setting. If arc center mode is set to incremental then I, J, K
+          are the distance and direction from the start point to the center point of the arc.
+          If arc center mode is set to absolute then I, J, K are the absolute position of the arc center point
+          in the current user coordinate system.
+
+        */
+
+        // for (Arc a : theArcs){
+        //g2.draw(new Arc2D.Double(x, y,rectwidth, rectheight, 90, 135, Arc2D.OPEN));
+        //
+        // }
 
 }
 }
