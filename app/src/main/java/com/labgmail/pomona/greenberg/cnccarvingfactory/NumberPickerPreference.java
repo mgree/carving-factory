@@ -16,10 +16,8 @@ import android.widget.TextView;
  * Created by edinameshietedoho on 6/1/17.
  */
 
-// ??? I just realized this is going to need to run two numberpickers at the same time for length and width hmmm...
 public class NumberPickerPreference extends DialogPreference {
 
-    private int mValue;
     private int mCValue;
     private static final int DEFAULT_VALUE = 5;
     private NumberPicker numPicker;
@@ -52,29 +50,60 @@ public class NumberPickerPreference extends DialogPreference {
     @Override
     protected View onCreateDialogView() {
         numPicker = new NumberPicker(getContext());
-        numPicker.setMinValue(5);
-        numPicker.setMaxValue(10);
+        numPicker.setMinValue(0);
+        numPicker.setMaxValue(60);
 
         numPicker.setValue(mCValue);
         return numPicker;
     }
-
+    @Override
     protected void onDialogClosed(boolean positive) {
         if(positive) {
-            persistInt(mValue);
+            numPicker.clearFocus();
+
+//            persistInt(mCValue);
+//            setValue(numPicker.getValue());
+//            int apple = 0;
+            try {
+               int apple = Integer.parseInt(String.valueOf(numPicker.getValue()));
+                setValue(apple);
+            } catch (NumberFormatException e) {
+            }
+
         }
     }
 
-    protected Object onGetDefaultValue(TypedArray a, int index) {
-        return a.getInteger(index, DEFAULT_VALUE);
-    }
-
+    @Override
     protected void onSetInitialValue(boolean rpv, Object defaultV) {
+
+        setValue(rpv ? getPersistedInt(mCValue) : (Integer) defaultV);
         if(rpv) {
             mCValue = this.getPersistedInt(DEFAULT_VALUE);
         } else {
             mCValue = (Integer) defaultV;
             persistInt(mCValue);
+        }
+    }
+
+    @Override
+    protected Object onGetDefaultValue(TypedArray a, int index) {
+        return a.getInteger(index, DEFAULT_VALUE);
+    }
+
+    public void setValue(int value) {
+        if (shouldPersist()) {
+            try {
+                int apple = Integer.parseInt(" " + value);
+                setValue(apple);
+                persistInt(value);
+            } catch (NumberFormatException e) {
+            }
+
+        }
+
+        if (value != mCValue) {
+            mCValue = value;
+            notifyChanged();
         }
     }
 
@@ -86,7 +115,7 @@ public class NumberPickerPreference extends DialogPreference {
         }
 
         final SavedState myState = new SavedState(superState);
-        myState.value = mValue;
+        myState.value = mCValue;
         return myState;
     }
 
