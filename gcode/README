@@ -5,12 +5,14 @@ June 2017
 
 This code will take in a gcode file and produce a GUI drawing the
 design the gcode will produce. It also prints a feed of instructions
-executed.
+executed. One can chose the dimensions of the piece of wood they plan to
+work on in inches and the GUI window will appear at these dimensions and
+show the line width proportionally.
 
 
 Command Line Arguments:
 
-java GCodeReader gCodeTestFile.txt dimX dimY sScaleNum strokeWidth
+java GCodeReader gCodeTestFile.txt dimX dimY sScaleNum
 
 The "gCodeTestFile.txt" must be a file of valid gcode. At the current moment
 our parser can handle almost all gcode commands, but certain things such as
@@ -20,38 +22,31 @@ yet to be accounted for. Keep this in mind when entering a gcode file.
 
 Optional arguments:
 dimX
-  This will be the X dimension of the GUI window (in pixels)
+  This will be the X dimension of the GUI window (in inches)
 dimY
-  This will be the Y dimension of the GUI window (in pixels)
+  This will be the Y dimension of the GUI window (in inches)
 sScaleNum
   This will be the factor by which the gcode drawing is scaled up. Note that
-  this number must be preceded by an 's' (s10 is a valid scale but 10 is not)
-strokeWidth
-  This will be the strokeWidth of the line drawn in the GUI
+  this number must be preceded by an 's' (s10 is a valid scale but 10 is not).
+  This is used for debugging your gcode (finding out what your values need to be)
+
 
 A note on argument ordering:
   All arguments are optional, but if one dimension is set, the other must be set
-  as well. Any combination of the pair of dimensions, scale number, and the
-  stroke width may be entered. If the pair of dimensions is entered, these
-  arguments MUST go first. Other than that, ordering does not matter and the
-  scale number and stroke width are interchangeable.
+  as well. The dimensions default to a 2' X 4'  piece of wood and the scale
+  defaults to 1. Either or both of the pair of dimensions or scale number, may be entered.
+  If the pair of dimensions is entered, these arguments MUST go first.
 
 Valid Examples:
-  java GCodeReader gCodeTestFile.txt 100 100.0 s3 5
-      //opens in a 100x100 window scaled by 3 with a 5pt line width
-  java GCodeReader gCodeTestFile.txt 100 100.0 5 s3
-      //same as above
-  java GCodeReader gCodeTestFile.txt 10 s2
-      //Opens in the default 300x300 window with a 10pt line scaled by 2
-  java GCodeReader gCodeTestFile.txt 10
-      //Opens in the default 300x300 window with a 10pt line
-
+  java GCodeReader gCodeTestFile.txt 36 24
+      //opens drawing in a 3 ft by 2 ft proportional window as large as will
+      //fit on your screen
   java GCodeReader gCodeTestFile.txt s2
-      //Opens in the default 300x300 window with a 1pt line scaled by 2
+      //Opens in the default 2 ft by 4 ft window with the drawing scaled up by 2
 
 
 Invalid Examples:
-  java GCodeReader gCodeTestFile.txt s3 5 100 100.0
+  java GCodeReader gCodeTestFile.txt s3 36 48
       //dimensions must go first
   java GCodeReader gCodeTestFile.txt s2 s3
-      //only one scale may be entered 
+      //only one scale may be entered

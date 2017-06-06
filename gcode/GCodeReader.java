@@ -11,8 +11,6 @@
         Color of Z
           gradient lines
 
-        proportional line size detected
-
 
 
    Check these cases:
@@ -64,16 +62,37 @@ import java.awt.BasicStroke;
 
 
 public class GCodeReader {
-public static ArrayList<Line> lines = new ArrayList<Line> ();
-private static int SCALE = 1;
+
+private static final int MAX_X_DIM = 1300;
+private static final int MAX_Y_DIM = 725;
+
+private static ArrayList<Line> lines = new ArrayList<Line> ();
 private static HashMap<Character,Double> parameters = new HashMap<Character,Double>();
 private static HashMap<String,Boolean> processable = new HashMap<String,Boolean>();
 
-//default window dimensions are 300 X 300
-private static int dimX = 300;
-private static int dimY = 300;
+//This is an additional scale to be used in debugging designs
+//This allows the user to manually scale their design up and down
+//They will then use this information to alter their gcode
+private static int scale = 1;
+
+//This is the automatically detected scale factor used to display
+//the lines proportionally according to the given dimensions
+private static double scaleFactor = 1.0;
+
+//ACTUAL DIMENSIONS (px)
+private static int pxDimX;
+private static int pxDimY;
+
+//default window is a 2' X 4' window
+//THESE ARE THE INPUTTED DIMENSIONS (inches)
+private static int dimX = 48;
+private static int dimY = 24;
+
+//Set up the default tool width
+private static double toolWidth = .5;
 
 //default stroke width for the drawing pane
+//This is updated to appear proportional to the given dimensions
 private static int strokeWidth = 1;
 
 //Initialize min and max values
@@ -92,63 +111,42 @@ private static double prevZ = 0.0;
 
 public static void main(String[] args) {
         //Wrong number of arguments
-        if (args.length > 5 || args.length < 1) {
-                System.err.println("Error: Please enter one file and two optional dimensions, an optional line width, and/or an optional scale factor");
+        if (args.length > 4 || args.length < 1) {
+                System.err.println("Error: Please enter one file and two optional dimensions (in inches) and/or an optional scale factor");
                 System.exit(-1);
         }
         try{
                 //if there is 1 additional arg
-                //either a stroke or scale is entered
+                //scale is entered
                 if (args.length == 2) {
                         if (args[1].charAt(0) == 's' || args[1].charAt(0) == 'S') {
-                                SCALE = (int)Double.parseDouble(args[1].substring(1));
-                        } else {
-                                strokeWidth = (int)Double.parseDouble(args[1]);
+                                scale = (int)Math.round(Double.parseDouble(args[1].substring(1)));
+                        }  else {
+                                System.err.println("Enter a scale preceded by an 's' or two dimensions");
+                                System.exit(-1);
                         }
                 }
                 //if there are 2 args
-                //only dimensions are inputted or
-                //stroke and scale both entered
+                //only dimensions are inputted
                 if (args.length == 3) {
-                        if (args[2].charAt(0) == 's' || args[2].charAt(0) == 'S') {
-                                SCALE = (int)Double.parseDouble(args[2].substring(1));
-                                strokeWidth = (int)Double.parseDouble(args[1]);
-                        } else if (args[1].charAt(0) == 's' || args[1].charAt(0) == 'S') {
-                                SCALE = (int)Double.parseDouble(args[1].substring(1));
-                                strokeWidth = (int)Double.parseDouble(args[2]);
-                        } else {
-                                dimX = (int)Double.parseDouble(args[1]);
-                                dimY = (int)Double.parseDouble(args[2]);
-                        }
+                        dimX = (int)Math.round(Double.parseDouble(args[1]));
+                        dimY = (int)Math.round(Double.parseDouble(args[2]));
 
                 }
                 //if there are 3 args
-                //the dimensions and a stroke width is inputted or
                 //the dimensions and a scale is entered
                 if (args.length == 4) {
-                        dimX = (int)Double.parseDouble(args[1]);
-                        dimY = (int)Double.parseDouble(args[2]);
+                        dimX = (int)Math.round(Double.parseDouble(args[1]));
+                        dimY = (int)Math.round(Double.parseDouble(args[2]));
 
                         if (args[3].charAt(0) == 's' || args[3].charAt(0) == 'S') {
-                                SCALE = (int)Double.parseDouble(args[3].substring(1));
+                                scale = (int)Math.round(Double.parseDouble(args[3].substring(1)));
                         } else {
-                                strokeWidth = (int)Double.parseDouble (args[3]);
+                                System.err.println("Enter a scale preceded by an 's'");
+                                System.exit(-1);
                         }
                 }
-                //if there are 4 args
-                //the dimensions, stroke, and scale are entered
-                if (args.length == 5) {
-                        dimX = (int)Double.parseDouble(args[1]);
-                        dimY = (int)Double.parseDouble(args[2]);
-                        if (args[3].charAt(0) == 's' || args[3].charAt(0) == 'S') {
-                                SCALE = (int)Double.parseDouble(args[3].substring(1));
-                                strokeWidth = (int)Double.parseDouble (args[4]);
-                        } else {
-                                strokeWidth = (int)Double.parseDouble (args[3]);
-                                SCALE = (int)Double.parseDouble(args[4].substring(1));
-                        }
 
-                }
         }  catch (NumberFormatException e) {
                 System.err.println("A number was entered incorrectly");
                 System.exit(-1);
@@ -156,6 +154,13 @@ public static void main(String[] args) {
 
         CharStream input;
         try {
+
+                scaleFactor = findScaleFactor(dimX, dimY);
+                strokeWidth = (int) (toolWidth * scaleFactor); //ok to just cast bc want to round down
+                pxDimX = (int)(scaleFactor * dimX);
+                pxDimY = (int)(scaleFactor * dimY);
+
+
                 input = CharStreams.fromFileName(args[0]);
                 PrgLexer lexer = new PrgLexer(input);
                 CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -175,9 +180,9 @@ public static void main(String[] args) {
                 }
 
                 //Print the X, Y, and Z ranges
-                System.err.println ("X Range: (" + minX*SCALE + ", " + maxX*SCALE +
-                                    ") \nY Range: (" + minY*SCALE + ", " + maxY*SCALE +
-                                    ") \nZ Range: (" + minZ*SCALE + ", " + maxZ*SCALE +")");
+                System.err.println ("X Range: (" + minX*scale + ", " + maxX*scale +
+                                    ") \nY Range: (" + minY*scale + ", " + maxY*scale +
+                                    ") \nZ Range: (" + minZ*scale + ", " + maxZ*scale +")");
 
         } catch (IOException e) {
                 System.err.println("IOException: " + e);
@@ -191,6 +196,22 @@ public static void main(String[] args) {
                                 createAndShowGUI();
                         }
                 });
+}
+
+
+//Using the max dimensions (unique to each screen size) and the entered dimensions
+//find the scale factor that allows the window to always appear as large as possible
+//while keeping the tool cuts proportional
+public static double findScaleFactor (int xDim, int yDim){
+        double SF;
+        double xSF = MAX_X_DIM / xDim;
+        double ySF = MAX_Y_DIM / yDim;
+        if (xSF < ySF) {
+                SF = xSF;
+        } else{
+                SF = ySF;
+        }
+        return SF;
 }
 
 
@@ -254,6 +275,7 @@ public static Command createCommand(PrgParser.CommandContext c){
 
         //ONLY IF A COMMAND IS KNOWN update params and min/maxes
         if (processable.containsKey(s.toString())) {
+
                 //For all the arguments, update that parameter in the hashmap
                 List<PrgParser.ArgContext> argList = c.arg();
                 for (PrgParser.ArgContext a : argList) {
@@ -313,14 +335,14 @@ public static void processCommand(Command c){
                 switch (mode) {
                 case 0:
                         lines.add(new Line (prevX, prevY, X, Y));
-                        System.err.println("Line drawn: ("+ prevX*SCALE + ", " + prevY*SCALE + ", " +
-                                           prevZ*SCALE + "), (" + X*SCALE + ", " + Y*SCALE + ", " + Z +
+                        System.err.println("Line drawn: ("+ prevX*scale + ", " + prevY*scale + ", " +
+                                           prevZ*scale + "), (" + X*scale + ", " + Y*scale + ", " + Z +
                                            ") at feed rate " + parameters.get('F') );
                         break;
                 case 1:
                         lines.add(new Line (prevX, prevY, X, Y));
-                        System.err.println("Line drawn: ("+ prevX*SCALE + ", " + prevY*SCALE + ", " +
-                                           prevZ*SCALE + "), (" + X*SCALE + ", " + Y*SCALE + ", " + Z +
+                        System.err.println("Line drawn: ("+ prevX*scale + ", " + prevY*scale + ", " +
+                                           prevZ*scale + "), (" + X*scale + ", " + Y*scale + ", " + Z +
                                            ") at feed rate " + parameters.get('F') );
                         break;
                 case 2:
@@ -447,8 +469,8 @@ public static void processCommand(Command c){
 private static void createAndShowGUI() {
         JFrame f = new JFrame("GCode Results");
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        f.add(new MyPanel(lines, SCALE, strokeWidth));
-        f.setPreferredSize(new Dimension(dimX, dimY));
+        f.add(new MyPanel(lines, scaleFactor, scale, strokeWidth));
+        f.setPreferredSize(new Dimension(pxDimX, pxDimY));
         f.pack();
         f.setVisible(true);
 }
@@ -494,17 +516,20 @@ private static float toFloat(PrgParser.FloatNumContext fnc) {
 
 
 
-
-//The panel sets up adn displays the GUI in the end
+//The panel sets up and displays the GUI in the end
 class MyPanel extends JPanel {
 ArrayList<Line> theLines;
-int scale;
+double scale; //This is automatically found for displaying the window correctly
+int auxScale; //This is used for debugging so you can easily scale your design up and
+              //down without manually altering all the gcode values
 int strokeWidth;
 
-public MyPanel(ArrayList<Line> j, int scaleFactor, int stroke) {
+
+public MyPanel(ArrayList<Line> j, double scaleFactor, int auxilliaryScale, int stroke) {
         setBorder(BorderFactory.createLineBorder(Color.black));
         theLines = j;
         scale = scaleFactor;
+        auxScale = auxilliaryScale;
         strokeWidth = stroke;
 }
 
@@ -519,8 +544,8 @@ protected void paintComponent(Graphics g) {
         g2.setStroke(new BasicStroke(strokeWidth));
 
         for (Line l : theLines) {
-                g.drawLine((int)(l.getStartX()*scale), (int)(l.getStartY()*scale),
-                           (int)(l.getEndX()*scale), (int)(l.getEndY())*scale);
+                g.drawLine((int)Math.round(l.getStartX()*scale * auxScale), (int)Math.round(l.getStartY()*scale * auxScale),
+                           (int)Math.round(l.getEndX()*scale * auxScale), (int)Math.round(l.getEndY()*scale * auxScale));
         }
 
 }
