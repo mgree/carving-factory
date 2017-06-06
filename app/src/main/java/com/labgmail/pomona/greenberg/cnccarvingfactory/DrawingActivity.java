@@ -135,17 +135,10 @@ public class DrawingActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent = new Intent(self, DisplaySettingsActivity.class);
                 startActivity(intent);
-
-
-
             }
         }) ;
-        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-//        String syncConnPref = sharedPref.getString(DisplaySettingsActivity.KEY_PREF_SYNC_CONN, "");
-
         setAlpha(255);
     }
-
 
     private void setAlpha(int alpha) {
         mContentView.setAlpha(alpha);

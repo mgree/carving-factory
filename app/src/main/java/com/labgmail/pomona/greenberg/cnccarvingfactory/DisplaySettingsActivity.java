@@ -21,6 +21,7 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
     public static final String KEY_LENGTH = "pref_length";
     public static final String KEY_WIDTH = "pref_width";
     public static final String KEY_DEPTH = "pref_depth";
+    public static final String KEY_NUMBER = "pref_num";
 
     public static class SettingsFragment extends PreferenceFragment implements SharedPreferences.OnSharedPreferenceChangeListener {
 
@@ -30,11 +31,11 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
             addPreferencesFromResource(R.xml.preferences);
             
             SharedPreferences prefs = getPreferenceManager().getSharedPreferences();
-            for (String key : new String[] { KEY_LENGTH, KEY_WIDTH, KEY_DEPTH }) {
+            for (String key : new String[] { KEY_LENGTH, KEY_WIDTH, KEY_DEPTH}) {
                 findPreference(key).setSummary(prefs.getString(key, null));
             }
         }
-
+// See if you can change the paramater from string to an int and then get rid of the text preferences
         @Override
         public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
             Preference pref = findPreference(key);
@@ -71,7 +72,6 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
 
         SharedPreferences.OnSharedPreferenceChangeListener listener = new SharedPreferences.OnSharedPreferenceChangeListener() {
             public void onSharedPreferenceChanged(SharedPreferences prefs,String key){
-                // Wants this line to live outside of the brackets. Why?
                 prefs.registerOnSharedPreferenceChangeListener(this);
             }
         };
@@ -86,6 +86,8 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
                 .commit();
     }
 
+
+
     // So what has to happen is a preference needs to be made (a custom preference that extends Preference with a NumberPicker)
     // That needs to be run in a PreferenceFragment
     // Set the default value
@@ -95,5 +97,6 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
     // Ok update, the settings button changes the view and they each individually save their values but they do nothing with them.
     // Also i need to figure out how to make it so that the only values that can be entered are integer values.
     // Also how to keep the pop up window from poping up whenever someone opens the app (the alpha picker).
+    // Change from EditTextPreference to NumberPickerPreference
 }
 //
