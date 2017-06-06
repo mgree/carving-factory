@@ -7,8 +7,10 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.preference.DialogPreference;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.View;
 import android.widget.NumberPicker;
+import android.widget.TextView;
 
 /**
  * Created by edinameshietedoho on 6/1/17.
@@ -21,15 +23,31 @@ public class NumberPickerPreference extends DialogPreference {
     private int mCValue;
     private static final int DEFAULT_VALUE = 5;
     private NumberPicker numPicker;
+    private static final int mDialogLayout = R.layout.picker_layout;
+
+    public NumberPickerPreference(Context context) {
+        this(context, null, 0);
+    }
 
     public NumberPickerPreference(Context context, AttributeSet attrs) {
+        this(context, attrs, 0);
+    }
+
+    public NumberPickerPreference(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs);
 
-        // ! Will probably have to create own layout but lets pretend this will work for a while
-//        setDialogLayoutResource(R.layout.pref_dialog_npicker);
+        setDialogLayoutResource(R.layout.picker_layout);
         setPositiveButtonText (android.R.string.ok);
         setNegativeButtonText(android.R.string.cancel);
     }
+
+
+
+    @Override
+    public int getDialogLayoutResource() {
+        return mDialogLayout;
+    }
+
 
     @Override
     protected View onCreateDialogView() {
@@ -40,6 +58,7 @@ public class NumberPickerPreference extends DialogPreference {
         numPicker.setValue(mCValue);
         return numPicker;
     }
+
     protected void onDialogClosed(boolean positive) {
         if(positive) {
             persistInt(mValue);
@@ -62,7 +81,7 @@ public class NumberPickerPreference extends DialogPreference {
     protected Parcelable onSuperInstanceState() {
         final Parcelable superState = super.onSaveInstanceState();
 
-        if(isPersistent()) {
+        if (isPersistent()) {
             return superState;
         }
 
@@ -72,17 +91,20 @@ public class NumberPickerPreference extends DialogPreference {
     }
 
     protected void onRestoreInstanceState(Parcelable state) {
-        if(state == null || !state.getClass().equals(SavedState.class)) {
+        if (state == null || !state.getClass().equals(SavedState.class)) {
             super.onRestoreInstanceState(state);
             return;
         }
 
         SavedState myState = (SavedState) state;
         super.onRestoreInstanceState(myState.getSuperState());
-//      ???  Where did they get this random NumberPicker from :/
-//        mNumberPicker.setValue(myState.value);
+        numPicker.setValue(myState.value);
     }
-// ??? Is this how that works??? I'm almost positive that is not how this works. Supposed to be a subclass of the preference subclass
+
+    public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
+
+    }
+
     private static class SavedState extends View.BaseSavedState {
         int value;
 
@@ -92,6 +114,7 @@ public class NumberPickerPreference extends DialogPreference {
 
         public SavedState(Parcel source) {
             super(source);
+            value = source.readInt();
         }
 
         @Override
