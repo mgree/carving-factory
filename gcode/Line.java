@@ -35,6 +35,10 @@ public class Line {
     return lineWidth;
   }
 
+  public String toGCode(){
+    return "G1X" + endX + "Y" + endY + "Z0.0\n";
+  }
+
   public String toString() {
     return "(" + startX + ", " + startY + ") ("
       + endX + ", " + endY + ") at width " + lineWidth;

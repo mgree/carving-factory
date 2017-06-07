@@ -10,6 +10,7 @@ type : 'G' | 'M' | 'g' | 'm' ;
 
 arg : paramChar paramArg ;
 
+
 paramChar: 'A' | 'B' | 'C' | 'D' | 'F' | 'H' | 'I'
          | 'J' | 'K' | 'L' | 'N' | 'O' | 'P' | 'Q'
          | 'R' | 'S' | 'T' | 'U' | 'V' | 'W' | 'X'

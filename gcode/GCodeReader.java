@@ -7,6 +7,8 @@
  * @version June 5th, 2017
  * Michael Greenberg Lab
  *
+ * Be aware I got bored of bug fixes so I gave up on the midline returns and the decimal mode types
+ * Deal with UVW
  */
 
 import org.antlr.v4.runtime.atn.*;
@@ -131,7 +133,6 @@ public static void main(String[] args) {
         CharStream input;
         try {
                 scaleFactor = findScaleFactor(dimX, dimY);
-                // strokeWidth = toolWidth;
                 pxDimX = (int)(scaleFactor * dimX);
                 pxDimY = (int)(scaleFactor * dimY);
 
@@ -179,7 +180,7 @@ public static void main(String[] args) {
 
 
 //Add all parameters to the hashmap with their default values
-public static void addAllParams(HashMap<Character,Double> hm){
+public static void addAllParams(Map<Character,Double> hm){
         //SET UP DEFAULT VALUES
         //Note: I have no idea what these should be whatsoever.
         hm.put('A', 0.0); //A-axis of machine
@@ -206,7 +207,7 @@ public static void addAllParams(HashMap<Character,Double> hm){
 //Add all processable commands to the hashmap for easy access
 //In the future, all commands will be processable so this will be
 //unnecessary
-public static void addAllProcessable(HashMap<String,Boolean> hm){
+public static void addAllProcessable(Map<String,Boolean> hm){
         hm.put("G0", true);
         hm.put("G1", true);
         hm.put("G2", true);
@@ -214,7 +215,7 @@ public static void addAllProcessable(HashMap<String,Boolean> hm){
         hm.put("M6", true);
 }
 
-public static void makeToolLibrary(HashMap<Integer,Double> tl){
+public static void makeToolLibrary(Map<Integer,Double> tl){
         tl.put(1, .5);
         tl.put(2, .25);
 }
