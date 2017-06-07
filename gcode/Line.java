@@ -4,31 +4,40 @@ import java.util.*;
 
 public class Line {
 
-  private double[] theLine;
+  private double startX, startY, endX, endY, lineWidth;
 
-  public Line (double startX, double startY, double endX, double endY){
-    theLine = new double[] {startX, startY, endX, endY};
+  public Line (double startX, double startY, double endX, double endY, double lineWidth){
+      this.startX = startX;
+      this.startY = startY;
+      this.endX = endX;
+      this.endY = endY;
+      this.lineWidth = lineWidth;
+
   }
 
   public double getStartX() {
-    return theLine[0];
+    return startX;
   }
 
   public double getStartY() {
-    return theLine[1];
+    return startY;
   }
 
   public double getEndX() {
-    return theLine[2];
+    return endX;
   }
 
   public double getEndY() {
-    return theLine[3];
+    return endY;
+  }
+
+  public double getLineWidth(){
+    return lineWidth;
   }
 
   public String toString() {
-    return "(" + theLine[0] + ", " + theLine[1] + ") ("
-      + theLine[2] + ", " + theLine[3] + ")";
+    return "(" + startX + ", " + startY + ") ("
+      + endX + ", " + endY + ") at width " + lineWidth;
   }
 
 

@@ -14,7 +14,7 @@ import java.util.*;
 
 public class Arc {
 
-double r, x0, y0, x1, y1; //inputs
+double r, x0, y0, x1, y1, lineWidth; //inputs
 
 double d;         //distance between points
 double m1;        //the midpoint x
@@ -31,13 +31,14 @@ double startAngle, endAngle, deltaAngle; //the calculated angles
 double[] drawingInfo;
 
 //CONSTRUCTOR WITH RADIUS AND TWO POINTS
-public Arc (double r, double x0, double y0, double x1, double y1, int e){
+public Arc (double r, double x0, double y0, double x1, double y1, int e, double lineWidth){
         this.r = r;
         this.x0 = x0;
         this.y0 = y0;
         this.x1 = x1;
         this.y1 = y1;
         this.e = e;
+        this.lineWidth = lineWidth;
 
         //calculate the distance between them
         d = Math.sqrt(Math.pow((x1-x0), 2) + Math.pow((y1-y0), 2));
@@ -72,7 +73,7 @@ public Arc (double r, double x0, double y0, double x1, double y1, int e){
 }
 
 //CONSTRUCTOR WITH CENTER AND TWO POINTS
-public Arc (double a, double b, double x0, double y0, double x1, double y1, int e){
+public Arc (double a, double b, double x0, double y0, double x1, double y1, int e, double lineWidth){
         this.a = a;
         this.b = b;
         this.x0 = x0;
@@ -80,6 +81,7 @@ public Arc (double a, double b, double x0, double y0, double x1, double y1, int 
         this.x1 = x1;
         this.y1 = y1;
         this.e = e;
+        this.lineWidth = lineWidth;
 
         //calculate the distance between them
         r = Math.sqrt(Math.pow((x1-a), 2) + Math.pow((y1-a), 2));
@@ -144,6 +146,10 @@ public double getStartAngle(){
 
 public double getEndAngle(){
         return endAngle;
+}
+
+public double getLineWidth(){
+        return lineWidth;
 }
 
 public String toString(){

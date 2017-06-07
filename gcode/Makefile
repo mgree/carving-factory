@@ -1,7 +1,7 @@
 test-gui : build-gui
-	java GCodeReader parser_test4 500 500 5
+	java GCodeReader Heart.txt s8
 
-build-gui : PrgLexer.tokens Line.class Command.class GCodeReader.class
+build-gui : PrgLexer.tokens Line.class Arc.class Command.class GCodeReader.class
 
 test-parser : build-parser
 	java PrgTest parser_test1.txt

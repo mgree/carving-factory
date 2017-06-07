@@ -42,11 +42,13 @@ private static ArrayList<Line> lines = new ArrayList<Line> ();
 private static ArrayList<Arc> arcs = new ArrayList<Arc>();
 private static HashMap<Character,Double> parameters = new HashMap<Character,Double>();
 private static HashMap<String,Boolean> processable = new HashMap<String,Boolean>();
+private static HashMap<Integer,Double> toolLibrary = new HashMap<Integer,Double>();
+    //maps the tool number to its bit size
 
 //This is an additional scale to be used in debugging designs
 //This allows the user to manually scale their design up and down
 //They will then use this information to alter their gcode
-private static int scale = 1;
+private static double scale = 1.0;
 
 //This is the automatically detected scale factor used to display
 //the lines proportionally according to the given dimensions
@@ -64,9 +66,9 @@ private static int dimY = 24;
 //Set up the default tool width
 private static double toolWidth = .5;
 
-//default stroke width for the drawing pane
-//This is updated to appear proportional to the given dimensions
-private static int strokeWidth = 1;
+// //default stroke width for the drawing pane
+// //This is updated to appear proportional to the given dimensions
+// private static double strokeWidth = .5;
 
 //Initialize min and max values
 private static double maxX = 0.0;
@@ -97,7 +99,7 @@ public static void main(String[] args) {
                 //if there is 1 additional arg then a scale has been entered
                 if (args.length == 2) {
                         if (args[1].charAt(0) == 's' || args[1].charAt(0) == 'S') {
-                                scale = (int)Math.round(Double.parseDouble(args[1].substring(1)));
+                                scale = Double.parseDouble(args[1].substring(1));
                         }  else {
                                 System.err.println("Enter a scale preceded by an 's' or two dimensions");
                                 System.exit(-1);
@@ -114,7 +116,7 @@ public static void main(String[] args) {
                         dimY = (int)Math.round(Double.parseDouble(args[2]));
 
                         if (args[3].charAt(0) == 's' || args[3].charAt(0) == 'S') {
-                                scale = (int)Math.round(Double.parseDouble(args[3].substring(1)));
+                                scale = Double.parseDouble(args[3].substring(1));
                         } else {
                                 System.err.println("Enter a scale preceded by an 's'");
                                 System.exit(-1);
@@ -129,7 +131,7 @@ public static void main(String[] args) {
         CharStream input;
         try {
                 scaleFactor = findScaleFactor(dimX, dimY);
-                strokeWidth = (int) (toolWidth * scaleFactor); //ok to just cast bc want to round down
+                // strokeWidth = toolWidth;
                 pxDimX = (int)(scaleFactor * dimX);
                 pxDimY = (int)(scaleFactor * dimY);
 
@@ -139,9 +141,10 @@ public static void main(String[] args) {
                 CommonTokenStream tokens = new CommonTokenStream(lexer);
                 PrgParser parser = new PrgParser(tokens);
 
-                //Set up parameters / processable commands
+                //Set up parameters / processable commands / tool library
                 addAllParams(parameters);
                 addAllProcessable(processable);
+                makeToolLibrary(toolLibrary);
 
                 //Get the program context and create a series of commands from it
                 //Process each of these commands in turn
@@ -194,7 +197,7 @@ public static void addAllParams(HashMap<Character,Double> hm){
         hm.put('Q', 0.0); //Feed increment in G83 canned cycle, repetitions of subroutine call
         hm.put('R', 1.0); //arc radius
         hm.put('S', 1.0); //spindle speed
-        hm.put('T', 0.0); //tool selection
+        hm.put('T', 1.0); //tool selection
         hm.put('X', 0.0); //X-axis of machine
         hm.put('Y', 0.0); //Y-axis of machine
         hm.put('Z', 0.0); //Z-axis of machine
@@ -208,9 +211,13 @@ public static void addAllProcessable(HashMap<String,Boolean> hm){
         hm.put("G1", true);
         hm.put("G2", true);
         hm.put("G3", true);
+        hm.put("M6", true);
 }
 
-
+public static void makeToolLibrary(HashMap<Integer,Double> tl){
+        tl.put(1, .5);
+        tl.put(2, .25);
+}
 
 //Method creates a command from a CommandContext
 public static Command createCommand(PrgParser.CommandContext c){
@@ -301,13 +308,12 @@ public static void processCommand(Command c){
         if (type == 'G') {
                 switch (mode) {
                 case 0:
-                        //lines.add(new Line (prevX, prevY, X, Y));
                         System.err.println("MOVE: ("+ prevX*scale + ", " + prevY*scale + ", " +
                                            prevZ*scale + "), (" + X*scale + ", " + Y*scale + ", " + Z +
                                            ") at feed rate " + parameters.get('F') );
                         break;
                 case 1:
-                        lines.add(new Line (prevX, prevY, X, Y));
+                        lines.add(new Line (prevX, prevY, X, Y, toolLibrary.get((int)Math.round(parameters.get('T')))));
                         System.err.println("Line drawn: ("+ prevX*scale + ", " + prevY*scale + ", " +
                                            prevZ*scale + "), (" + X*scale + ", " + Y*scale + ", " + Z +
                                            ") at feed rate " + parameters.get('F') );
@@ -316,13 +322,13 @@ public static void processCommand(Command c){
                         //DOES THE -1 ACTUALLY MATTER AT ALL??
                         Arc newArc;
                         if (isRadiusArc()) {
-                                newArc = new Arc(parameters.get('R'), prevX, prevY, X, Y, -1);
+                                newArc = new Arc(parameters.get('R'), prevX, prevY, X, Y, -1, toolLibrary.get((int)Math.round(parameters.get('T'))));
                                 //if the radius is negative, draw the inverse
                                 if (parameters.get('R')  < 0) {
                                         newArc.inverseArc();
                                 }
                         } else {
-                                newArc = new Arc(parameters.get('I'), parameters.get('J'), prevX, prevY, X, Y, -1);
+                                newArc = new Arc(parameters.get('I'), parameters.get('J'), prevX, prevY, X, Y, -1, toolLibrary.get((int)Math.round(parameters.get('T'))));
                         }
                         arcs.add(newArc);
                         System.err.println("Clockwise arc drawn with center (" +  newArc.getCenterX() +
@@ -332,13 +338,13 @@ public static void processCommand(Command c){
                 case 3:
                         Arc aNewArc;
                         if (isRadiusArc()) {
-                                aNewArc = new Arc(parameters.get('R'), prevX, prevY, X, Y, 1);
+                                aNewArc = new Arc(parameters.get('R'), prevX, prevY, X, Y, 1, toolLibrary.get((int)Math.round(parameters.get('T'))));
                                 //if the radius is negative, draw the inverse
                                 if (parameters.get('R')  < 0) {
                                         aNewArc.inverseArc();
                                 }
                         } else {
-                                aNewArc = new Arc(parameters.get('I'), parameters.get('J'), prevX, prevY, X, Y, 1);
+                                aNewArc = new Arc(parameters.get('I'), parameters.get('J'), prevX, prevY, X, Y, 1, toolLibrary.get((int)Math.round(parameters.get('T'))));
                         }
                         arcs.add(aNewArc);
 
@@ -414,7 +420,7 @@ public static void processCommand(Command c){
                         break;
 
                 case 6:
-                        System.err.println ("Tool Change");
+                        System.err.println ("Tool Change to tool " + (int)Math.round(parameters.get('T')) );
                         break;
                 case 8:
                         System.err.println ("Dust hood up on");
@@ -466,7 +472,7 @@ public static void processCommand(Command c){
 private static void createAndShowGUI() {
         JFrame f = new JFrame("GCode Results");
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        f.add(new MyPanel(lines, arcs, scaleFactor, scale, strokeWidth));
+        f.add(new MyPanel(lines, arcs, scaleFactor, scale));
         f.setPreferredSize(new Dimension(pxDimX, pxDimY));
         f.pack();
         f.setVisible(true);
@@ -547,18 +553,16 @@ class MyPanel extends JPanel {
 ArrayList<Line> theLines;
 ArrayList<Arc> theArcs;
 double scale; //This is automatically found for displaying the window correctly
-int auxScale; //This is used for debugging so you can easily scale your design up and
+double auxScale; //This is used for debugging so you can easily scale your design up and
               //down without manually altering all the gcode values
-int strokeWidth;
 
 
-public MyPanel(ArrayList<Line> j, ArrayList<Arc> k, double scaleFactor, int auxilliaryScale, int stroke) {
+public MyPanel(ArrayList<Line> j, ArrayList<Arc> k, double scaleFactor, double auxilliaryScale) {
         setBorder(BorderFactory.createLineBorder(Color.black));
         theLines = j;
         theArcs = k;
         scale = scaleFactor;
         auxScale = auxilliaryScale;
-        strokeWidth = stroke;
 }
 
 public Dimension getPreferredSize() {
@@ -569,15 +573,16 @@ protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
         Graphics2D g2 = (Graphics2D) g;
-        g2.setStroke(new BasicStroke(strokeWidth));
 
         for (Line l : theLines) {
+                g2.setStroke(new BasicStroke((float)(scale*l.getLineWidth())));
                 g.drawLine((int)Math.round(l.getStartX()*scale * auxScale), (int)Math.round(l.getStartY()*scale * auxScale),
                            (int)Math.round(l.getEndX()*scale * auxScale), (int)Math.round(l.getEndY()*scale * auxScale));
         }
 
         for (Arc a : theArcs) {
                 double[] dInfo = a.getDrawingInfo();
+                g2.setStroke(new BasicStroke((float)(scale*a.getLineWidth())));
                 g.drawArc((int)Math.round(dInfo[0]), (int)Math.round(dInfo[1]),
                           (int)Math.round(dInfo[2]), (int)Math.round(dInfo[3]), (int)Math.round(dInfo[4]),
                           (int)Math.round(dInfo[5]));
@@ -590,7 +595,8 @@ protected void paintComponent(Graphics g) {
            This setting is independent of the G90/G91 setting. If arc center mode is set to incremental then I, J, K
            are the distance and direction from the start point to the center point of the arc.
            If arc center mode is set to absolute then I, J, K are the absolute position of the arc center point
-           in the current user coordinate system.""
+           in the current user coordinate system."
+
          */
 
 
