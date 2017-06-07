@@ -1,17 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-    <EditTextPreference
-        android:key="pref_width"
-        android:title="@string/pref_width"
-        android:defaultValue="24" />
-    <EditTextPreference
-        android:key="pref_length"
-        android:title="@string/pref_length"
-        android:defaultValue="48" />
-    <EditTextPreference
-        android:key="pref_depth"
-        android:title="@string/pref_depth"
-        android:defaultValue="0.5" />
+    <!--<PreferenceScreen-->
+        <!--android:key="dimension_settings"-->
+        <!--android:title="@string/select_dimensions"-->
+        <!--android:persistent="false">-->
+        <!--<EditTextPreference-->
+        <!--android:key="pref_width"-->
+        <!--android:title="@string/pref_width"-->
+        <!--android:defaultValue="24" />-->
+        <!--<EditTextPreference-->
+            <!--android:key="pref_length"-->
+            <!--android:title="@string/pref_length"-->
+            <!--android:defaultValue="48" />-->
+        <!--<EditTextPreference-->
+            <!--android:key="pref_depth"-->
+            <!--android:title="@string/pref_depth"-->
+            <!--android:defaultValue="0.5" />-->
+    <!--</PreferenceScreen>-->
     <com.labgmail.pomona.greenberg.cnccarvingfactory.NumberPickerPreference
         android:key="pref_wLength"
         android:title="select length"
@@ -20,12 +25,12 @@
         android:key="pref_wWidth"
         android:title="select width"
         android:defaultValue="24"/>
-    <CheckBoxPreference
-        android:defaultValue="false"
-        android:key="pref_inch"
-        android:title="inches" />
-    <CheckBoxPreference
-        android:defaultValue="false"
-        android:key="pref_feet"
-        android:title="feet" />
+    <!--<CheckBoxPreference-->
+        <!--android:defaultValue="false"-->
+        <!--android:key="pref_inch"-->
+        <!--android:title="inches" />-->
+    <!--<CheckBoxPreference-->
+        <!--android:defaultValue="false"-->
+        <!--android:key="pref_feet"-->
+        <!--android:title="feet" />-->
 </PreferenceScreen>
