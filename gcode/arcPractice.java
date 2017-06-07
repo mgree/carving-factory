@@ -66,7 +66,7 @@ public Dimension getPreferredSize() {
 
 protected void paintComponent(Graphics g) {
         //these are inputs
-        int r = 50;
+        int r = 40;
         int x0 = 160;
         int y0 = 80;
         int x1 = 120;
@@ -130,12 +130,23 @@ protected void paintComponent(Graphics g) {
         g2.setStroke(new BasicStroke(1));
         g.drawRect(rectx, recty, 2*r, 2*r);
 
+
+        //To do opposite arc. Swap start and end points, use deltaAngle - 360
+        int xtemp = x0;
+        int ytemp = y0;
+        x0 = x1;
+        y0 = y1;
+        x1 = xtemp;
+        y1 = ytemp;
+
         //calculate angles
         double startAngle = (180/Math.PI * Math.atan2(b-y0, x0-a));
         double endAngle = (180/Math.PI * Math.atan2(b-y1, x1-a));
         double deltaAngle = endAngle - startAngle;
 
         //draw the arc
-        g.drawArc(rectx, recty, 2*r, 2*r, (int)Math.round(startAngle), (int)Math.round(deltaAngle));
+        //g.drawArc(rectx, recty, 2*r, 2*r, (int)Math.round(startAngle), (int)Math.round(deltaAngle));
+        g.drawArc(rectx, recty, 2*r, 2*r, (int)Math.round(startAngle), (int)Math.round(deltaAngle-360));
+
 }
 }

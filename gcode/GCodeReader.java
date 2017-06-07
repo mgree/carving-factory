@@ -1,33 +1,4 @@
 /*
-    More features
-        Think about how to implement arcs, etc
-        Deal with scaling and errors
-              calculate the existing error
-              create error threshold var
-              from there calculate required scale factor
-              compare to dimensions
-              output results with scale if able, else report that these
-                dimensions can't be used to create an image of high enough fidelity
-        Color of Z
-          gradient lines
-
-
-
-   Check these cases:
-        multiple G commands on one line
-        Weird start commands (s, t)
-        Negative x and y values
-        u,v,w
-        G0 IS A MOVE WITHOUT DRAWING
-
-
-   Parser still can't handle:
-      G91.1
-      returns in the middle of lines
-
- */
-
-/*
  * Gcode Reader -- designed to take a GCode file and display a GUI of
  * the expected pattern to be drawn. It also outputs all instructions
  * it processes in an easy to read format in the terminal window
@@ -62,13 +33,13 @@ import java.awt.geom.*;
 
 
 
-
 public class GCodeReader {
 
 private static final int MAX_X_DIM = 1300;
 private static final int MAX_Y_DIM = 725;
 
 private static ArrayList<Line> lines = new ArrayList<Line> ();
+private static ArrayList<Arc> arcs = new ArrayList<Arc>();
 private static HashMap<Character,Double> parameters = new HashMap<Character,Double>();
 private static HashMap<String,Boolean> processable = new HashMap<String,Boolean>();
 
@@ -110,6 +81,11 @@ private static double prevX = 0.0;
 private static double prevY = 0.0;
 private static double prevZ = 0.0;
 
+//Initialize arc centers
+private static double prevI = 0.0;
+private static double prevJ = 0.0;
+private static double prevK = 0.0;
+private static double prevR = 1.0;
 
 public static void main(String[] args) {
         //Wrong number of arguments
@@ -118,8 +94,7 @@ public static void main(String[] args) {
                 System.exit(-1);
         }
         try{
-                //if there is 1 additional arg
-                //scale is entered
+                //if there is 1 additional arg then a scale has been entered
                 if (args.length == 2) {
                         if (args[1].charAt(0) == 's' || args[1].charAt(0) == 'S') {
                                 scale = (int)Math.round(Double.parseDouble(args[1].substring(1)));
@@ -128,15 +103,12 @@ public static void main(String[] args) {
                                 System.exit(-1);
                         }
                 }
-                //if there are 2 args
-                //only dimensions are inputted
+                //if there are 2 args then only dimensions have been inputted
                 if (args.length == 3) {
                         dimX = (int)Math.round(Double.parseDouble(args[1]));
                         dimY = (int)Math.round(Double.parseDouble(args[2]));
-
                 }
-                //if there are 3 args
-                //the dimensions and a scale is entered
+                //if there are 3 args then both dimensions and a scale have been entered
                 if (args.length == 4) {
                         dimX = (int)Math.round(Double.parseDouble(args[1]));
                         dimY = (int)Math.round(Double.parseDouble(args[2]));
@@ -156,13 +128,12 @@ public static void main(String[] args) {
 
         CharStream input;
         try {
-
                 scaleFactor = findScaleFactor(dimX, dimY);
                 strokeWidth = (int) (toolWidth * scaleFactor); //ok to just cast bc want to round down
                 pxDimX = (int)(scaleFactor * dimX);
                 pxDimY = (int)(scaleFactor * dimY);
 
-
+                //Parse document
                 input = CharStreams.fromFileName(args[0]);
                 PrgLexer lexer = new PrgLexer(input);
                 CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -201,20 +172,7 @@ public static void main(String[] args) {
 }
 
 
-//Using the max dimensions (unique to each screen size) and the entered dimensions
-//find the scale factor that allows the window to always appear as large as possible
-//while keeping the tool cuts proportional
-public static double findScaleFactor (int xDim, int yDim){
-        double SF;
-        double xSF = MAX_X_DIM / xDim;
-        double ySF = MAX_Y_DIM / yDim;
-        if (xSF < ySF) {
-                SF = xSF;
-        } else{
-                SF = ySF;
-        }
-        return SF;
-}
+
 
 
 //Add all parameters to the hashmap with their default values
@@ -248,6 +206,8 @@ public static void addAllParams(HashMap<Character,Double> hm){
 public static void addAllProcessable(HashMap<String,Boolean> hm){
         hm.put("G0", true);
         hm.put("G1", true);
+        hm.put("G2", true);
+        hm.put("G3", true);
 }
 
 
@@ -269,6 +229,11 @@ public static Command createCommand(PrgParser.CommandContext c){
         prevX = parameters.get('X');
         prevY = parameters.get('Y');
         prevZ = parameters.get('Z');
+
+        prevI = parameters.get('I');
+        prevJ = parameters.get('J');
+        prevK = parameters.get('K');
+        prevR = parameters.get('R');
 
         //Get TypeMode string
         StringBuilder s = new StringBuilder();
@@ -348,12 +313,38 @@ public static void processCommand(Command c){
                                            ") at feed rate " + parameters.get('F') );
                         break;
                 case 2:
-                        System.err.println("A clockwise arc should be drawn with radius "
-                                           + parameters.get('R'));
+                        //DOES THE -1 ACTUALLY MATTER AT ALL??
+                        Arc newArc;
+                        if (isRadiusArc()) {
+                                newArc = new Arc(parameters.get('R'), prevX, prevY, X, Y, -1);
+                                //if the radius is negative, draw the inverse
+                                if (parameters.get('R')  < 0) {
+                                        newArc.inverseArc();
+                                }
+                        } else {
+                                newArc = new Arc(parameters.get('I'), parameters.get('J'), prevX, prevY, X, Y, -1);
+                        }
+                        arcs.add(newArc);
+                        System.err.println("Clockwise arc drawn with center (" +  newArc.getCenterX() +
+                                           ", " + newArc.getCenterY() + ") and radius " + parameters.get('R') + " from " +
+                                           newArc.getStartAngle() + " to " + newArc.getEndAngle());
                         break;
                 case 3:
-                        System.err.println ("A counterclockwise arc should be drawn with radius "
-                                            + parameters.get('R'));
+                        Arc aNewArc;
+                        if (isRadiusArc()) {
+                                aNewArc = new Arc(parameters.get('R'), prevX, prevY, X, Y, 1);
+                                //if the radius is negative, draw the inverse
+                                if (parameters.get('R')  < 0) {
+                                        aNewArc.inverseArc();
+                                }
+                        } else {
+                                aNewArc = new Arc(parameters.get('I'), parameters.get('J'), prevX, prevY, X, Y, 1);
+                        }
+                        arcs.add(aNewArc);
+
+                        System.err.println ("Counterclockwise arc drawn with center (" +  aNewArc.getCenterX() +
+                                            ", " + aNewArc.getCenterY() + ") and radius " + parameters.get('R') + " from " +
+                                            aNewArc.getStartAngle() + " to " + aNewArc.getEndAngle());
                         break;
                 case 4:
                         System.err.println("Dwell for " + parameters.get('P') + "time");
@@ -467,19 +458,27 @@ public static void processCommand(Command c){
         }
 }
 
+
+
+
+
 //Create the GUI
 private static void createAndShowGUI() {
         JFrame f = new JFrame("GCode Results");
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        f.add(new MyPanel(lines, scaleFactor, scale, strokeWidth));
+        f.add(new MyPanel(lines, arcs, scaleFactor, scale, strokeWidth));
         f.setPreferredSize(new Dimension(pxDimX, pxDimY));
         f.pack();
         f.setVisible(true);
 }
 
+
+
 /*
- * Private helpers for the command context to command transformation
+ * Private helper functions
+ *
  */
+//For the command context to command transformation
 //Creates an int from a NaturalContext
 private static int toNum(PrgParser.NaturalContext nc) {
         List<TerminalNode> dcs = nc.DIGIT();
@@ -492,6 +491,7 @@ private static int toNum(PrgParser.NaturalContext nc) {
         return Integer.parseInt(digits.toString());
 }
 
+//For the command context to command transformation
 //Creates a float from a FloatNumContext
 private static float toFloat(PrgParser.FloatNumContext fnc) {
 
@@ -514,6 +514,30 @@ private static float toFloat(PrgParser.FloatNumContext fnc) {
 }
 
 
+//Using the max dimensions (unique to each screen size) and the entered dimensions
+//find the scale factor that allows the window to always appear as large as possible
+//while keeping the tool cuts proportional
+private static double findScaleFactor (int xDim, int yDim){
+        double SF;
+        double xSF = MAX_X_DIM / xDim;
+        double ySF = MAX_Y_DIM / yDim;
+        if (xSF < ySF) {
+                SF = xSF;
+        } else{
+                SF = ySF;
+        }
+        return SF;
+}
+
+
+//tells you if the arc should be designated by the radius (R) or the center (I,J)
+//if the I, J, K values haven't been recently updated then assume its in radius mode
+//we need to check this is a valid assumption
+private static Boolean isRadiusArc(){
+        return (prevI == parameters.get('I') && prevJ == parameters.get('J') &&
+                prevK == parameters.get('K') && prevR != parameters.get('R'));
+}
+
 }
 
 
@@ -521,15 +545,17 @@ private static float toFloat(PrgParser.FloatNumContext fnc) {
 //The panel sets up and displays the GUI in the end
 class MyPanel extends JPanel {
 ArrayList<Line> theLines;
+ArrayList<Arc> theArcs;
 double scale; //This is automatically found for displaying the window correctly
 int auxScale; //This is used for debugging so you can easily scale your design up and
               //down without manually altering all the gcode values
 int strokeWidth;
 
 
-public MyPanel(ArrayList<Line> j, double scaleFactor, int auxilliaryScale, int stroke) {
+public MyPanel(ArrayList<Line> j, ArrayList<Arc> k, double scaleFactor, int auxilliaryScale, int stroke) {
         setBorder(BorderFactory.createLineBorder(Color.black));
         theLines = j;
+        theArcs = k;
         scale = scaleFactor;
         auxScale = auxilliaryScale;
         strokeWidth = stroke;
@@ -550,45 +576,23 @@ protected void paintComponent(Graphics g) {
                            (int)Math.round(l.getEndX()*scale * auxScale), (int)Math.round(l.getEndY()*scale * auxScale));
         }
 
-        //draws a counterclockwise arc starting at pos x side
-        //rect top left x, rect top left y, rect width, rect height,
-        // starting degree (0 is positive x side), num degrees on arc
-        //("length" of arc in degrees) going counterclockwise, arc type
-        // g2.draw(new Arc2D.Double(40, 40, 50, 50, 180, 135, Arc2D.OPEN));
-        // g.drawLine(40,40,40,40);
+        for (Arc a : theArcs) {
+                double[] dInfo = a.getDrawingInfo();
+                g.drawArc((int)Math.round(dInfo[0]), (int)Math.round(dInfo[1]),
+                          (int)Math.round(dInfo[2]), (int)Math.round(dInfo[3]), (int)Math.round(dInfo[4]),
+                          (int)Math.round(dInfo[5]));
+        }
 
-        /*start and end points, its radius or center point, a direction, and a plane.
-        Direction is determined by G02, clockwise, and G03, counterclockwise, when viewed from the plane’s positive direction
-        (If XY plane is selected look down so that the X axis positive direction is pointing to the right, and the Y axis
-        positive direction is pointing forward)
-        The start point is the current position of the machine.
-        Specify the end point with X, Y, and Z.
-          The values input for the end point will depend on the current G90/G91 (abs/inc) setting of the machine.
-          Only the two points in the current plane are required for an arc. Adding in the third point will create a helical interpolation.
-        Next is to specify the radius or the center point of the arc, only one or the other, not both.
-          Radius:
-          To specify the radius, use R and input the actual radius of the desired arc
-          When an arc is created knowing only start and end points and a radius there are two possible solutions,
-          an arc with a sweep less than 180° and one with sweep greater than 180°. The sign of the radius value,
-          positive or negative, determines which arc will be cut, see figure 3. A positive value for R cuts an arc
-          with sweep less than 180°. A negative value for R cuts an arc with sweep greater than 180°.
-          Center:
-          A more accurate and reliable way to define an arc is by specifying the center point, this is done with arguments I, J, and K
-          The center point must be defined in the current plane. I, J, and K correspond to X, Y, Z respectively; the current plane
-          selection will determine which two are used. XY plane (G17) would use I and J for example.
-          Mach has two settings for how I, J, and K should be specified, absolute and incremental.
-          This setting can be changed by G code, G90.1 and G91.1, or in the general tab in the Mach configuration.
-          This setting is independent of the G90/G91 setting. If arc center mode is set to incremental then I, J, K
-          are the distance and direction from the start point to the center point of the arc.
-          If arc center mode is set to absolute then I, J, K are the absolute position of the arc center point
-          in the current user coordinate system.
 
-        */
+        /*
+           //Should probably fix this but also meh
+           "This setting can be changed by G code, G90.1 and G91.1, or in the general tab in the Mach configuration.
+           This setting is independent of the G90/G91 setting. If arc center mode is set to incremental then I, J, K
+           are the distance and direction from the start point to the center point of the arc.
+           If arc center mode is set to absolute then I, J, K are the absolute position of the arc center point
+           in the current user coordinate system.""
+         */
 
-        // for (Arc a : theArcs){
-        //g2.draw(new Arc2D.Double(x, y,rectwidth, rectheight, 90, 135, Arc2D.OPEN));
-        //
-        // }
 
 }
 }
