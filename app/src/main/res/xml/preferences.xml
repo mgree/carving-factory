@@ -13,7 +13,19 @@
         android:title="@string/pref_depth"
         android:defaultValue="0.5" />
     <com.labgmail.pomona.greenberg.cnccarvingfactory.NumberPickerPreference
-        android:key="pref_num"
-        android:title="stock num"
-        android:defaultValue="25"/>
+        android:key="pref_wLength"
+        android:title="select length"
+        android:defaultValue="24"/>
+    <com.labgmail.pomona.greenberg.cnccarvingfactory.NumberPickerPreference
+        android:key="pref_wWidth"
+        android:title="select width"
+        android:defaultValue="24"/>
+    <CheckBoxPreference
+        android:defaultValue="false"
+        android:key="pref_inch"
+        android:title="inches" />
+    <CheckBoxPreference
+        android:defaultValue="false"
+        android:key="pref_feet"
+        android:title="feet" />
 </PreferenceScreen>

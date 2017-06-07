@@ -21,7 +21,10 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
     public static final String KEY_LENGTH = "pref_length";
     public static final String KEY_WIDTH = "pref_width";
     public static final String KEY_DEPTH = "pref_depth";
-    public static final String KEY_NUMBER = "pref_num";
+    public static final String KEY_NUMB1 = "pref_wLength";
+    public static final String KEY_NUMB2 = "pref_wWidth";
+
+
 
     public static class SettingsFragment extends PreferenceFragment implements SharedPreferences.OnSharedPreferenceChangeListener {
 
@@ -29,7 +32,7 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             addPreferencesFromResource(R.xml.preferences);
-            
+
             SharedPreferences prefs = getPreferenceManager().getSharedPreferences();
             for (String key : new String[] { KEY_LENGTH, KEY_WIDTH, KEY_DEPTH}) {
                 findPreference(key).setSummary(prefs.getString(key, null));
