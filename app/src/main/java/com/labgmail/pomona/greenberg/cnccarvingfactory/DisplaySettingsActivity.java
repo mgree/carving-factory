@@ -4,6 +4,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
+import android.preference.PreferenceScreen;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.preference.PreferenceManager;
@@ -18,13 +19,9 @@ import android.view.ViewGroup;
 
 public class DisplaySettingsActivity extends AppCompatActivity  {
 
-    public static final String KEY_LENGTH = "pref_length";
-    public static final String KEY_WIDTH = "pref_width";
-    public static final String KEY_DEPTH = "pref_depth";
-    public static final String KEY_NUMB1 = "pref_wLength";
-    public static final String KEY_NUMB2 = "pref_wWidth";
-
-
+    public static final String KEY_DEPTH = "pref_wDepth";
+    public static final String KEY_LENGTH = "pref_wLength";
+    public static final String KEY_WIDTH = "pref_wWidth";
 
     public static class SettingsFragment extends PreferenceFragment implements SharedPreferences.OnSharedPreferenceChangeListener {
 
@@ -34,15 +31,23 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
             addPreferencesFromResource(R.xml.preferences);
 
             SharedPreferences prefs = getPreferenceManager().getSharedPreferences();
-            for (String key : new String[] { KEY_LENGTH, KEY_WIDTH, KEY_DEPTH}) {
-                findPreference(key).setSummary(prefs.getString(key, null));
+            for (String key : new String[] { KEY_LENGTH, KEY_WIDTH /*, KEY_DEPTH */}) {
+                findPreference(key).setSummary(Integer.toString(prefs.getInt(key, 0)) + "in");
             }
         }
-// See if you can change the paramater from string to an int and then get rid of the text preferences
+
         @Override
         public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
             Preference pref = findPreference(key);
-            if (pref != null) {
+
+            if (pref == null) {
+                return;
+            }
+
+            if (key.equals(KEY_LENGTH) || key.equals(KEY_WIDTH) || key.equals(KEY_DEPTH)) {
+                int val = sharedPreferences.getInt(key, 0);
+                pref.setSummary(Integer.toString(val) + "in");
+            } else {
                 String val = sharedPreferences.getString(key,null);
                 Log.d("PREF",String.format("updated %s to %s",key,val));
                 pref.setSummary(val);
@@ -89,17 +94,4 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
                 .commit();
     }
 
-
-
-    // So what has to happen is a preference needs to be made (a custom preference that extends Preference with a NumberPicker)
-    // That needs to be run in a PreferenceFragment
-    // Set the default value
-    // Go over Preferences and Settings API figure out how to get vaue entered to make a new rectangle with those dimensions...
-    // Hmm will probably need a conversion factor for square feet to dp(whatever unit of measure that is)
-    // Ok we have a full day ahead of us tomorrow. Get ready buddy ole pall.
-    // Ok update, the settings button changes the view and they each individually save their values but they do nothing with them.
-    // Also i need to figure out how to make it so that the only values that can be entered are integer values.
-    // Also how to keep the pop up window from poping up whenever someone opens the app (the alpha picker).
-    // Change from EditTextPreference to NumberPickerPreference
 }
-//
