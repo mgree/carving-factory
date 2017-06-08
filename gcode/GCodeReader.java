@@ -4,7 +4,7 @@
  * it processes in an easy to read format in the terminal window
  *
  * @author Sonia Grunwald
- * @version June 5th, 2017
+ * @version June, 2017
  * Michael Greenberg Lab
  *
  */
@@ -43,7 +43,7 @@ private static ArrayList<Arc> arcs = new ArrayList<Arc>();
 private static HashMap<Character,Double> parameters = new HashMap<Character,Double>();
 private static HashMap<String,Boolean> processable = new HashMap<String,Boolean>();
 private static HashMap<Integer,Double> toolLibrary = new HashMap<Integer,Double>();
-    //maps the tool number to its bit size
+//maps the tool number to its bit size
 
 //This is an additional scale to be used in debugging designs
 //This allows the user to manually scale their design up and down
@@ -204,8 +204,8 @@ public static void addAllParams(Map<Character,Double> hm){
 }
 
 /* Adds all processable commands to the hashmap for easy access mapping a String
-representation of the command to a bool of whether or not it is processable.
-In the future, all commands will be processable so this will be unnecessary */
+   representation of the command to a bool of whether or not it is processable.
+   In the future, all commands will be processable so this will be unnecessary */
 public static void addAllProcessable(Map<String,Boolean> hm){
         hm.put("G0", true);
         hm.put("G1", true);
@@ -214,12 +214,12 @@ public static void addAllProcessable(Map<String,Boolean> hm){
         hm.put("M6", true);
 }
 
+
 /* Creates a tool library mapping tool numbers to the size of the bit */
 public static void makeToolLibrary(Map<Integer,Double> tl){
         tl.put(1, .5);
         tl.put(2, .25);
 }
-
 
 
 /* Creates a command from a CommandContext */
@@ -295,8 +295,8 @@ public static Command createCommand(PrgParser.CommandContext c){
 
 
 /* Processes the command. This may include adding lines to the list of lines
-to be drawn, adding arcs to the appropriate list, and printing out updates of what
-each command does */
+   to be drawn, adding arcs to the appropriate list, and printing out updates of what
+   each command does */
 public static void processCommand(Command c){
 
         char type = c.getType();
@@ -358,6 +358,21 @@ public static void processCommand(Command c){
                 case 4:
                         System.err.println("Dwell for " + parameters.get('P') + "time");
                         break;
+                case 10:
+                        System.err.println("Coordinate system origin setting");
+                        break;
+                case 12:
+                        System.err.println("Clockwise circular pocket");
+                        break;
+                case 13:
+                        System.err.println("Counterclockwise circular pocket");
+                        break;
+                case 15:
+                        System.err.println("Polar Coordinate moves in G0 and G1");
+                        break;
+                case 16:
+                        System.err.println("Polar Coordinate moves in G0 and G1");
+                        break;
                 case 17:
                         System.err.println("XY plane selected");
                         break;
@@ -367,34 +382,138 @@ public static void processCommand(Command c){
                 case 19:
                         System.err.println("YZ plane selected");
                         break;
-
                 case 20:
                         System.err.println("Change units to inches");
                         break;
-
                 case 21:
                         System.err.println("Change units to millimeters");
                         break;
-
+                case 28:
+                        System.err.println("Return Home");
+                        parameters.put ('X', 0.0);
+                        parameters.put('Y', 0.0);
+                        parameters.put ('Z', 0.0);
+                        break;
                 case 30:
                         System.err.println("Return Home");
                         parameters.put ('X', 0.0);
                         parameters.put('Y', 0.0);
                         parameters.put ('Z', 0.0);
                         break;
-
+                case 31:
+                        System.err.println("Straight probe");
+                        break;
+                case 40:
+                        System.err.println("Cancel cutter radius compensation");
+                        break;
+                case 41:
+                        System.err.println("Start cutter radius compensation left");
+                        break;
+                case 42:
+                        System.err.println("Start cutter radius compensation right");
+                        break;
+                case 43:
+                        System.err.println("Apply tool length offset (plus)");
+                        break;
                 case 49:
                         System.err.println("Cancel tool length offset");
                         break;
-
+                case 50:
+                        System.err.println("Reset all scale factors to 1.0");
+                        break;
+                case 51:
+                        System.err.println("Set axis data input scale factors");
+                        break;
+                case 52:
+                        System.err.println("Temporary coordinate system offsets");
+                        break;
+                case 53:
+                        System.err.println("Move in absolute machine coordinate system");
+                        break;
+                case 54:
+                        System.err.println("Use fixture offset 1");
+                        break;
+                case 55:
+                        System.err.println("Use fixture offset 2");
+                        break;
+                case 56:
+                        System.err.println("Use fixture offset 3");
+                        break;
+                case 57:
+                        System.err.println("Use fixture offset 4");
+                        break;
+                case 58:
+                        System.err.println("Use fixture offset 5");
+                        break;
+                case 59:
+                        System.err.println("Use fixture offset 6 / use general fixture number");
+                        break;
+                case 61:
+                        System.err.println("Exact stop");
+                        break;
+                case 64:
+                        System.err.println("Constant Velocity mode");
+                        break;
+                case 68:
+                        System.err.println("Rotate program coordinate system");
+                        break;
+                case 69:
+                        System.err.println("Rotate program coordinate system");
+                        break;
+                case 70:
+                        System.err.println("Change units to inches");
+                        break;
+                case 71:
+                        System.err.println("Change units to millimeters");
+                        break;
+                case 73:
+                        System.err.println("Canned cycle - peck drilling");
+                        break;
+                case 80:
+                        System.err.println("Cancel motion mode (includeing canned cycles)");
+                        break;
+                case 81:
+                        System.err.println("Canned cycle - drilling");
+                        break;
+                case 82:
+                        System.err.println("Canned cycle - drilling with dwell");
+                        break;
+                case 83:
+                        System.err.println("Canned cycle - peck drilling");
+                        break;
+                case 85:
+                        System.err.println("Canned cycle - boring");
+                        break;
+                case 86:
+                        System.err.println("Canned cycle - boring");
+                        break;
+                case 88:
+                        System.err.println("Canned cycle - boring");
+                        break;
+                case 89:
+                        System.err.println("Canned cycle - boring");
+                        break;
                 case 90:
                         System.err.println("Absolute distance mode");
                         break;
-
                 case 91:
                         System.err.println("Incremental distance mode");
                         break;
-
+                case 93:
+                        System.err.println("Inverse feed rate mode initiated");
+                        break;
+                case 94:
+                        System.err.println("Feed per minute mode");
+                        break;
+                case 95:
+                        System.err.println("Feed per revolution mode");
+                        break;
+                case 98:
+                        System.err.println("Initial level return after canned cycles");
+                        break;
+                case 99:
+                        System.err.println("R-point level return after canned cycles");
+                        break;
                 default:
                         System.err.println ("Command not processed. Command: " + type + mode);
                 }
@@ -558,23 +677,18 @@ private static Boolean isRadiusArc(){
 
 
 
-
-
-
-
-
 /**
  *
  * SETTING UP AND DISPLAYING THE GUI
  *
-**/
+ **/
 
 class MyPanel extends JPanel {
 ArrayList<Line> theLines;
 ArrayList<Arc> theArcs;
 double scale; //This is automatically found for displaying the window correctly
 double auxScale; //This is used for debugging so you can easily scale your design up and
-              //down without manually altering all the gcode values
+                 //down without manually altering all the gcode values
 
 
 public MyPanel(ArrayList<Line> j, ArrayList<Arc> k, double scaleFactor, double auxilliaryScale) {
@@ -607,17 +721,5 @@ protected void paintComponent(Graphics g) {
                           (int)Math.round(dInfo[2]), (int)Math.round(dInfo[3]), (int)Math.round(dInfo[4]),
                           (int)Math.round(dInfo[5]));
         }
-
-
-        /*
-           Should probably fix this but also meh
-           "This setting can be changed by G code, G90.1 and G91.1, or in the general tab in the Mach configuration.
-           This setting is independent of the G90/G91 setting. If arc center mode is set to incremental then I, J, K
-           are the distance and direction from the start point to the center point of the arc.
-           If arc center mode is set to absolute then I, J, K are the absolute position of the arc center point
-           in the current user coordinate system."
-         */
-
-
 }
 }

@@ -98,12 +98,14 @@ public static void writeFile(){
                                         gcode.append("N" + linenum + " ");
                                         gcode.append("G0 X" + lines.get(i).getStartX() + " Y" +
                                                      lines.get(i).getStartY() + " Z0.0\n");
-                                        linenum++;
+                                        linenum = (linenum+1) % 99999; //ensuring we never go over the limit
+
                                 }
                                 //no matter what, draw the line and increase the line number
                                 gcode.append("N" + linenum + " ");
                                 gcode.append(lines.get(i).toGCode());
-                                linenum++;
+                                linenum = (linenum+1) % 99999; //ensuring we never go over the limit
+
                         }
 
                         //add the ending sequence
