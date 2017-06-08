@@ -1,6 +1,7 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.util.AttributeSet;
@@ -22,20 +23,22 @@ import java.util.List;
  * Created by edinameshietedoho on 5/25/17.
  */
 
-public class DrawingView extends View {
+public class DrawingView extends View implements SharedPreferences.OnSharedPreferenceChangeListener {
     private Stroke curStroke;
     private List<Stroke> strokes = new LinkedList<>();
     private final Paint brush = new Paint();
+    private float stockLength = -1;
+    private float stockWidth = -1;
+    private float cutoffRight = -1;
+    private float cutoffBottom = -1;
 
-    public DrawingView(Context ctx) {
-        super(ctx);
-
-        initializeBrush();
-    }
+    public DrawingView(Context ctx) { this(ctx, null); }
 
     public DrawingView(Context ctx, AttributeSet attrs) {
         super(ctx, attrs);
 
+        cutoffRight = getWidth();
+        cutoffBottom = getHeight();
         initializeBrush();
     }
 
@@ -52,6 +55,35 @@ public class DrawingView extends View {
 
         int curColor = brush.getColor();
 
+        float height = canvas.getHeight();
+        float width = canvas.getWidth();
+
+        float wPPI = stockWidth > 0 ? width / stockWidth  : 1;
+        float lPPI = stockLength > 0 ? height / stockLength : 1;
+
+        float scale = Math.min(wPPI, lPPI);
+
+        cutoffBottom = scale * stockLength;
+        cutoffRight = scale * stockWidth;
+
+        Log.d("DIM",String.format("canvas %fx%f, stock %fx%f, wScale %f lScale %f, scaled to %f %f",
+                width, height,
+                stockWidth, stockLength,
+                wPPI, lPPI,
+                cutoffRight, cutoffBottom));
+
+        brush.setARGB(255,0,0,0);
+        brush.setStyle(Paint.Style.FILL);
+        Log.d("DIM",String.format("drawing rectangle at %f %f %f %f", cutoffRight, 0f, width, height));
+
+        // RIGHT
+        canvas.drawRect(cutoffRight, 0, width, height, brush);
+        // BOTTOM
+        canvas.drawRect(0, cutoffBottom, width, height, brush);
+
+        //Multiply by the scale factor and the value the user gives and then open a window with those dimensions
+
+        brush.setStyle(Paint.Style.STROKE);
         for (Stroke s : strokes) {
             brush.setColor(s.getColor());
             canvas.drawPath(s.getPath(), brush);
@@ -78,7 +110,7 @@ public class DrawingView extends View {
                 break;
             case MotionEvent.ACTION_UP:
                 addMotionEvent(event);
-                Log.d("TOUCH", curStroke.toString());
+                Log.d("TOUCH", String.format("cutoff %f/%f stroke %s", cutoffRight, cutoffBottom, curStroke.toString()));
                 strokes.add(curStroke);
                 curStroke = null;
                 break;
@@ -116,18 +148,21 @@ public class DrawingView extends View {
 
     private void addMotionEvent(MotionEvent event) {
         for (int h = 0; h < event.getHistorySize(); h += 1) {
-            curStroke.addPoint(event.getHistoricalEventTime(h),
-                    event.getHistoricalX(h),
-                    event.getHistoricalY(h));
+            addPoint(event.getHistoricalEventTime(h),
+                     event.getHistoricalX(h),
+                     event.getHistoricalY(h));
         }
 
-        curStroke.addPoint(event.getEventTime(),
-                event.getX(),
-                event.getY());
+        addPoint(event.getEventTime(),
+                 event.getX(),
+                 event.getY());
 
-        invalidate();
+        postInvalidate();
     }
 
+    private void addPoint(long time, float x, float y) {
+        curStroke.addPoint(time, Math.min(x, cutoffRight), Math.min(y, cutoffBottom));
+    }
 
     public void saveState(OutputStream state) throws IOException {
         ObjectOutputStream out = new ObjectOutputStream(state);
@@ -148,4 +183,22 @@ public class DrawingView extends View {
         }
     }
 
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        Log.d("DIM", "updated key " + key);
+
+        if (key.equals(DisplaySettingsActivity.KEY_LENGTH)) {
+            stockLength = sharedPreferences.getInt(key, 0);
+        } else if (key.equals(DisplaySettingsActivity.KEY_WIDTH)) {
+            stockWidth = sharedPreferences.getInt(key, 0);
+        } /* TODO DEPTH */
+
+        postInvalidate();
+    }
+
+    public void initializeStockDimensions(SharedPreferences prefs) {
+        stockLength = prefs.getInt(DisplaySettingsActivity.KEY_LENGTH, -1);
+        stockWidth = prefs.getInt(DisplaySettingsActivity.KEY_WIDTH, -1);
+        // TODO DEPTH
+    }
 }

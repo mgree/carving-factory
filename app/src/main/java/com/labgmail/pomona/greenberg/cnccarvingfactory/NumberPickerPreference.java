@@ -44,6 +44,7 @@ public class NumberPickerPreference extends DialogPreference {
 
         mDistance = getPersistedInt(DEFAULT_VALUE);
 
+
         mDistPicker = (NumberPicker) v.findViewById(R.id.measure_amount_id);
         mDistPicker.setMinValue(0);
         mDistPicker.setMaxValue(12 * 5); // 5' ... might need to convert to appropriate current unit

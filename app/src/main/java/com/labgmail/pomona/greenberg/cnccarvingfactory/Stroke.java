@@ -50,6 +50,11 @@ public class Stroke extends Path implements Serializable {
         return color;
     }
 
+    @Override
+    public String toString() {
+        return points.toString();
+    }
+
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.writeInt(color);
 
@@ -74,9 +79,7 @@ public class Stroke extends Path implements Serializable {
         }
     }
 
-    private void readObjectNoData() throws ObjectStreamException {
-
-    }
+    private void readObjectNoData() throws ObjectStreamException { }
 
     public static final long serialVersionUID = 42L;
 
