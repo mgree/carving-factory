@@ -1,16 +1,21 @@
+/*
+ * Arc Class -- creates objects of type Arc which hold the information needed
+ * to draw an arc in swing or using gcode. This arc class is built for
+ * compatibility with gcode. The constructor is overloaded so that one can
+ * either create an arc from two points and a radius or two points and the center
+ * of the circle. This class takes those inputs and finds all the necessary
+ * information you need to draw it in swing.
+ *
+ * @author Sonia Grunwald
+ * @version June 7th, 2017
+ * Michael Greenberg Lab
+ *
+ */
+
 import java.io.*;
 import java.lang.*;
 import java.util.*;
 
-/**
-   This arc class is built for compatibility with gcode
-   radius and two points are the easiest way to input an arc
-   in gcode. This class takes those inputs and finds all
-   the information you need to draw it in swing
-
-
-   Constructor is overloaded so that you can either input a radius or a center to draw
- **/
 
 public class Arc {
 
@@ -67,7 +72,6 @@ public Arc (double r, double x0, double y0, double x1, double y1, int e, double 
         endAngle = (180/Math.PI * Math.atan2(b-y1, x1-a));
         deltaAngle = endAngle - startAngle;
 
-
         drawingInfo = new double[] {rectx, recty, 2*r, 2*r, (int)Math.round(startAngle), (int)Math.round(deltaAngle)};
 
 }
@@ -103,7 +107,8 @@ public Arc (double a, double b, double x0, double y0, double x1, double y1, int 
 }
 
 
-//To get the reverse of the arc, swap the start and end points and subtract 360 from the deltaAngle
+/* Returns the inverse of the arc (the remainder of the circle the arc is a section of)
+To get the reverse of the arc, swap the start and end points and subtract 360 from the deltaAngle */
 public void inverseArc(){
         double xtemp = x0;
         double ytemp = y0;
@@ -117,41 +122,50 @@ public void inverseArc(){
         endAngle = (180/Math.PI * Math.atan2(b-y1, x1-a));
         deltaAngle = endAngle - startAngle;
 
-
+        //update the drawingInfo
         drawingInfo[4] = (int)Math.round(startAngle);
         drawingInfo[5] = (int)Math.round(deltaAngle) - 360;
 }
 
 
-
+/* Returns an array of doubles with the information needed to draw a swing arc*/
 public double[] getDrawingInfo(){
         return drawingInfo;
 }
 
+/* Returns the x coordinate of the center of the circle */
 public double getCenterX() {
         return a;
 }
 
+/* Returns the y coordinate of the center of the circle */
 public double getCenterY(){
         return b;
 }
 
+/* Returns the radius of the circle */
 public double getRadius(){
         return r;
 }
 
+/* Returns the angle the first point is at relative to the positive x axis
+    moving counterclockwise */
 public double getStartAngle(){
         return startAngle;
 }
 
+/* Returns the angle the final point is at relative to the positive x axis
+    moving counterclockwise */
 public double getEndAngle(){
         return endAngle;
 }
 
+/* Returns the line width for that arc */
 public double getLineWidth(){
         return lineWidth;
 }
 
+/* Creates a string representation of the arc */
 public String toString(){
         String things =  "Arc:\n" + "Rectangle: (" + rectx + ", " + recty + ", " +
                         2*r + ", " + 2*r + ", " + ") \nStart Angle: " + startAngle +
@@ -159,6 +173,5 @@ public String toString(){
                         "\nCenter: (" + a + ", " + b +")";
         return things;
 }
-
 
 }

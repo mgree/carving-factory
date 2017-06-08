@@ -7,8 +7,6 @@
  * @version June 5th, 2017
  * Michael Greenberg Lab
  *
- * Be aware I got bored of bug fixes so I gave up on the midline returns and the decimal mode types
- * Deal with UVW
  */
 
 import org.antlr.v4.runtime.atn.*;
@@ -132,6 +130,7 @@ public static void main(String[] args) {
 
         CharStream input;
         try {
+                //find the scale factor and set the dimensions accordingly
                 scaleFactor = findScaleFactor(dimX, dimY);
                 pxDimX = (int)(scaleFactor * dimX);
                 pxDimY = (int)(scaleFactor * dimY);
@@ -179,7 +178,7 @@ public static void main(String[] args) {
 
 
 
-//Add all parameters to the hashmap with their default values
+/* Adds all parameters to the hashmap mapping characters to their default values */
 public static void addAllParams(Map<Character,Double> hm){
         //SET UP DEFAULT VALUES
         //Note: I have no idea what these should be whatsoever.
@@ -204,9 +203,9 @@ public static void addAllParams(Map<Character,Double> hm){
         hm.put('Z', 0.0); //Z-axis of machine
 }
 
-//Add all processable commands to the hashmap for easy access
-//In the future, all commands will be processable so this will be
-//unnecessary
+/* Adds all processable commands to the hashmap for easy access mapping a String
+representation of the command to a bool of whether or not it is processable.
+In the future, all commands will be processable so this will be unnecessary */
 public static void addAllProcessable(Map<String,Boolean> hm){
         hm.put("G0", true);
         hm.put("G1", true);
@@ -215,12 +214,15 @@ public static void addAllProcessable(Map<String,Boolean> hm){
         hm.put("M6", true);
 }
 
+/* Creates a tool library mapping tool numbers to the size of the bit */
 public static void makeToolLibrary(Map<Integer,Double> tl){
         tl.put(1, .5);
         tl.put(2, .25);
 }
 
-//Method creates a command from a CommandContext
+
+
+/* Creates a command from a CommandContext */
 public static Command createCommand(PrgParser.CommandContext c){
 
         Command newCommand = new Command();
@@ -292,9 +294,9 @@ public static Command createCommand(PrgParser.CommandContext c){
 }
 
 
-//Processes the command
-//(adds lines to the list of lines to be drawn and prints out updates of what
-//each command does)
+/* Processes the command. This may include adding lines to the list of lines
+to be drawn, adding arcs to the appropriate list, and printing out updates of what
+each command does */
 public static void processCommand(Command c){
 
         char type = c.getType();
@@ -309,7 +311,7 @@ public static void processCommand(Command c){
         if (type == 'G') {
                 switch (mode) {
                 case 0:
-                        System.err.println("MOVE: ("+ prevX*scale + ", " + prevY*scale + ", " +
+                        System.err.println("Rapid Move: ("+ prevX*scale + ", " + prevY*scale + ", " +
                                            prevZ*scale + "), (" + X*scale + ", " + Y*scale + ", " + Z +
                                            ") at feed rate " + parameters.get('F') );
                         break;
@@ -466,10 +468,7 @@ public static void processCommand(Command c){
 }
 
 
-
-
-
-//Create the GUI
+/* Creates and shows the GUI window */
 private static void createAndShowGUI() {
         JFrame f = new JFrame("GCode Results");
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -485,8 +484,12 @@ private static void createAndShowGUI() {
  * Private helper functions
  *
  */
-//For the command context to command transformation
-//Creates an int from a NaturalContext
+
+
+
+/* Creates an int from a NaturalContext to help translate a command context to
+ * a command
+ */
 private static int toNum(PrgParser.NaturalContext nc) {
         List<TerminalNode> dcs = nc.DIGIT();
 
@@ -498,8 +501,9 @@ private static int toNum(PrgParser.NaturalContext nc) {
         return Integer.parseInt(digits.toString());
 }
 
-//For the command context to command transformation
-//Creates a float from a FloatNumContext
+/* Creates a float from a NaturalContext to help translate a command context to
+ * a command
+ */
 private static float toFloat(PrgParser.FloatNumContext fnc) {
 
         List<TerminalNode> dcs = fnc.DIGIT(); //first part of num
@@ -521,9 +525,11 @@ private static float toFloat(PrgParser.FloatNumContext fnc) {
 }
 
 
-//Using the max dimensions (unique to each screen size) and the entered dimensions
-//find the scale factor that allows the window to always appear as large as possible
-//while keeping the tool cuts proportional
+/* Finds the appropriate pixels/inch scale factor to scale the GUI window and
+ * drawings proportionally.
+ * Using the max dimensions (unique to each screen size) and the entered dimensions
+ * it allows the window to always appear as large as possible while keeping the
+ * tool cuts proportional */
 private static double findScaleFactor (int xDim, int yDim){
         double SF;
         double xSF = MAX_X_DIM / xDim;
@@ -536,10 +542,12 @@ private static double findScaleFactor (int xDim, int yDim){
         return SF;
 }
 
+/* Indicates whether an arc should be drawn according to the radius parameter (R)
+ * or the center parameters (I,J,K).
+ * If the I, J, K values haven't been recently updated while R has, assume it's
+ * in radius mode
+ */
 
-//tells you if the arc should be designated by the radius (R) or the center (I,J)
-//if the I, J, K values haven't been recently updated then assume its in radius mode
-//we need to check this is a valid assumption
 private static Boolean isRadiusArc(){
         return (prevI == parameters.get('I') && prevJ == parameters.get('J') &&
                 prevK == parameters.get('K') && prevR != parameters.get('R'));
@@ -549,7 +557,18 @@ private static Boolean isRadiusArc(){
 
 
 
-//The panel sets up and displays the GUI in the end
+
+
+
+
+
+
+/**
+ *
+ * SETTING UP AND DISPLAYING THE GUI
+ *
+**/
+
 class MyPanel extends JPanel {
 ArrayList<Line> theLines;
 ArrayList<Arc> theArcs;
@@ -591,13 +610,12 @@ protected void paintComponent(Graphics g) {
 
 
         /*
-           //Should probably fix this but also meh
+           Should probably fix this but also meh
            "This setting can be changed by G code, G90.1 and G91.1, or in the general tab in the Mach configuration.
            This setting is independent of the G90/G91 setting. If arc center mode is set to incremental then I, J, K
            are the distance and direction from the start point to the center point of the arc.
            If arc center mode is set to absolute then I, J, K are the absolute position of the arc center point
            in the current user coordinate system."
-
          */
 
 
