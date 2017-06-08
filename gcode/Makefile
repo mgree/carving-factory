@@ -3,6 +3,11 @@ test-gui : build-gui
 
 build-gui : PrgLexer.tokens Line.class Arc.class Command.class GCodeReader.class
 
+test-gen : build-gen
+	java GCodeGenerator
+
+build-gen : PrgLexer.tokens Line.class Arc.class Command.class GCodeGenerator.class
+
 test-parser : build-parser
 	java PrgTest parser_test1.txt
 

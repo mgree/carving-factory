@@ -35,8 +35,8 @@ import java.awt.geom.*;
 
 public class GCodeReader {
 
-private static final int MAX_X_DIM = 1300;
-private static final int MAX_Y_DIM = 725;
+private static final double MAX_X_DIM = 1300;
+private static final double MAX_Y_DIM = 725;
 
 private static ArrayList<Line> lines = new ArrayList<Line> ();
 private static ArrayList<Arc> arcs = new ArrayList<Arc>();
@@ -534,9 +534,12 @@ public static void processCommand(Command c){
                         break;
 
                 case 3:
-                        System.err.println ("Spindle on");
+                        System.err.println ("Spindle on clockwise");
                         break;
 
+                case 4:
+                        System.err.println ("Spindle on counterclockwise");
+                        break;
                 case 5:
                         System.err.println ("Spindle off");
                         break;
@@ -544,12 +547,15 @@ public static void processCommand(Command c){
                 case 6:
                         System.err.println ("Tool Change to tool " + (int)Math.round(parameters.get('T')) );
                         break;
+                case 7:
+                        System.err.println ("Mist coolant on");
+                        break;
                 case 8:
-                        System.err.println ("Dust hood up on");
+                        System.err.println ("Dust hood up on/Flood coolant on");
                         break;
 
                 case 9:
-                        System.err.println ("Dust hood up off");
+                        System.err.println ("Dust hood up off/ all coolant off");
                         break;
 
                 case 10:
@@ -563,6 +569,10 @@ public static void processCommand(Command c){
                         System.err.println ("Open grip off with no check for tool in spindle");
                         break;
 
+                case 19:
+                        System.err.println ("Spindle Orient");
+                        break;
+
                 case 20:
                         System.err.println ("Turns on mister output");
                         break;
@@ -572,6 +582,24 @@ public static void processCommand(Command c){
 
                 case 30:
                         System.err.println ("Program end and rewind");
+                        break;
+
+                case 47:
+                        System.err.println ("Repeat program from first line");
+                        break;
+
+                case 48:
+                        System.err.println ("Enable feed/speed overrides");
+                        break;
+                case 49:
+                        System.err.println ("Disable feed/speed overrides");
+                        break;
+
+                case 98:
+                        System.err.println ("Subprogram call");
+                        break;
+                case 99:
+                        System.err.println ("Return from subprogram/rewind");
                         break;
 
                 case 102:

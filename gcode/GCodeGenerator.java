@@ -69,7 +69,7 @@ public static void writeFile(){
 
         BufferedWriter fileWriter = null;
         Date d = new java.util.Date();
-        String startSequence = "(Generated GCode from  " + d + ")\nN0 G90 G91 \nN1 T1 M6\n";
+        String startSequence = "(Generated GCode from  " + d + ")\nN0 G0 G49 G40 G17 G80 G50 G90\nN1 T1 M6\n";
 
         try{
                 //Get the lines
