@@ -12,6 +12,7 @@
         <activity
             android:name=".DrawingActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
+            android:windowSoftInputMode="stateHidden"
             android:label="@string/app_name"
             android:theme="@style/FullscreenTheme">
             <intent-filter>

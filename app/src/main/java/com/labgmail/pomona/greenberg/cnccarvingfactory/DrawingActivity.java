@@ -103,7 +103,6 @@ public class DrawingActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
         super.onCreate(savedInstanceState);
 
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
@@ -136,14 +135,18 @@ public class DrawingActivity extends AppCompatActivity {
         findViewById(R.id.clear_button).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { mContentView.clear(); }
         });
-        ((NumberPicker) findViewById(R.id.number_picker)).setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
+
+        // INITIALIZE NUMBER PICKER
+        NumberPicker picker = (NumberPicker) findViewById(R.id.number_picker);
+        picker.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
             @Override
             public void onValueChange(NumberPicker npicker, int oldVal, int newVal) {
                 newVal = npicker.getValue();
                 setAlpha(newVal); }
         });
+        setAlpha(255);
 
-
+        // SETTINGS BUTTON
         final Activity self = this;
         findViewById(R.id.settings_button).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -151,8 +154,6 @@ public class DrawingActivity extends AppCompatActivity {
                 startActivity(new Intent(self, DisplaySettingsActivity.class));
             }
         });
-
-        setAlpha(255);
     }
 
     private void setAlpha(int alpha) {
