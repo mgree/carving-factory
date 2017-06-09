@@ -41,7 +41,6 @@ private static final double MAX_Y_DIM = 725;
 private static ArrayList<Line> lines = new ArrayList<Line> ();
 private static ArrayList<Arc> arcs = new ArrayList<Arc>();
 private static HashMap<Character,Double> parameters = new HashMap<Character,Double>();
-//private static HashMap<String,Boolean> processable = new HashMap<String,Boolean>();
 private static HashMap<Integer,Double> toolLibrary = new HashMap<Integer,Double>();
 //maps the tool number to its bit size
 
@@ -137,9 +136,8 @@ public static void main(String[] args) {
                 CommonTokenStream tokens = new CommonTokenStream(lexer);
                 PrgParser parser = new PrgParser(tokens);
 
-                //Set up parameters / processable commands / tool library
+                //Set up parameters / tool library
                 addAllParams(parameters);
-                //addAllProcessable(processable);
                 makeToolLibrary(toolLibrary);
 
                 //Get the program context and create a series of commands from it
@@ -155,10 +153,10 @@ public static void main(String[] args) {
                 System.err.println ("X Range: (" + minX*scale + ", " + maxX*scale +
                                     ") \nY Range: (" + minY*scale + ", " + maxY*scale +
                                     ") \nZ Range: (" + minZ*scale + ", " + maxZ*scale +")");
-                if (!validDrawing){
-                  System.err.println ("This drawing is invalid given the x and y stock lengths. Please reexamine your gcode.");
+                if (!validDrawing) {
+                        System.err.println ("This drawing is invalid given the x and y stock lengths. Please reexamine your gcode.");
                 } else {
-                  System.err.println ("This drawing is valid given the x and y stock lengths.");
+                        System.err.println ("This drawing is valid given the x and y stock lengths.");
                 }
 
         } catch (IOException e) {
@@ -202,17 +200,6 @@ public static void addAllParams(Map<Character,Double> hm){
         hm.put('Z', 0.0); //Z-axis of machine
 }
 
-/* Adds all processable commands to the hashmap for easy access mapping a String
-   representation of the command to a bool of whether or not it is processable.
-   In the future, all commands will be processable so this will be unnecessary */
-// public static void addAllProcessable(Map<String,Boolean> hm){
-//         hm.put("G0", true);
-//         hm.put("G1", true);
-//         hm.put("G2", true);
-//         hm.put("G3", true);
-//         hm.put("M6", true);
-// }
-
 
 /* Creates a tool library mapping tool numbers to the size of the bit */
 public static void makeToolLibrary(Map<Integer,Double> tl){
@@ -223,19 +210,19 @@ public static void makeToolLibrary(Map<Integer,Double> tl){
 
 /* Checks if the dimensions can be drawn on the given space */
 public static Boolean outOfBounds (double x1, double y1, double x2, double y2){
-  x1 *= (scale * scaleFactor);
-  y1 *= (scale * scaleFactor);
-  x2 *= (scale * scaleFactor);
-  y2 *= (scale * scaleFactor);
+        x1 *= (scale * scaleFactor);
+        y1 *= (scale * scaleFactor);
+        x2 *= (scale * scaleFactor);
+        y2 *= (scale * scaleFactor);
 
-  if (x1 <= pxDimX && x1 >= 0 &&
-      y1 <= pxDimY && y1 >= 0 &&
-      x2 <= pxDimX && x2 >= 0 &&
-      y2 <= pxDimY && y2 >= 0) {
-        return false;
-      }
+        if (x1 <= pxDimX && x1 >= 0 &&
+            y1 <= pxDimY && y1 >= 0 &&
+            x2 <= pxDimX && x2 >= 0 &&
+            y2 <= pxDimY && y2 >= 0) {
+                return false;
+        }
 
-  return true;
+        return true;
 }
 
 
@@ -244,34 +231,47 @@ public static Command createCommand(PrgParser.CommandContext c){
 
         Command newCommand = new Command();
 
-        //get the type and set the type to that character
-        //(For unclear reasons, using tokens here made things mor difficult)
-        PrgParser.TypeContext type = c.type();
-        newCommand.setType(Character.toUpperCase(type.getText().charAt(0)));
+        //if it's a line of just arguments, get them and set the arguments
+        //This will leave the newCommand with default values which means they
+        //won't get executed
+        PrgParser.JustArgContext justArg = c.justArg();
+        PrgParser.NormalCmdContext normalCmd = c.normalCmd();
+        if (justArg != null) {
+                List<PrgParser.ArgContext> argList = justArg.arg();
+                for (PrgParser.ArgContext a : argList) {
+                        Character charCode = Character.toUpperCase(a.paramChar().getText().charAt(0));
+                        Double paramValue = (double)toFloat(a.paramArg().floatNum());
+                        parameters.put (charCode, paramValue);
+                }
+        }
+        //If it's a normal command, proceed as usual
+        else if (normalCmd != null){
 
-        //get the mode and set it
-        newCommand.setMode(toNum(c.natural()));
+                //get the type and set the type to that character
+                //(For unclear reasons, using tokens here made things mor difficult)
+                PrgParser.TypeContext type = normalCmd.type();
+                newCommand.setType(Character.toUpperCase(type.getText().charAt(0)));
 
-        //For x, y, and z, get existing values for starting point of the line
-        prevX = parameters.get('X');
-        prevY = parameters.get('Y');
-        prevZ = parameters.get('Z');
+                //get the mode and set it
+                newCommand.setMode(toNum(normalCmd.natural()));
 
-        prevI = parameters.get('I');
-        prevJ = parameters.get('J');
-        prevK = parameters.get('K');
-        prevR = parameters.get('R');
+                //For x, y, and z, get existing values for starting point of the line
+                prevX = parameters.get('X');
+                prevY = parameters.get('Y');
+                prevZ = parameters.get('Z');
 
-        //Get TypeMode string
-        StringBuilder s = new StringBuilder();
-        s.append (Character.toUpperCase(type.getText().charAt(0)));
-        s.append (toNum(c.natural()));
+                prevI = parameters.get('I');
+                prevJ = parameters.get('J');
+                prevK = parameters.get('K');
+                prevR = parameters.get('R');
 
-        //ONLY IF A COMMAND IS KNOWN update params and min/maxes
-        //if (processable.containsKey(s.toString())) {
+                //Get TypeMode string
+                StringBuilder s = new StringBuilder();
+                s.append (Character.toUpperCase(type.getText().charAt(0)));
+                s.append (toNum(normalCmd.natural()));
 
                 //For all the arguments, update that parameter in the hashmap
-                List<PrgParser.ArgContext> argList = c.arg();
+                List<PrgParser.ArgContext> argList = normalCmd.arg();
                 for (PrgParser.ArgContext a : argList) {
 
                         Character charCode = Character.toUpperCase(a.paramChar().getText().charAt(0));
@@ -304,10 +304,11 @@ public static Command createCommand(PrgParser.CommandContext c){
                                         maxZ = paramValue;
                                 }
                         }
-              //  }
-        }
+                }
 
+        }
         return newCommand;
+
 }
 
 
@@ -328,17 +329,17 @@ public static void processCommand(Command c){
         if (type == 'G') {
                 switch (mode) {
                 case 0:
-                        if (outOfBounds(prevX, prevY, X, Y)){
-                          System.err.println("Warning: Moving outside stock limits");
+                        if (outOfBounds(prevX, prevY, X, Y)) {
+                                System.err.println("Warning: Moving outside stock limits");
                         }
                         System.err.println("Rapid Move: ("+ prevX*scale + ", " + prevY*scale + ", " +
                                            prevZ*scale + "), (" + X*scale + ", " + Y*scale + ", " + Z +
                                            ") at feed rate " + parameters.get('F') );
                         break;
                 case 1:
-                        if (outOfBounds(prevX, prevY, X, Y)){
-                          System.err.println("Warning: Line will not fit on specified stock");
-                          validDrawing = false;
+                        if (outOfBounds(prevX, prevY, X, Y)) {
+                                System.err.println("Warning: Line will not fit on specified stock");
+                                validDrawing = false;
                         }
                         lines.add(new Line (prevX, prevY, X, Y, toolLibrary.get((int)Math.round(parameters.get('T')))));
                         System.err.println("Line drawn: ("+ prevX*scale + ", " + prevY*scale + ", " +
@@ -346,9 +347,9 @@ public static void processCommand(Command c){
                                            ") at feed rate " + parameters.get('F') );
                         break;
                 case 2:
-                        if (outOfBounds(prevX, prevY, X, Y)){
-                          System.err.println("Warning: Arc may not fit on specified stock");
-                          validDrawing = false;
+                        if (outOfBounds(prevX, prevY, X, Y)) {
+                                System.err.println("Warning: Arc may not fit on specified stock");
+                                validDrawing = false;
                         }
                         //DOES THE -1 ACTUALLY MATTER AT ALL??
                         Arc newArc;
@@ -367,9 +368,9 @@ public static void processCommand(Command c){
                                            newArc.getStartAngle() + " to " + newArc.getEndAngle());
                         break;
                 case 3:
-                        if (outOfBounds(prevX, prevY, X, Y)){
-                          System.err.println("Warning: Arc may not fit on specified stock");
-                          validDrawing = false;
+                        if (outOfBounds(prevX, prevY, X, Y)) {
+                                System.err.println("Warning: Arc may not fit on specified stock");
+                                validDrawing = false;
                         }
                         Arc aNewArc;
                         if (isRadiusArc()) {
@@ -641,9 +642,8 @@ public static void processCommand(Command c){
                 default:
                         System.err.println ("Command not processed. Command: " + type + mode);
                 }
-        } else {
-                System.err.println ("Error. Type: " + type);
         }
+        //If it was an argument only command it won't be processed
 }
 
 
@@ -684,11 +684,11 @@ private static int toNum(PrgParser.NaturalContext nc) {
  * a command
  */
 private static float toFloat(PrgParser.FloatNumContext fnc) {
-      //Save the sign
-      String sign = " ";
-      if (fnc.sign() !=null ) {
-         sign = fnc.sign().getText();
-      }
+        //Save the sign
+        String sign = " ";
+        if (fnc.sign() !=null ) {
+                sign = fnc.sign().getText();
+        }
 
         List<TerminalNode> dcs = fnc.DIGIT(); //first part of num
 
@@ -710,7 +710,7 @@ private static float toFloat(PrgParser.FloatNumContext fnc) {
 
         //if it's supposed to be negative, multiply by -1
         if (sign.charAt(0) == ('-')) {
-          ans *= -1;
+                ans *= -1;
         }
 
         return ans;
