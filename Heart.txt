@@ -1,8 +1,7 @@
 (Created 5:36:41 AM 5/1/2011 from Valsheartredo.dxf)
 (Post = Mikes Mach3 Router)
 (Tool 8 = .250 Vee bit)
-N0001 G90 G91
-n001000 T1M6
+N0001 G90 G91.1
 N0002 G20 M03
 N0003 G00 X0.0387 Y0.5609 Z0.5000
 N0004 G00 X0.0387 Y0.5609 Z0.5000

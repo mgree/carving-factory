@@ -1,12 +1,17 @@
+test-gui : build-gui
+	java GCodeReader Heart.txt s8
+
+build-gui : PrgLexer.tokens Line.class Arc.class Command.class GCodeReader.class
+
+test-gen : build-gen
+	java GCodeGenerator
+
+build-gen : PrgLexer.tokens Line.class Arc.class Command.class GCodeGenerator.class
+
 test-parser : build-parser
 	java PrgTest parser_test1.txt
 
-build-parser : PrgLexer.tokens Params.class Command.class PrgTest.class
-
-test-gui : build-gui
-	java GCodeReader SimpleGCode.txt
-
-build-gui : Line.class Params.class Command.class GCodeReader.class
+build-parser : PrgLexer.tokens Command.class PrgTest.class
 
 PrgLexer.tokens : Prg.g4
 	java -jar /usr/local/lib/antlr-4.7-complete.jar $<

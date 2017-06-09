@@ -2,13 +2,14 @@ grammar Prg;
 
 program : command+ ;
 
-command : returnChar* linenum? type natural arg* returnChar*;
+command : returnChar* linenum? arg* type natural arg* returnChar* linenum* returnChar*;
 
 linenum: 'N' natural | 'n' natural ;
 
 type : 'G' | 'M' | 'g' | 'm' ;
 
 arg : paramChar paramArg ;
+
 
 paramChar: 'A' | 'B' | 'C' | 'D' | 'F' | 'H' | 'I'
          | 'J' | 'K' | 'L' | 'N' | 'O' | 'P' | 'Q'
@@ -36,3 +37,5 @@ DIGIT : ('0' .. '9')  ;
 WS  :  [ \t\u000C]+ -> skip ;
 
 COMMENT : '(' .*? ')' -> skip ;
+
+ENDCHAR : '%' -> skip ;

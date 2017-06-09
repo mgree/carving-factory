@@ -2,9 +2,12 @@ package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.drawable.ColorDrawable;
+import android.preference.Preference;
+import android.preference.PreferenceScreen;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -46,6 +49,8 @@ public class DrawingActivity extends AppCompatActivity {
     private final Handler mHideHandler = new Handler();
     private DrawingView mContentView;
     private ImageView swatch;
+    public static int val= 4;
+    public static int val2 = 2;
 
     private final Runnable mHidePart2Runnable = new Runnable() {
         @SuppressLint("InlinedApi")
@@ -103,15 +108,26 @@ public class DrawingActivity extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
 
+        PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+
         setContentView(R.layout.activity_drawing);
 
         mVisible = true;
         mControlsView = findViewById(R.id.fullscreen_content_controls);
         mContentView = (DrawingView) findViewById(R.id.fullscreen_content);
+
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        Log.d("PREF",prefs.getAll().toString());
+        prefs.registerOnSharedPreferenceChangeListener(mContentView);
+        mContentView.initializeStockDimensions(prefs);
+
+        // TOOLBAR SETUP
         swatch = (ImageView) findViewById(R.id.alpha_swatch);
         NumberPicker nPicker = (NumberPicker) findViewById(R.id.number_picker);
         nPicker.setMaxValue(255);
         nPicker.setMinValue(0);
+
+        // FULLSCREEN SETUP
         // Upon interacting with UI controls, delay any scheduled hide()
         // operations to prevent the jarring behavior of controls going away
         // while interacting with the UI.
@@ -129,23 +145,17 @@ public class DrawingActivity extends AppCompatActivity {
                 setAlpha(newVal); }
         });
 
+
         final Activity self = this;
         findViewById(R.id.settings_button).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(self, DisplaySettingsActivity.class);
-                startActivity(intent);
-
-
-
+                startActivity(new Intent(self, DisplaySettingsActivity.class));
             }
-        }) ;
-        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-//        String syncConnPref = sharedPref.getString(DisplaySettingsActivity.KEY_PREF_SYNC_CONN, "");
+        });
 
         setAlpha(255);
     }
-
 
     private void setAlpha(int alpha) {
         mContentView.setAlpha(alpha);
@@ -167,6 +177,8 @@ public class DrawingActivity extends AppCompatActivity {
         } catch (IOException e) {
             Log.e("PAUSE", "ioe saving state");
         }
+
+        getPreferences(Context.MODE_PRIVATE).unregisterOnSharedPreferenceChangeListener(mContentView);
     }
 
     @Override
@@ -182,6 +194,8 @@ public class DrawingActivity extends AppCompatActivity {
         } catch (IOException e) {
             Log.e("PAUSE", "ioe loading state");
         }
+
+        getPreferences(Context.MODE_PRIVATE).registerOnSharedPreferenceChangeListener(mContentView);
     }
 
     @Override

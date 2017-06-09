@@ -10,7 +10,7 @@
     <string name="cancel" >cancel</string>
     <string name="settings" >settings</string>
     <string name="select_dimensions">select length and width</string>
-    <string name="pref_width">stock width (y axis)</string>
-    <string name="pref_length">stock length (x axis)</string>
-    <string name="pref_depth">stock depth (z axis)</string>
+    <string name="pref_width">set stock width (y axis)</string>
+    <string name="pref_length">set stock length (x axis)</string>
+    <string name="pref_depth">set stock depth (z axis)</string>
 </resources>
