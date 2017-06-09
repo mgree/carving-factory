@@ -41,7 +41,7 @@ private static final double MAX_Y_DIM = 725;
 private static ArrayList<Line> lines = new ArrayList<Line> ();
 private static ArrayList<Arc> arcs = new ArrayList<Arc>();
 private static HashMap<Character,Double> parameters = new HashMap<Character,Double>();
-private static HashMap<String,Boolean> processable = new HashMap<String,Boolean>();
+//private static HashMap<String,Boolean> processable = new HashMap<String,Boolean>();
 private static HashMap<Integer,Double> toolLibrary = new HashMap<Integer,Double>();
 //maps the tool number to its bit size
 
@@ -63,13 +63,6 @@ private static int pxDimY;
 private static int dimX = 48;
 private static int dimY = 24;
 
-//Set up the default tool width
-private static double toolWidth = .5;
-
-// //default stroke width for the drawing pane
-// //This is updated to appear proportional to the given dimensions
-// private static double strokeWidth = .5;
-
 //Initialize min and max values
 private static double maxX = 0.0;
 private static double minX = 0.0;
@@ -88,6 +81,9 @@ private static double prevI = 0.0;
 private static double prevJ = 0.0;
 private static double prevK = 0.0;
 private static double prevR = 1.0;
+
+//Bool to warn if drawing is valid
+private static Boolean validDrawing = true;
 
 public static void main(String[] args) {
         //Wrong number of arguments
@@ -143,7 +139,7 @@ public static void main(String[] args) {
 
                 //Set up parameters / processable commands / tool library
                 addAllParams(parameters);
-                addAllProcessable(processable);
+                //addAllProcessable(processable);
                 makeToolLibrary(toolLibrary);
 
                 //Get the program context and create a series of commands from it
@@ -159,6 +155,11 @@ public static void main(String[] args) {
                 System.err.println ("X Range: (" + minX*scale + ", " + maxX*scale +
                                     ") \nY Range: (" + minY*scale + ", " + maxY*scale +
                                     ") \nZ Range: (" + minZ*scale + ", " + maxZ*scale +")");
+                if (!validDrawing){
+                  System.err.println ("This drawing is invalid given the x and y stock lengths. Please reexamine your gcode.");
+                } else {
+                  System.err.println ("This drawing is valid given the x and y stock lengths.");
+                }
 
         } catch (IOException e) {
                 System.err.println("IOException: " + e);
@@ -173,8 +174,6 @@ public static void main(String[] args) {
                         }
                 });
 }
-
-
 
 
 
@@ -206,19 +205,37 @@ public static void addAllParams(Map<Character,Double> hm){
 /* Adds all processable commands to the hashmap for easy access mapping a String
    representation of the command to a bool of whether or not it is processable.
    In the future, all commands will be processable so this will be unnecessary */
-public static void addAllProcessable(Map<String,Boolean> hm){
-        hm.put("G0", true);
-        hm.put("G1", true);
-        hm.put("G2", true);
-        hm.put("G3", true);
-        hm.put("M6", true);
-}
+// public static void addAllProcessable(Map<String,Boolean> hm){
+//         hm.put("G0", true);
+//         hm.put("G1", true);
+//         hm.put("G2", true);
+//         hm.put("G3", true);
+//         hm.put("M6", true);
+// }
 
 
 /* Creates a tool library mapping tool numbers to the size of the bit */
 public static void makeToolLibrary(Map<Integer,Double> tl){
         tl.put(1, .5);
         tl.put(2, .25);
+}
+
+
+/* Checks if the dimensions can be drawn on the given space */
+public static Boolean outOfBounds (double x1, double y1, double x2, double y2){
+  x1 *= (scale * scaleFactor);
+  y1 *= (scale * scaleFactor);
+  x2 *= (scale * scaleFactor);
+  y2 *= (scale * scaleFactor);
+
+  if (x1 <= pxDimX && x1 >= 0 &&
+      y1 <= pxDimY && y1 >= 0 &&
+      x2 <= pxDimX && x2 >= 0 &&
+      y2 <= pxDimY && y2 >= 0) {
+        return false;
+      }
+
+  return true;
 }
 
 
@@ -251,7 +268,7 @@ public static Command createCommand(PrgParser.CommandContext c){
         s.append (toNum(c.natural()));
 
         //ONLY IF A COMMAND IS KNOWN update params and min/maxes
-        if (processable.containsKey(s.toString())) {
+        //if (processable.containsKey(s.toString())) {
 
                 //For all the arguments, update that parameter in the hashmap
                 List<PrgParser.ArgContext> argList = c.arg();
@@ -287,7 +304,7 @@ public static Command createCommand(PrgParser.CommandContext c){
                                         maxZ = paramValue;
                                 }
                         }
-                }
+              //  }
         }
 
         return newCommand;
@@ -311,17 +328,28 @@ public static void processCommand(Command c){
         if (type == 'G') {
                 switch (mode) {
                 case 0:
+                        if (outOfBounds(prevX, prevY, X, Y)){
+                          System.err.println("Warning: Moving outside stock limits");
+                        }
                         System.err.println("Rapid Move: ("+ prevX*scale + ", " + prevY*scale + ", " +
                                            prevZ*scale + "), (" + X*scale + ", " + Y*scale + ", " + Z +
                                            ") at feed rate " + parameters.get('F') );
                         break;
                 case 1:
+                        if (outOfBounds(prevX, prevY, X, Y)){
+                          System.err.println("Warning: Line will not fit on specified stock");
+                          validDrawing = false;
+                        }
                         lines.add(new Line (prevX, prevY, X, Y, toolLibrary.get((int)Math.round(parameters.get('T')))));
                         System.err.println("Line drawn: ("+ prevX*scale + ", " + prevY*scale + ", " +
                                            prevZ*scale + "), (" + X*scale + ", " + Y*scale + ", " + Z +
                                            ") at feed rate " + parameters.get('F') );
                         break;
                 case 2:
+                        if (outOfBounds(prevX, prevY, X, Y)){
+                          System.err.println("Warning: Arc may not fit on specified stock");
+                          validDrawing = false;
+                        }
                         //DOES THE -1 ACTUALLY MATTER AT ALL??
                         Arc newArc;
                         if (isRadiusArc()) {
@@ -339,6 +367,10 @@ public static void processCommand(Command c){
                                            newArc.getStartAngle() + " to " + newArc.getEndAngle());
                         break;
                 case 3:
+                        if (outOfBounds(prevX, prevY, X, Y)){
+                          System.err.println("Warning: Arc may not fit on specified stock");
+                          validDrawing = false;
+                        }
                         Arc aNewArc;
                         if (isRadiusArc()) {
                                 aNewArc = new Arc(parameters.get('R'), prevX, prevY, X, Y, 1, toolLibrary.get((int)Math.round(parameters.get('T'))));
@@ -470,7 +502,7 @@ public static void processCommand(Command c){
                         System.err.println("Canned cycle - peck drilling");
                         break;
                 case 80:
-                        System.err.println("Cancel motion mode (includeing canned cycles)");
+                        System.err.println("Cancel motion mode (including canned cycles)");
                         break;
                 case 81:
                         System.err.println("Canned cycle - drilling");
@@ -555,7 +587,7 @@ public static void processCommand(Command c){
                         break;
 
                 case 9:
-                        System.err.println ("Dust hood up off/ all coolant off");
+                        System.err.println ("Dust hood up off/all coolant off");
                         break;
 
                 case 10:
@@ -652,6 +684,11 @@ private static int toNum(PrgParser.NaturalContext nc) {
  * a command
  */
 private static float toFloat(PrgParser.FloatNumContext fnc) {
+      //Save the sign
+      String sign = " ";
+      if (fnc.sign() !=null ) {
+         sign = fnc.sign().getText();
+      }
 
         List<TerminalNode> dcs = fnc.DIGIT(); //first part of num
 
@@ -668,7 +705,15 @@ private static float toFloat(PrgParser.FloatNumContext fnc) {
                         digits.append(f.getSymbol().getText());
                 }
         }
-        return Float.parseFloat(digits.toString());
+
+        float ans = Float.parseFloat(digits.toString());
+
+        //if it's supposed to be negative, multiply by -1
+        if (sign.charAt(0) == ('-')) {
+          ans *= -1;
+        }
+
+        return ans;
 }
 
 
@@ -694,15 +739,12 @@ private static double findScaleFactor (int xDim, int yDim){
  * If the I, J, K values haven't been recently updated while R has, assume it's
  * in radius mode
  */
-
 private static Boolean isRadiusArc(){
         return (prevI == parameters.get('I') && prevJ == parameters.get('J') &&
                 prevK == parameters.get('K') && prevR != parameters.get('R'));
 }
 
 }
-
-
 
 
 /**
