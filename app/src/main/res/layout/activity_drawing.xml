@@ -46,27 +46,29 @@
             android:layout_height="wrap_content"
             android:layout_weight="1" />
 
-        <Button
+        <ImageButton
             android:id="@+id/clear_button"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="1dp"
             android:layout_weight="1"
-            android:text="@string/clear" />
+            android:contentDescription="Clear"
+            app:srcCompat="@android:drawable/ic_menu_close_clear_cancel" />
 
-        <Button
+        <ImageButton
             android:id="@+id/undo_button"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="1dp"
             android:layout_weight="1"
-            android:text="@string/Undo" />
+            android:contentDescription="Undo"
+            app:srcCompat="@android:drawable/ic_menu_revert" />
 
-        <Button
+        <ImageButton
             android:id="@+id/settings_button"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="1dp"
             android:layout_weight="1"
-            android:text="@string/settings"
-            tools:text="@string/settings" />
+            android:contentDescription="Settings"
+            app:srcCompat="@android:drawable/ic_menu_preferences" />
 
     </LinearLayout>
 
