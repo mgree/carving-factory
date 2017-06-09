@@ -114,7 +114,7 @@ public class DrawingActivity extends AppCompatActivity {
         mContentView = (DrawingView) findViewById(R.id.fullscreen_content);
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        Log.d("PREF",prefs.getAll().toString());
+        Log.d("PREF", prefs.getAll().toString());
         prefs.registerOnSharedPreferenceChangeListener(mContentView);
         mContentView.initializeStockDimensions(prefs);
 

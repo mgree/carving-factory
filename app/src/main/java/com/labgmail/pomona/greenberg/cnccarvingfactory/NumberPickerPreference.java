@@ -9,6 +9,7 @@ import android.os.Parcelable;
 import android.preference.DialogPreference;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -23,7 +24,6 @@ import android.widget.TextView;
 public class NumberPickerPreference extends DialogPreference {
 
     private int mDistance;
-    private static final int DEFAULT_VALUE = 5;
     private NumberPicker mDistPicker;
 
     public NumberPickerPreference(Context context) { this(context, null, 0); }
@@ -31,7 +31,7 @@ public class NumberPickerPreference extends DialogPreference {
     public NumberPickerPreference(Context context, AttributeSet attrs) { this(context, attrs, 0); }
 
     public NumberPickerPreference(Context context, AttributeSet attrs, int defStyle) {
-        super(context, attrs);
+        super(context, attrs, defStyle);
 
         setDialogLayoutResource(R.layout.picker_layout);
         setPositiveButtonText (android.R.string.ok);
@@ -42,8 +42,7 @@ public class NumberPickerPreference extends DialogPreference {
     protected void onBindDialogView(View v) {
         super.onBindDialogView(v);
 
-        mDistance = getPersistedInt(DEFAULT_VALUE);
-
+        mDistance = getPersistedInt(-1);
 
         mDistPicker = (NumberPicker) v.findViewById(R.id.measure_amount_id);
         mDistPicker.setMinValue(0);
@@ -63,6 +62,21 @@ public class NumberPickerPreference extends DialogPreference {
         if(positive && shouldPersist()) {
             persistInt(mDistance);
         }
+    }
+
+    @Override
+    protected void onSetInitialValue(boolean restore, Object defaultValue) {
+        if (restore) {
+            mDistance = getPersistedInt(-1);
+        } else {
+            mDistance = ((Integer) defaultValue).intValue();
+            persistInt(mDistance);
+        }
+    }
+
+    @Override
+    protected Object onGetDefaultValue(TypedArray a, int index) {
+        return a.getInteger(index, -1);
     }
 }
 

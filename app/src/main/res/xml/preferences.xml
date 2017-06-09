@@ -1,19 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="Stock dimensions">
     <ListPreference
         android:key="pref_units"
         android:title="Unit of measure"
         android:entries="@array/units"
         android:entryValues="@array/unit_values"
-        android:defaultValue="in"/>
+        android:defaultValue="@string/pref_unit_default" />
     <com.labgmail.pomona.greenberg.cnccarvingfactory.NumberPickerPreference
         android:key="pref_wLength"
         android:id="@+id/length_patch"
         android:title="Stock length"
-        android:defaultValue="24"/>
+        android:defaultValue="@integer/pref_length_default" />
     <com.labgmail.pomona.greenberg.cnccarvingfactory.NumberPickerPreference
         android:key="pref_wWidth"
         android:id="@+id/width_patch"
         android:title="Stock width"
-        android:defaultValue="24"/>
+        android:defaultValue="@integer/pref_width_default" />
+    </PreferenceCategory>
 </PreferenceScreen>
