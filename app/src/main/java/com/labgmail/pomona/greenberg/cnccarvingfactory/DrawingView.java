@@ -4,16 +4,25 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.PointF;
+import android.media.MediaScannerConnection;
+import android.net.Uri;
+import android.os.Environment;
+import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -29,8 +38,10 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     private final Paint brush = new Paint();
     private float stockLength = -1;
     private float stockWidth = -1;
+    private float stockDepth = -1;
     private float cutoffRight = -1;
     private float cutoffBottom = -1;
+    private String stockUnit = "undef";
 
     public DrawingView(Context ctx) { this(ctx, null); }
 
@@ -66,7 +77,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         cutoffBottom = scale * stockLength;
         cutoffRight = scale * stockWidth;
 
-        Log.d("DIM",String.format("canvas %fx%f, stock %fx%f, wScale %f lScale %f, scaled to %f %f",
+        Log.d("DIM",String.format("canvas %1.4fx%1.4f, stock %1.4fx%1.4f, wScale %1.4f lScale %1.4f, scaled to %1.4f %1.4f",
                 width, height,
                 stockWidth, stockLength,
                 wPPI, lPPI,
@@ -74,7 +85,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         brush.setARGB(255,0,0,0);
         brush.setStyle(Paint.Style.FILL);
-        Log.d("DIM",String.format("drawing rectangle at %f %f %f %f", cutoffRight, 0f, width, height));
+        Log.d("DIM",String.format("drawing rectangle at %1.4f %1.4f %1.4f %1.4f", cutoffRight, 0f, width, height));
 
         // RIGHT
         canvas.drawRect(cutoffRight, 0, width, height, brush);
@@ -87,6 +98,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         for (Stroke s : strokes) {
             brush.setColor(s.getColor());
             canvas.drawPath(s.getPath(), brush);
+
         }
 
         brush.setColor(curColor);
@@ -110,7 +122,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                 break;
             case MotionEvent.ACTION_UP:
                 addMotionEvent(event);
-                Log.d("TOUCH", String.format("cutoff %f/%f stroke %s", cutoffRight, cutoffBottom, curStroke.toString()));
+                Log.d("TOUCH", String.format("cutoff %1.4f/%1.4f stroke %s", cutoffRight, cutoffBottom, curStroke.toString()));
                 strokes.add(curStroke);
                 curStroke = null;
                 break;
@@ -134,12 +146,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             invalidate();
         }
     }
-
-    // ??? Is a redo button possible?
-//    public void redo() {
-    // get the state of the list before the last stroke was deleted than revert to the old state
-    // way we're doing it now decreases the size of the array, doesn't really save anything.
-//    }
 
     public void setAlpha(int alpha) {
         brush.setAlpha(alpha);
@@ -191,7 +197,11 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             stockLength = sharedPreferences.getInt(key, 0);
         } else if (key.equals(DisplaySettingsActivity.KEY_WIDTH)) {
             stockWidth = sharedPreferences.getInt(key, 0);
-        } /* TODO DEPTH */
+        } else if (key.equals(DisplaySettingsActivity.KEY_WIDTH)) {
+            stockDepth = sharedPreferences.getInt(key,0);
+        } else if (key.equals(DisplaySettingsActivity.KEY_UNIT)) {
+            stockUnit = sharedPreferences.getString(key,"in");
+        }
 
         postInvalidate();
     }
@@ -199,6 +209,126 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     public void initializeStockDimensions(SharedPreferences prefs) {
         stockLength = prefs.getInt(DisplaySettingsActivity.KEY_LENGTH, -1);
         stockWidth = prefs.getInt(DisplaySettingsActivity.KEY_WIDTH, -1);
-        // TODO DEPTH
+        stockDepth = prefs.getInt(DisplaySettingsActivity.KEY_DEPTH, -1);
     }
+
+    public void exportGCode() {
+        File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
+
+        try {
+            dir.mkdirs();
+
+            // compute the filename
+            StringBuffer filename = new StringBuffer();
+            CharSequence timestamp = DateFormat.format("yyyy-MM-ddThh:mm:ss", new Date());
+            filename.append(timestamp);
+            filename.append("_");
+            filename.append(Float.toString(stockWidth));
+            filename.append("x");
+            filename.append(Float.toString(stockLength));
+            filename.append(".txt"); // TODO: change back to prg (associate prg w/ text?)
+
+
+            File prg = new File(dir, filename.toString());
+            if (!prg.createNewFile()) {
+                throw new IOException("couldn't create file " + filename.toString());
+            }
+
+            PrintWriter out = new PrintWriter(new FileOutputStream(prg, false));
+
+            float oldStockDepth = stockDepth;
+            stockDepth = 0.72f;
+
+            // compute scale
+            float ipp = stockWidth / cutoffRight;
+
+            // write metadata comments
+            out.println("(generated by CNC Carving Factory)");
+            out.printf("(expected stock dimensions: %1.4fx%1.4fx%1.4f[override] %s)\n",
+                    stockWidth, stockLength, stockDepth, stockUnit);
+
+            // write prelude
+            int line = 1;
+            out.println("(prelude)");
+            out.printf("N%d G00 G17 G40 G90\n", line++);
+            out.printf("N%d G70\n", line++);
+            out.printf("N%d G54\n", line++);
+            out.printf("N%d T1 M06\n", line++);
+            out.printf("N%d D1\n", line++);
+            out.printf("N%d M03 S18000\n", line++);
+
+            // write the strokes into the file in GCode format
+            out.println("(carving)");
+
+            float boardHeight = 0.495f + 0.72f;
+            float clearancePlane = boardHeight + 0.25f;
+            float cuttingDepth = boardHeight - 0.25f;
+
+            int numStrokes = 0;
+            for (Stroke s : strokes) {
+                boolean cutting = false;
+                boolean fast = false;
+
+                numStrokes += 1;
+                out.printf("(stroke %d)\n", numStrokes);
+
+                PointF last = null;
+                for (PointF point : s) {
+                    if (point.equals(last)) {
+                        continue;
+                    }
+
+                    if (!cutting) {
+                        // emit G00 moves, move in w/slow feed rate (first iteration)
+                        out.printf("N%d G00 X%1.4f Y%1.4f\n", line++, point.x * ipp, point.y * ipp);
+                        out.printf("N%d G00 Z%1.4f\n", line++, clearancePlane);
+                        out.printf("N%d G01 Z%1.4f F80.0\n", line++, cuttingDepth);
+
+                        cutting = true;
+                    } else {
+                        if (!fast) {
+                            // first G01 move, set high feedrate (second iteration)
+                            out.printf("N%d G01 X%1.4f Y%1.4f F250.0\n", line++, point.x * ipp, point.y * ipp);
+
+                            fast = true;
+                        } else {
+                            // general moves (other iterations)
+                            out.printf("N%d G01 X%1.4f Y%1.4f\n", line++, point.x * ipp, point.y * ipp);
+                        }
+                    }
+
+                    last = point;
+                }
+
+                // emit pull out
+                out.printf("N%d G00 X%1.4f Y%1.4f\n", line++, last.x * ipp, last.y * ipp);
+                out.printf("N%d G00 Z%1.4f\n", line++, clearancePlane);
+            }
+
+            // write outlude
+            out.println("(closing arguments)");
+            out.printf("N%d D0\n", line++);
+            out.printf("N%d G00 Z0\n", line++);
+            out.printf("N%d G53\n", line++);
+            out.printf("N%d G00 Y0.0000\n", line++);
+            out.printf("N%d G00 X0.0000 M05\n", line++);
+            out.printf("N%d G54\n", line++);
+            out.printf("N%d M30\n", line++);
+
+            out.flush();
+            out.close();
+
+            MediaScannerConnection.scanFile(getContext(),
+                    new String[] { prg.toString() }, null,
+                    new MediaScannerConnection.OnScanCompletedListener() {
+                        public void onScanCompleted(String path, Uri uri) {
+                            Log.i("IO", "Scanned " + path + ":");
+                            Log.i("IO", "-> uri=" + uri);
+                        }
+                    });
+        } catch (IOException e) {
+            Log.d("IO", e.getMessage());
+        }
+    }
+
 }

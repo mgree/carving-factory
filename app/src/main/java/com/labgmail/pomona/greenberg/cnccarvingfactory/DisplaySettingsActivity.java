@@ -38,7 +38,7 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
             mCurUnit = prefs.getString(KEY_UNIT, defaultUnit);
             findPreference(KEY_UNIT).setSummary(mCurUnit);
 
-            for (String key : new String[] { KEY_LENGTH, KEY_WIDTH /*, KEY_DEPTH */}) {
+            for (String key : new String[] { KEY_LENGTH, KEY_WIDTH , KEY_DEPTH }) {
                 findPreference(key).setSummary(Integer.toString(prefs.getInt(key, 0)) + mCurUnit );
             }
         }
@@ -48,7 +48,7 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
             Preference pref = findPreference(key);
 
             if (key.equals(KEY_LENGTH) || key.equals(KEY_WIDTH) || key.equals(KEY_DEPTH)) {
-                // Keeps track of both length and width inputs (and depth eventually)
+                // Keeps track of length, width, and depth inputs
                 pref.setSummary(Integer.toString(sharedPreferences.getInt(key, 0)) + mCurUnit);
             } else if (key.equals(KEY_UNIT)) {
                 String newUnit = sharedPreferences.getString(KEY_UNIT, defaultUnit);
@@ -82,11 +82,11 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
             SharedPreferences prefs = getPreferenceManager().getSharedPreferences();
             int w = prefs.getInt(KEY_WIDTH, 0);
             int l = prefs.getInt(KEY_LENGTH, 0);
-            //int d = prefs.getInt(KEY_DEPTH, 0);
+            int d = prefs.getInt(KEY_DEPTH, 0);
             prefs.edit()
                     .putInt(KEY_WIDTH, (int) Math.round(w * factor))
                     .putInt(KEY_LENGTH, (int) Math.round(l * factor))
-//                    .putInt(KEY_DEPTH, (int) Math.round(d * factor))
+                    .putInt(KEY_DEPTH, (int) Math.round(d * factor))
                     .commit();
         }
 

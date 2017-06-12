@@ -46,7 +46,7 @@ public class NumberPickerPreference extends DialogPreference {
 
         mDistPicker = (NumberPicker) v.findViewById(R.id.measure_amount_id);
         mDistPicker.setMinValue(0);
-        mDistPicker.setMaxValue(12 * 5); // 5' ... might need to convert to appropriate current unit
+        mDistPicker.setMaxValue(2540); // 5' ... might need to convert to appropriate current unit So should we put unit conversion here too to accomodate or just set to 2540?
         mDistPicker.setValue(mDistance);
 
         mDistPicker.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {

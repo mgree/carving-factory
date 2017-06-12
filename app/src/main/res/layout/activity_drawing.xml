@@ -70,6 +70,14 @@
             android:contentDescription="Settings"
             app:srcCompat="@android:drawable/ic_menu_preferences" />
 
+        <ImageButton
+            android:id="@+id/save_button"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_weight="1"
+            android:contentDescription="Save"
+            app:srcCompat="@android:drawable/ic_menu_save" />
+
     </LinearLayout>
 
     <FrameLayout

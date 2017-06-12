@@ -2,4 +2,5 @@
 <resources>
     <integer name="pref_width_default">48</integer>
     <integer name="pref_length_default">24</integer>
+    <integer name="pref_depth_default">1</integer>
 </resources>

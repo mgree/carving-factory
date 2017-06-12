@@ -1,12 +1,20 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.drawable.ColorDrawable;
+import android.media.MediaScannerConnection;
+import android.net.Uri;
+import android.os.Environment;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -14,14 +22,19 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.NumberPicker;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-
+import java.io.PrintStream;
+import java.io.PrintWriter;
 
 /**
  * Central drawing activity for (eventual) output to a CNC machine.
@@ -47,8 +60,10 @@ public class DrawingActivity extends AppCompatActivity {
     private final Handler mHideHandler = new Handler();
     private DrawingView mContentView;
     private ImageView swatch;
-    public static int val= 4;
-    public static int val2 = 2;
+    private String fileName = "sample.txt";
+    private String filePath = "MyFileStorage";
+    File myExternalFile;
+
 
     private final Runnable mHidePart2Runnable = new Runnable() {
         @SuppressLint("InlinedApi")
@@ -100,6 +115,7 @@ public class DrawingActivity extends AppCompatActivity {
             return false;
         }
     };
+    private boolean mCanWrite = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -136,6 +152,31 @@ public class DrawingActivity extends AppCompatActivity {
             public void onClick(View v) { mContentView.clear(); }
         });
 
+        // SETUP SAVE BUTTON
+        final Activity self = this;
+        findViewById(R.id.save_button).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                Log.d("IO", "clicked");
+                if (ContextCompat.checkSelfPermission(self, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+                    mContentView.exportGCode();
+                    // TODO notify on success
+                } else {
+                    ActivityCompat.requestPermissions(self,
+                            new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                            0);
+                    // TODO record pending save and call it in the onPermissions handler
+                }
+           }
+        });
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+            findViewById(R.id.save_button).setClickable(true);
+        } else {
+            ActivityCompat.requestPermissions(this,
+                    new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    0);
+        }
+
         // INITIALIZE NUMBER PICKER
         NumberPicker picker = (NumberPicker) findViewById(R.id.number_picker);
         picker.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
@@ -147,13 +188,39 @@ public class DrawingActivity extends AppCompatActivity {
         setAlpha(255);
 
         // SETTINGS BUTTON
-        final Activity self = this;
         findViewById(R.id.settings_button).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(self, DisplaySettingsActivity.class));
             }
         });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode != 0) {
+            Log.d("IO","huh?");
+            return;
+        }
+
+        findViewById(R.id.save_button)
+                .setClickable(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED);
+    }
+
+    private static boolean isExternalStorageReadOnly() {
+        String extStorageState = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(extStorageState)) {
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean isExternalStorageAvailable() {
+        String extStorageState = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(extStorageState)) {
+            return true;
+        }
+        return false;
     }
 
     private void setAlpha(int alpha) {

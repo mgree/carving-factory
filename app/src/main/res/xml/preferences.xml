@@ -17,5 +17,10 @@
         android:id="@+id/width_patch"
         android:title="Stock width"
         android:defaultValue="@integer/pref_width_default" />
+        <com.labgmail.pomona.greenberg.cnccarvingfactory.NumberPickerPreference
+            android:key="pref_wDepth"
+            android:id="@+id/depth_patch"
+            android:title="Stock depth"
+            android:defaultValue="@integer/pref_depth_default" />
     </PreferenceCategory>
 </PreferenceScreen>

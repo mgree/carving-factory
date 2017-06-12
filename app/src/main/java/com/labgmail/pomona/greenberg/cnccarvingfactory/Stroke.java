@@ -8,8 +8,11 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Spliterator;
+import java.util.function.Consumer;
 
 /**
  * Custom pseudo-wrapper on paths, so we can actually save them. (android.os.Path isn't Parcelable!)
@@ -17,7 +20,7 @@ import java.util.List;
  * Created by edinameshietedoho on 5/25/17.
  */
 
-public class Stroke extends Path implements Serializable {
+public class Stroke extends Path implements Serializable, Iterable<PointF> {
 
     // TODO: Colors!
 
@@ -83,4 +86,8 @@ public class Stroke extends Path implements Serializable {
 
     public static final long serialVersionUID = 42L;
 
+    @Override
+    public Iterator<PointF> iterator() {
+        return points.iterator();
+    }
 }

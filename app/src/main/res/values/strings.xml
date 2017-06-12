@@ -9,7 +9,6 @@
     <string name="set" >set</string>
     <string name="cancel" >cancel</string>
     <string name="settings" >settings</string>
-
     <string name="pref_unit_default">in</string>
 
 </resources>
