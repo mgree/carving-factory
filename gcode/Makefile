@@ -18,7 +18,7 @@ PrgLexer.tokens : Prg.g4
 	javac Prg*.java
 
 %.class : %.java
-	javac $<
+	javac -cp /usr/local/lib/antlr-4.7-complete.jar:. $<
 
 clean :
 	-rm -f *.class *.tokens
