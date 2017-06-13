@@ -55,7 +55,13 @@ public class Stroke extends Path implements Serializable, Iterable<PointF> {
 
     @Override
     public String toString() {
-        return points.toString();
+        StringBuffer string = new StringBuffer();
+
+        for(PointF p : points  ) {
+            string.append(p.toString());
+            string.append("\n");
+        }
+        return string.toString();
     }
 
     private void writeObject(ObjectOutputStream out) throws IOException {

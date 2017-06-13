@@ -13,6 +13,7 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -212,6 +213,50 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         stockDepth = prefs.getInt(DisplaySettingsActivity.KEY_DEPTH, -1);
     }
 
+
+    public void exportPath(){
+        File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
+
+        try {
+            dir.mkdirs();
+
+            // compute the filename
+            StringBuffer filename = new StringBuffer();
+            CharSequence timestamp = DateFormat.format("yyyy-MM-ddThh:mm:ss", new Date());
+            filename.append("STROKELIST-");
+            filename.append(timestamp);
+            filename.append("_");
+            filename.append(Float.toString(stockWidth));
+            filename.append("x");
+            filename.append(Float.toString(stockLength));
+            filename.append(".txt"); // TODO: change back to prg (associate prg w/ text?)
+
+
+            File prg = new File(dir, filename.toString());
+            if (!prg.createNewFile()) {
+                throw new IOException("couldn't create file " + filename.toString());
+            }
+
+            PrintWriter out = new PrintWriter(new FileOutputStream(prg, false));
+
+            out.write(strokes.toString());
+
+            out.flush();
+            out.close();
+
+            MediaScannerConnection.scanFile(getContext(),
+                    new String[] { prg.toString() }, null,
+                    new MediaScannerConnection.OnScanCompletedListener() {
+                        public void onScanCompleted(String path, Uri uri) {
+                            Log.i("IO", "Scanned " + path + ":");
+                            Log.i("IO", "-> uri=" + uri);
+                        }
+                    });
+        } catch (IOException e) {
+            Log.d("IO", e.getMessage());
+        }
+    }
+
     public void exportGCode() {
         File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
 
@@ -314,6 +359,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             out.printf("N%d G00 X0.0000 M05\n", line++);
             out.printf("N%d G54\n", line++);
             out.printf("N%d M30\n", line++);
+            out.printf("N%d %%",line++ );
 
             out.flush();
             out.close();
@@ -326,6 +372,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                             Log.i("IO", "-> uri=" + uri);
                         }
                     });
+
+            Toast.makeText(getContext(), "Saved to " + prg.toString(), Toast.LENGTH_SHORT);
         } catch (IOException e) {
             Log.d("IO", e.getMessage());
         }

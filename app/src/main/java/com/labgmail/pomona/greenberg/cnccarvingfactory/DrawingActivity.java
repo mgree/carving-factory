@@ -159,6 +159,7 @@ public class DrawingActivity extends AppCompatActivity {
                 Log.d("IO", "clicked");
                 if (ContextCompat.checkSelfPermission(self, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
                     mContentView.exportGCode();
+//                    mContentView.exportPath();
                     // TODO notify on success
                 } else {
                     ActivityCompat.requestPermissions(self,
