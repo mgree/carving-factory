@@ -1,14 +1,5 @@
 <resources>
     <string name="app_name">CNC Carving Factory</string>
-
     <string name="dummy_button">dummy_button</string>
-    <string name="Clear" >clear</string>
-    <string name="Undo" >undo</string>
-    <string name="color" >color</string>
-    <string name="alpha" >pick an alpha value</string>
-    <string name="set" >set</string>
-    <string name="cancel" >cancel</string>
-    <string name="settings" >settings</string>
     <string name="pref_unit_default">in</string>
-
 </resources>

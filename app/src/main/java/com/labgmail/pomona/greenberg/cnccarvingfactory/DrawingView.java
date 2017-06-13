@@ -196,7 +196,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         brush.setColor(in.readInt());
         try {
-            strokes = (LinkedList) in.readObject();
+            //noinspection unchecked
+            strokes = (LinkedList<Stroke>) in.readObject();
         } catch (ClassNotFoundException e) {
             throw new IOException(e);
         }
@@ -206,14 +207,19 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         Log.d("DIM", "updated key " + key);
 
-        if (key.equals(DisplaySettingsActivity.KEY_LENGTH)) {
-            stockLength = sharedPreferences.getInt(key, 0);
-        } else if (key.equals(DisplaySettingsActivity.KEY_WIDTH)) {
-            stockWidth = sharedPreferences.getInt(key, 0);
-        } else if (key.equals(DisplaySettingsActivity.KEY_WIDTH)) {
-            stockDepth = sharedPreferences.getInt(key,0);
-        } else if (key.equals(DisplaySettingsActivity.KEY_UNIT)) {
-            stockUnit = sharedPreferences.getString(key,"in");
+        switch (key) {
+            case DisplaySettingsActivity.KEY_LENGTH:
+                stockLength = sharedPreferences.getInt(key, 0);
+                break;
+            case DisplaySettingsActivity.KEY_WIDTH:
+                stockWidth = sharedPreferences.getInt(key, 0);
+                break;
+            case DisplaySettingsActivity.KEY_DEPTH:
+                stockDepth = sharedPreferences.getInt(key, 0);
+                break;
+            case DisplaySettingsActivity.KEY_UNIT:
+                stockUnit = sharedPreferences.getString(key, "in");
+                break;
         }
 
         postInvalidate();
@@ -225,58 +231,16 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         stockDepth = prefs.getInt(DisplaySettingsActivity.KEY_DEPTH, -1);
     }
 
-
-    public void exportPath(){
-        File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
-
-        try {
-            dir.mkdirs();
-
-            // compute the filename
-            StringBuffer filename = new StringBuffer();
-            CharSequence timestamp = DateFormat.format("yyyy-MM-ddThh:mm:ss", new Date());
-            filename.append("STROKELIST-");
-            filename.append(timestamp);
-            filename.append("_");
-            filename.append(Float.toString(stockWidth));
-            filename.append("x");
-            filename.append(Float.toString(stockLength));
-            filename.append(".txt"); // TODO: change back to prg (associate prg w/ text?)
-
-
-            File prg = new File(dir, filename.toString());
-            if (!prg.createNewFile()) {
-                throw new IOException("couldn't create file " + filename.toString());
-            }
-
-            PrintWriter out = new PrintWriter(new FileOutputStream(prg, false));
-
-            out.write(strokes.toString());
-
-            out.flush();
-            out.close();
-
-            MediaScannerConnection.scanFile(getContext(),
-                    new String[] { prg.toString() }, null,
-                    new MediaScannerConnection.OnScanCompletedListener() {
-                        public void onScanCompleted(String path, Uri uri) {
-                            Log.i("IO", "Scanned " + path + ":");
-                            Log.i("IO", "-> uri=" + uri);
-                        }
-                    });
-        } catch (IOException e) {
-            Log.d("IO", e.getMessage());
-        }
-    }
-
     public void exportGCode() {
         File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
 
         try {
-            dir.mkdirs();
+            if (dir.mkdirs()) {
+                throw new IOException("Couldn't find Documents directory");
+            }
 
             // compute the filename
-            StringBuffer filename = new StringBuffer();
+            StringBuilder filename = new StringBuilder();
             CharSequence timestamp = DateFormat.format("yyyy-MM-ddThh:mm:ss", new Date());
             filename.append(timestamp);
             filename.append("_");
@@ -285,7 +249,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             filename.append(Float.toString(stockLength));
             filename.append(".txt"); // TODO: change back to prg (associate prg w/ text?)
 
-
             File prg = new File(dir, filename.toString());
             if (!prg.createNewFile()) {
                 throw new IOException("couldn't create file " + filename.toString());
@@ -293,11 +256,18 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
             PrintWriter out = new PrintWriter(new FileOutputStream(prg, false));
 
+            // manual override of cutting parameters TODO make this configurable
             float oldStockDepth = stockDepth;
-            stockDepth = 0.72f;
+            float spoilBoard = 0.495f;
+            stockDepth = 0.72f; // manual override
 
-            // compute scale
-            float ipp = stockWidth / cutoffRight;
+            float boardHeight = spoilBoard + stockDepth;
+            float clearancePlane = boardHeight + 0.25f;
+            float cuttingDepth = boardHeight - 0.25f;
+
+            float ipp = stockWidth / cutoffRight; // scaling factor
+
+            stockDepth = oldStockDepth;
 
             // write metadata comments
             out.println("(generated by CNC Carving Factory)");
@@ -316,10 +286,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
             // write the strokes into the file in GCode format
             out.println("(carving)");
-
-            float boardHeight = 0.495f + 0.72f;
-            float clearancePlane = boardHeight + 0.25f;
-            float cuttingDepth = boardHeight - 0.25f;
 
             int numStrokes = 0;
             for (Stroke s : strokes) {
@@ -358,8 +324,10 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                 }
 
                 // emit pull out
-                out.printf("N%d G00 X%1.4f Y%1.4f\n", line++, last.x * ipp, last.y * ipp);
-                out.printf("N%d G00 Z%1.4f\n", line++, clearancePlane);
+                if (last != null) {
+                    out.printf("N%d G00 X%1.4f Y%1.4f\n", line++, last.x * ipp, last.y * ipp);
+                    out.printf("N%d G00 Z%1.4f\n", line++, clearancePlane);
+                }
             }
 
             // write outlude
@@ -371,7 +339,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             out.printf("N%d G00 X0.0000 M05\n", line++);
             out.printf("N%d G54\n", line++);
             out.printf("N%d M30\n", line++);
-            out.printf("N%d %%",line++ );
+            //noinspection UnusedAssignment
+            out.printf("N%d %%",line++);
 
             out.flush();
             out.close();
@@ -387,7 +356,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
             Toast.makeText(getContext(), "Saved to " + filename.toString(), Toast.LENGTH_SHORT).show();
         } catch (IOException e) {
-            Log.d("IO", e.getMessage());
+            Toast.makeText(getContext(), "Couldn't save file (" + e.getLocalizedMessage() + ")", Toast.LENGTH_SHORT).show();
+            Log.d("IO", e.toString());
         }
     }
 

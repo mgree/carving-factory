@@ -11,8 +11,6 @@ import java.io.Serializable;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Spliterator;
-import java.util.function.Consumer;
 
 /**
  * Custom pseudo-wrapper on paths, so we can actually save them. (android.os.Path isn't Parcelable!)
@@ -20,6 +18,7 @@ import java.util.function.Consumer;
  * Created by edinameshietedoho on 5/25/17.
  */
 
+@SuppressWarnings("WeakerAccess")
 public class Stroke extends Path implements Serializable, Iterable<PointF> {
 
     // TODO: Colors!
@@ -55,7 +54,7 @@ public class Stroke extends Path implements Serializable, Iterable<PointF> {
 
     @Override
     public String toString() {
-        StringBuffer string = new StringBuffer();
+        StringBuilder string = new StringBuilder();
 
         for(PointF p : points  ) {
             string.append(p.toString());
@@ -88,6 +87,7 @@ public class Stroke extends Path implements Serializable, Iterable<PointF> {
         }
     }
 
+    @SuppressWarnings({"EmptyMethod", "RedundantThrows", "unused"})
     private void readObjectNoData() throws ObjectStreamException { }
 
     public static final long serialVersionUID = 42L;

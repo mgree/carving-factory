@@ -1,30 +1,21 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
-import android.app.DialogFragment;
 import android.content.Context;
 import android.content.res.TypedArray;
-import android.os.Bundle;
-import android.os.Parcel;
-import android.os.Parcelable;
 import android.preference.DialogPreference;
-import android.support.annotation.Nullable;
 import android.util.AttributeSet;
-import android.util.Log;
-import android.util.TypedValue;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.NumberPicker;
-import android.widget.TextView;
 
 /**
+ * Custom number picker for integers.
+ *
  * Created by edinameshietedoho on 6/1/17.
  */
 
 public class NumberPickerPreference extends DialogPreference {
 
     private int mDistance;
-    private NumberPicker mDistPicker;
 
     public NumberPickerPreference(Context context) { this(context, null, 0); }
 
@@ -44,7 +35,7 @@ public class NumberPickerPreference extends DialogPreference {
 
         mDistance = getPersistedInt(-1);
 
-        mDistPicker = (NumberPicker) v.findViewById(R.id.measure_amount_id);
+        NumberPicker mDistPicker = (NumberPicker) v.findViewById(R.id.measure_amount_id);
         mDistPicker.setMinValue(0);
         mDistPicker.setMaxValue(2540); // 5' ... might need to convert to appropriate current unit So should we put unit conversion here too to accomodate or just set to 2540?
         mDistPicker.setValue(mDistance);
@@ -69,7 +60,7 @@ public class NumberPickerPreference extends DialogPreference {
         if (restore) {
             mDistance = getPersistedInt(-1);
         } else {
-            mDistance = ((Integer) defaultValue).intValue();
+            mDistance = (Integer) defaultValue;
             persistInt(mDistance);
         }
     }

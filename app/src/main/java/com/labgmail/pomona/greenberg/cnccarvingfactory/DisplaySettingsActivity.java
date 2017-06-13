@@ -1,6 +1,7 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
@@ -13,6 +14,8 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 /**
+ * Preference screen.
+ *
  * Created by edinameshietedoho on 5/31/17.
  */
 
@@ -48,20 +51,26 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
         public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
             Preference pref = findPreference(key);
 
-            if (key.equals(KEY_LENGTH) || key.equals(KEY_WIDTH) || key.equals(KEY_DEPTH)) {
-                // Keeps track of length, width, and depth inputs
-                pref.setSummary(Integer.toString(sharedPreferences.getInt(key, 0)) + mCurUnit);
-            } else if (key.equals(KEY_UNIT)) {
-                String newUnit = sharedPreferences.getString(KEY_UNIT, defaultUnit);
+            switch (key) {
+                case KEY_LENGTH:
+                case KEY_WIDTH:
+                case KEY_DEPTH:
+                    // Keeps track of length, width, and depth inputs
+                    pref.setSummary(Integer.toString(sharedPreferences.getInt(key, 0)) + mCurUnit);
+                    break;
+                case KEY_UNIT:
+                    String newUnit = sharedPreferences.getString(KEY_UNIT, defaultUnit);
 
-                if (newUnit.equals(mCurUnit)) {
-                    return;
-                }
+                    if (newUnit.equals(mCurUnit)) {
+                        return;
+                    }
 
-                convertDimensionsTo(newUnit);
-                pref.setSummary(newUnit);
-            } else {
-                Log.d("PREF",String.format("unknown key %s",key));
+                    convertDimensionsTo(newUnit);
+                    pref.setSummary(newUnit);
+                    break;
+                default:
+                    Log.d("PREF", String.format("unknown key %s", key));
+                    break;
             }
         }
 
@@ -70,15 +79,18 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
 
             double factor;
             int descIndex;
-            if (newUnit.equals("in")) {
-                factor = 1/2.54;
-                descIndex = 0;
-            } else if (newUnit.equals("cm")) {
-                factor = 2.54;
-                descIndex = 1;
-            } else {
-                Log.d("PREF",String.format("unfamiliar unit %s (currently in %s, staying there)", newUnit, mCurUnit));
-                return;
+            switch (newUnit) {
+                case "in":
+                    factor = 1 / 2.54;
+                    descIndex = 0;
+                    break;
+                case "cm":
+                    factor = 2.54;
+                    descIndex = 1;
+                    break;
+                default:
+                    Log.d("PREF", String.format("unfamiliar unit %s (currently in %s, staying there)", newUnit, mCurUnit));
+                    return;
             }
 
             mCurUnit = newUnit;
@@ -105,7 +117,9 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
         public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
             View view = super.onCreateView(inflater, container, savedInstanceState);
 
-            view.setBackgroundColor(getResources().getColor(android.R.color.background_light, null));
+            if (view != null) {
+                view.setBackgroundColor(Color.DKGRAY);
+            }
 
             return view;
         }

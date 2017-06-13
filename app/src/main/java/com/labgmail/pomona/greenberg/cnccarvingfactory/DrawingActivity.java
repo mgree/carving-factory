@@ -8,9 +8,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.ColorDrawable;
-import android.media.MediaScannerConnection;
-import android.net.Uri;
-import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -22,19 +19,13 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.Button;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.NumberPicker;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
-import java.io.PrintWriter;
 
 /**
  * Central drawing activity for (eventual) output to a CNC machine.
@@ -60,10 +51,7 @@ public class DrawingActivity extends AppCompatActivity {
     private final Handler mHideHandler = new Handler();
     private DrawingView mContentView;
     private ImageView swatch;
-    private String fileName = "sample.txt";
-    private String filePath = "MyFileStorage";
-    File myExternalFile;
-
+    private boolean pendingSave = false;
 
     private final Runnable mHidePart2Runnable = new Runnable() {
         @SuppressLint("InlinedApi")
@@ -94,7 +82,6 @@ public class DrawingActivity extends AppCompatActivity {
             mControlsView.setVisibility(View.VISIBLE);
         }
     };
-    private boolean mVisible;
     private final Runnable mHideRunnable = new Runnable() {
         @Override
         public void run() {
@@ -115,7 +102,6 @@ public class DrawingActivity extends AppCompatActivity {
             return false;
         }
     };
-    private boolean mCanWrite = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -125,7 +111,6 @@ public class DrawingActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_drawing);
 
-        mVisible = true;
         mControlsView = findViewById(R.id.fullscreen_content_controls);
         mContentView = (DrawingView) findViewById(R.id.fullscreen_content);
 
@@ -139,6 +124,13 @@ public class DrawingActivity extends AppCompatActivity {
         NumberPicker nPicker = (NumberPicker) findViewById(R.id.number_picker);
         nPicker.setMaxValue(255);
         nPicker.setMinValue(0);
+        nPicker.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
+            @Override
+            public void onValueChange(NumberPicker npicker, int oldVal, int newVal) {
+                newVal = npicker.getValue();
+                setAlpha(newVal); }
+        });
+        setAlpha(255);
 
         // FULLSCREEN SETUP
         // Upon interacting with UI controls, delay any scheduled hide()
@@ -159,34 +151,14 @@ public class DrawingActivity extends AppCompatActivity {
                 Log.d("IO", "clicked");
                 if (ContextCompat.checkSelfPermission(self, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
                     mContentView.exportGCode();
-//                    mContentView.exportPath();
-                    // TODO notify on success
                 } else {
+                    pendingSave = true;
                     ActivityCompat.requestPermissions(self,
                             new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE},
                             0);
-                    // TODO record pending save and call it in the onPermissions handler
                 }
            }
         });
-
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-            findViewById(R.id.save_button).setClickable(true);
-        } else {
-            ActivityCompat.requestPermissions(this,
-                    new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                    0);
-        }
-
-        // INITIALIZE NUMBER PICKER
-        NumberPicker picker = (NumberPicker) findViewById(R.id.number_picker);
-        picker.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
-            @Override
-            public void onValueChange(NumberPicker npicker, int oldVal, int newVal) {
-                newVal = npicker.getValue();
-                setAlpha(newVal); }
-        });
-        setAlpha(255);
 
         // SETTINGS BUTTON
         findViewById(R.id.settings_button).setOnClickListener(new View.OnClickListener() {
@@ -204,24 +176,12 @@ public class DrawingActivity extends AppCompatActivity {
             return;
         }
 
-        findViewById(R.id.save_button)
-                .setClickable(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED);
-    }
+        boolean success = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
 
-    private static boolean isExternalStorageReadOnly() {
-        String extStorageState = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(extStorageState)) {
-            return true;
+        if (success && pendingSave) {
+            pendingSave = false;
+            findViewById(R.id.save_button).performClick();
         }
-        return false;
-    }
-
-    private static boolean isExternalStorageAvailable() {
-        String extStorageState = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(extStorageState)) {
-            return true;
-        }
-        return false;
     }
 
     private void setAlpha(int alpha) {
@@ -284,7 +244,6 @@ public class DrawingActivity extends AppCompatActivity {
             actionBar.hide();
         }
         mControlsView.setVisibility(View.GONE);
-        mVisible = false;
 
         // Schedule a runnable to remove the status and navigation bar after a delay
         mHideHandler.removeCallbacks(mShowPart2Runnable);
