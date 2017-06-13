@@ -118,7 +118,7 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
             View view = super.onCreateView(inflater, container, savedInstanceState);
 
             if (view != null) {
-                view.setBackgroundColor(Color.DKGRAY);
+                view.setBackgroundColor(getResources().getColor(android.R.color.background_light, null));
             }
 
             return view;

@@ -235,9 +235,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
 
         try {
-            if (dir.mkdirs()) {
-                throw new IOException("Couldn't find Documents directory");
-            }
+            dir.mkdirs();
 
             // compute the filename
             StringBuilder filename = new StringBuilder();
@@ -289,6 +287,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
             int numStrokes = 0;
             for (Stroke s : strokes) {
+                // TODO: transformations on strokes (convert to stock coordinate system, Y inversion)
+
                 boolean cutting = false;
                 boolean fast = false;
 
@@ -303,7 +303,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
                     if (!cutting) {
                         // emit G00 moves, move in w/slow feed rate (first iteration)
-                        out.printf("N%d G00 X%1.4f Y%1.4f\n", line++, point.x * ipp, point.y * ipp);
+                        out.printf("N%d G00 X%1.4f Y%1.4f\n", line++, point.x * ipp, stockLength - point.y * ipp);
                         out.printf("N%d G00 Z%1.4f\n", line++, clearancePlane);
                         out.printf("N%d G01 Z%1.4f F80.0\n", line++, cuttingDepth);
 
@@ -311,12 +311,12 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                     } else {
                         if (!fast) {
                             // first G01 move, set high feedrate (second iteration)
-                            out.printf("N%d G01 X%1.4f Y%1.4f F250.0\n", line++, point.x * ipp, point.y * ipp);
+                            out.printf("N%d G01 X%1.4f Y%1.4f F250.0\n", line++, point.x * ipp, stockLength - point.y * ipp);
 
                             fast = true;
                         } else {
                             // general moves (other iterations)
-                            out.printf("N%d G01 X%1.4f Y%1.4f\n", line++, point.x * ipp, point.y * ipp);
+                            out.printf("N%d G01 X%1.4f Y%1.4f\n", line++, point.x * ipp, stockLength - point.y * ipp);
                         }
                     }
 
@@ -325,7 +325,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
                 // emit pull out
                 if (last != null) {
-                    out.printf("N%d G00 X%1.4f Y%1.4f\n", line++, last.x * ipp, last.y * ipp);
+                    out.printf("N%d G00 X%1.4f Y%1.4f\n", line++, last.x * ipp, stockLength - last.y * ipp);
                     out.printf("N%d G00 Z%1.4f\n", line++, clearancePlane);
                 }
             }
@@ -338,9 +338,9 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             out.printf("N%d G00 Y0.0000\n", line++);
             out.printf("N%d G00 X0.0000 M05\n", line++);
             out.printf("N%d G54\n", line++);
-            out.printf("N%d M30\n", line++);
             //noinspection UnusedAssignment
-            out.printf("N%d %%",line++);
+            out.printf("N%d M30\n", line++);
+            // some samples indicate a % sign after to ensure a newline, but our CNC code checker rejects it
 
             out.flush();
             out.close();
