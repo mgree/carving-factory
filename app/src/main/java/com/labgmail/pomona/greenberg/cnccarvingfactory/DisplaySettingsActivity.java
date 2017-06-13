@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 /**
  * Created by edinameshietedoho on 5/31/17.
@@ -68,10 +69,13 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
             // either: in -> cm or cm -> in
 
             double factor;
+            int descIndex;
             if (newUnit.equals("in")) {
                 factor = 1/2.54;
+                descIndex = 0;
             } else if (newUnit.equals("cm")) {
                 factor = 2.54;
+                descIndex = 1;
             } else {
                 Log.d("PREF",String.format("unfamiliar unit %s (currently in %s, staying there)", newUnit, mCurUnit));
                 return;
@@ -87,7 +91,13 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
                     .putInt(KEY_WIDTH, (int) Math.round(w * factor))
                     .putInt(KEY_LENGTH, (int) Math.round(l * factor))
                     .putInt(KEY_DEPTH, (int) Math.round(d * factor))
-                    .commit();
+                    .apply();
+
+            Toast.makeText(
+                    getContext(),
+                    "Converted to " + getResources().getStringArray(R.array.units)[descIndex] + ", adjusted stock dimensions",
+                    Toast.LENGTH_SHORT)
+                    .show();
         }
 
 

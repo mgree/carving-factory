@@ -115,23 +115,26 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                curStroke = new Stroke(brush.getColor());
-                addMotionEvent(event);
-                break;
             case MotionEvent.ACTION_MOVE:
                 addMotionEvent(event);
                 break;
             case MotionEvent.ACTION_UP:
                 addMotionEvent(event);
-                Log.d("TOUCH", String.format("cutoff %1.4f/%1.4f stroke %s", cutoffRight, cutoffBottom, curStroke.toString()));
-                strokes.add(curStroke);
-                curStroke = null;
+                saveStroke();
                 break;
             default:
                 break;
         }
 
         return true;
+    }
+
+    private void saveStroke() {
+        if (curStroke != null) {
+            strokes.add(curStroke);
+        }
+
+        curStroke = null;
     }
 
 
@@ -168,7 +171,16 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
     private void addPoint(long time, float x, float y) {
-        curStroke.addPoint(time, Math.min(x, cutoffRight), Math.min(y, cutoffBottom));
+        if (x > cutoffRight || y > cutoffBottom) {
+            saveStroke();
+            return;
+        }
+
+        if (curStroke == null) {
+            curStroke = new Stroke(brush.getColor());
+        }
+
+        curStroke.addPoint(time, x, y);
     }
 
     public void saveState(OutputStream state) throws IOException {
@@ -373,7 +385,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                         }
                     });
 
-            Toast.makeText(getContext(), "Saved to " + prg.toString(), Toast.LENGTH_SHORT);
+            Toast.makeText(getContext(), "Saved to " + filename.toString(), Toast.LENGTH_SHORT).show();
         } catch (IOException e) {
             Log.d("IO", e.getMessage());
         }
