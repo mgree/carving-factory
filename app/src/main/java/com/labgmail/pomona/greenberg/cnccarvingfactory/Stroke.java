@@ -24,10 +24,12 @@ public class Stroke extends Path implements Serializable, Iterable<PointF> {
     // TODO: Colors!
 
     private int color;
+    private float sWidth;
     private List<PointF> points = new LinkedList<>();
 
-    public Stroke(int color) {
+    public Stroke(int color, float sWidth) {
         this.color = color;
+        this.sWidth = sWidth;
     }
 
     public Path getPath() {
@@ -52,6 +54,8 @@ public class Stroke extends Path implements Serializable, Iterable<PointF> {
         return color;
     }
 
+    public float getsWidth() { return sWidth; }
+
     @Override
     public String toString() {
         StringBuilder string = new StringBuilder();
@@ -65,6 +69,7 @@ public class Stroke extends Path implements Serializable, Iterable<PointF> {
 
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.writeInt(color);
+        out.writeFloat(sWidth);
 
         out.writeInt(points.size());
         for (PointF p : points) {
@@ -77,6 +82,7 @@ public class Stroke extends Path implements Serializable, Iterable<PointF> {
 
     private void readObject(ObjectInputStream in) throws IOException {
         color = in.readInt();
+        sWidth = in.readFloat();
 
         int size = in.readInt();
         points = new LinkedList<>();

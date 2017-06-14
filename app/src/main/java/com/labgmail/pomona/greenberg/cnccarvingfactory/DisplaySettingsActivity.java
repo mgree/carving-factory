@@ -25,6 +25,8 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
     public static final String KEY_LENGTH = "pref_wLength";
     public static final String KEY_WIDTH = "pref_wWidth";
     public static final String KEY_UNIT = "pref_units";
+    public static final String KEY_SDEPTH = "pref_spoilB";
+    public static final String KEY_SWIDTH = "pref_sWidth";
 
     public static class SettingsFragment extends PreferenceFragment implements SharedPreferences.OnSharedPreferenceChangeListener {
 
@@ -42,7 +44,7 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
             mCurUnit = prefs.getString(KEY_UNIT, defaultUnit);
             findPreference(KEY_UNIT).setSummary(mCurUnit);
 
-            for (String key : new String[] { KEY_LENGTH, KEY_WIDTH , KEY_DEPTH }) {
+            for (String key : new String[] { KEY_LENGTH, KEY_WIDTH , KEY_DEPTH, KEY_SDEPTH, KEY_SWIDTH }) {
                 findPreference(key).setSummary(Integer.toString(prefs.getInt(key, 0)) + mCurUnit );
             }
         }
@@ -52,10 +54,12 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
             Preference pref = findPreference(key);
 
             switch (key) {
+                case KEY_SWIDTH:
+                case KEY_SDEPTH:
                 case KEY_LENGTH:
                 case KEY_WIDTH:
                 case KEY_DEPTH:
-                    // Keeps track of length, width, and depth inputs
+                    // Keeps track of length, width, depth, and spoil board depth inputs
                     pref.setSummary(Integer.toString(sharedPreferences.getInt(key, 0)) + mCurUnit);
                     break;
                 case KEY_UNIT:
@@ -99,10 +103,14 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
             int w = prefs.getInt(KEY_WIDTH, 0);
             int l = prefs.getInt(KEY_LENGTH, 0);
             int d = prefs.getInt(KEY_DEPTH, 0);
+            int s = prefs.getInt(KEY_SDEPTH,0);
+            int b = prefs.getInt(KEY_SWIDTH,0);
             prefs.edit()
                     .putInt(KEY_WIDTH, (int) Math.round(w * factor))
                     .putInt(KEY_LENGTH, (int) Math.round(l * factor))
                     .putInt(KEY_DEPTH, (int) Math.round(d * factor))
+                    .putInt(KEY_SDEPTH, (int) Math.round(s * factor))
+                    .putInt(KEY_SWIDTH, (int) Math.round(b * factor))
                     .apply();
 
             Toast.makeText(
