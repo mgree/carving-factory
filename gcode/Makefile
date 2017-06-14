@@ -1,10 +1,12 @@
+CLASSPATH=antlr-4.7-complete.jar:.
+
 test-gui : build-gui
-	java GCodeReader Heart.txt s8
+	java -cp $(CLASSPATH) GCodeReader Heart.txt s8
 
 build-gui : PrgLexer.tokens Line.class Arc.class Command.class GCodeReader.class
 
 test-gen : build-gen
-	java GCodeGenerator
+	java -cp $(CLASSPATH) GCodeGenerator
 
 build-gen : PrgLexer.tokens Line.class Arc.class Command.class GCodeGenerator.class
 
@@ -14,11 +16,11 @@ test-parser : build-parser
 build-parser : PrgLexer.tokens Command.class PrgTest.class
 
 PrgLexer.tokens : Prg.g4
-	java -jar /usr/local/lib/antlr-4.7-complete.jar $<
+	java -jar antlr-4.7-complete.jar $<
 	javac Prg*.java
 
 %.class : %.java
-	javac -cp /usr/local/lib/antlr-4.7-complete.jar:. $<
+	javac -cp $(CLASSPATH) $<
 
 clean :
 	-rm -f *.class *.tokens
