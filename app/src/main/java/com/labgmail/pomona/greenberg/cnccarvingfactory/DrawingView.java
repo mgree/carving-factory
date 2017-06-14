@@ -40,7 +40,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     private float stockLength = -1;
     private float stockWidth = -1;
     private float stockDepth = -1;
-    private float stocksWidth = -1;
+    private float strokeWidth = -1;
     private float cutoffRight = -1;
     private float cutoffBottom = -1;
     private String stockUnit = "undef";
@@ -59,7 +59,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         brush.setStyle(Paint.Style.STROKE);
         brush.setARGB(255, 0, 0, 0);
         brush.setAntiAlias(true);
-        setSW();
     }
 
     @Override
@@ -98,13 +97,13 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         brush.setStyle(Paint.Style.STROKE);
         for (Stroke s : strokes) {
             brush.setColor(s.getColor());
-            brush.setStrokeWidth(s.getsWidth());
+            brush.setStrokeWidth(s.getStrokeWidth() * scale);
             canvas.drawPath(s.getPath(), brush);
 
         }
 
         brush.setColor(curColor);
-        setSW();
+        brush.setStrokeWidth(strokeWidth * scale);
         if (curStroke != null) {
             canvas.drawPath(curStroke.getPath(), brush);
         }
@@ -178,7 +177,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
 
         if (curStroke == null) {
-            curStroke = new Stroke(brush.getColor(),brush.getStrokeWidth());
+            curStroke = new Stroke(brush.getColor(), strokeWidth);
         }
 
         curStroke.addPoint(time, x, y);
@@ -224,8 +223,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                 stockUnit = sharedPreferences.getString(key, "in");
                 break;
             case DisplaySettingsActivity.KEY_SWIDTH:
-                stocksWidth = sharedPreferences.getInt(key, 0);
-//                setSW();
+                strokeWidth = sharedPreferences.getInt(key, 0);
                 break;
         }
 
@@ -236,14 +234,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         stockLength = prefs.getInt(DisplaySettingsActivity.KEY_LENGTH, -1);
         stockWidth = prefs.getInt(DisplaySettingsActivity.KEY_WIDTH, -1);
         stockDepth = prefs.getInt(DisplaySettingsActivity.KEY_DEPTH, -1);
-        stocksWidth = prefs.getInt(DisplaySettingsActivity.KEY_SWIDTH, -1);
+        strokeWidth = prefs.getInt(DisplaySettingsActivity.KEY_SWIDTH, -1);
     }
-
-    public void setSW() {
-        brush.setStrokeWidth(stocksWidth);
-        Log.d("STROKE", " " + stocksWidth + " ");
-    }
-
 
     public void exportGCode() {
         File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);

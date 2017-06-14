@@ -30,7 +30,7 @@
         <com.labgmail.pomona.greenberg.cnccarvingfactory.NumberPickerPreference
             android:key="pref_sWidth"
             android:id="@+id/stroke_patch"
-            android:title="Stock stroke width"
+            android:title="Drill bit dimameter"
             android:defaultValue="@integer/pref_stroke_default" />
     </PreferenceCategory>
 </PreferenceScreen>

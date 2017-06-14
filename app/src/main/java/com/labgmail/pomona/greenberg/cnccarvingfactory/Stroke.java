@@ -54,7 +54,7 @@ public class Stroke extends Path implements Serializable, Iterable<PointF> {
         return color;
     }
 
-    public float getsWidth() { return sWidth; }
+    public float getStrokeWidth() { return sWidth; }
 
     @Override
     public String toString() {
