@@ -30,7 +30,8 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.BasicStroke;
 import java.awt.geom.*;
-
+import java.awt.event.*;
+import javax.swing.event.*;
 
 
 public class GCodeReader {
@@ -72,7 +73,7 @@ private static double minZ = 0.0;
 
 //Initialize starting point
 private static double prevX = 0.0;
-private static double prevY = 0.0;
+private static double prevY = dimY;
 private static double prevZ = 0.0;
 
 //Initialize arc centers
@@ -245,7 +246,7 @@ public static Command createCommand(PrgParser.CommandContext c){
                 }
         }
         //If it's a normal command, proceed as usual
-        else if (normalCmd != null){
+        else if (normalCmd != null) {
 
                 //get the type and set the type to that character
                 //(For unclear reasons, using tokens here made things mor difficult)
@@ -329,11 +330,11 @@ public static void processCommand(Command c){
         if (type == 'G') {
                 switch (mode) {
                 case 0:
-                        if (outOfBounds(prevX, prevY, X, Y)) {
+                        if (outOfBounds(prevX, dimY - prevY, X, dimY - Y)) {
                                 System.err.println("Warning: Moving outside stock limits");
                         }
-                        System.err.println("Rapid Move: ("+ prevX*scale + ", " + prevY*scale + ", " +
-                                           prevZ*scale + "), (" + X*scale + ", " + Y*scale + ", " + Z +
+                        System.err.println("Rapid Move: ("+ prevX*scale + ", " + (dimY - prevY)*scale + ", " +
+                                           prevZ*scale + "), (" + X*scale + ", " + (dimY - Y)*scale + ", " + Z +
                                            ") at feed rate " + parameters.get('F') );
                         break;
                 case 1:
@@ -347,20 +348,20 @@ public static void processCommand(Command c){
                                            ") at feed rate " + parameters.get('F') );
                         break;
                 case 2:
-                        if (outOfBounds(prevX, prevY, X, Y)) {
-                                System.err.println("Warning: Arc may not fit on specified stock");
+                        if (outOfBounds(prevX, dimY - prevY, X, dimY - Y)) {
+                                System.err.println("Warning: Arc will not fit on specified stock");
                                 validDrawing = false;
                         }
-                        //DOES THE -1 ACTUALLY MATTER AT ALL??
                         Arc newArc;
                         if (isRadiusArc()) {
-                                newArc = new Arc(parameters.get('R'), prevX, prevY, X, Y, -1, toolLibrary.get((int)Math.round(parameters.get('T'))));
+                                newArc = new Arc(parameters.get('R'), prevX, dimY - prevY, X, dimY - Y, -1, toolLibrary.get((int)Math.round(parameters.get('T'))));
                                 //if the radius is negative, draw the inverse
                                 if (parameters.get('R')  < 0) {
                                         newArc.inverseArc();
+                                        System.err.println("DREW INVERSE ARC");
                                 }
                         } else {
-                                newArc = new Arc(parameters.get('I'), parameters.get('J'), prevX, prevY, X, Y, -1, toolLibrary.get((int)Math.round(parameters.get('T'))));
+                                newArc = new Arc(parameters.get('I'), parameters.get('J'), prevX, dimY - prevY, X, dimY - Y, -1, toolLibrary.get((int)Math.round(parameters.get('T'))));
                         }
                         arcs.add(newArc);
                         System.err.println("Clockwise arc drawn with center (" +  newArc.getCenterX() +
@@ -368,19 +369,20 @@ public static void processCommand(Command c){
                                            newArc.getStartAngle() + " to " + newArc.getEndAngle());
                         break;
                 case 3:
-                        if (outOfBounds(prevX, prevY, X, Y)) {
-                                System.err.println("Warning: Arc may not fit on specified stock");
+                        if (outOfBounds(prevX, dimY - prevY, X, dimY - Y)) {
+                                System.err.println("Warning: Arc will not fit on specified stock");
                                 validDrawing = false;
                         }
                         Arc aNewArc;
                         if (isRadiusArc()) {
-                                aNewArc = new Arc(parameters.get('R'), prevX, prevY, X, Y, 1, toolLibrary.get((int)Math.round(parameters.get('T'))));
+                                aNewArc = new Arc(parameters.get('R'), prevX, dimY - prevY, X, dimY - Y, 1, toolLibrary.get((int)Math.round(parameters.get('T'))));
                                 //if the radius is negative, draw the inverse
                                 if (parameters.get('R')  < 0) {
                                         aNewArc.inverseArc();
+                                        System.err.println("DREW INVERSE ARC");
                                 }
                         } else {
-                                aNewArc = new Arc(parameters.get('I'), parameters.get('J'), prevX, prevY, X, Y, 1, toolLibrary.get((int)Math.round(parameters.get('T'))));
+                                aNewArc = new Arc(parameters.get('I'), parameters.get('J'), prevX, pxDimY - prevY, X, pxDimY - Y, 1, toolLibrary.get((int)Math.round(parameters.get('T'))));
                         }
                         arcs.add(aNewArc);
 
@@ -650,8 +652,9 @@ public static void processCommand(Command c){
 /* Creates and shows the GUI window */
 private static void createAndShowGUI() {
         JFrame f = new JFrame("GCode Results");
+
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        f.add(new MyPanel(lines, arcs, scaleFactor, scale));
+        f.add(new MyPanel (lines, arcs, scaleFactor, scale, pxDimY));
         f.setPreferredSize(new Dimension(pxDimX, pxDimY));
         f.pack();
         f.setVisible(true);
@@ -740,10 +743,10 @@ private static double findScaleFactor (int xDim, int yDim){
  * in radius mode
  */
 private static Boolean isRadiusArc(){
-        return (prevI == parameters.get('I') && prevJ == parameters.get('J') &&
-                prevK == parameters.get('K') && prevR != parameters.get('R'));
+        return ((prevI ==parameters.get('I')) &&
+                (prevJ == parameters.get('J')) &&
+                (prevK == parameters.get('K')));
 }
-
 }
 
 
@@ -753,43 +756,110 @@ private static Boolean isRadiusArc(){
  *
  **/
 
+
 class MyPanel extends JPanel {
 ArrayList<Line> theLines;
 ArrayList<Arc> theArcs;
 double scale; //This is automatically found for displaying the window correctly
 double auxScale; //This is used for debugging so you can easily scale your design up and
                  //down without manually altering all the gcode values
+int upToThisPointLines;
+int upToThisPointArcs;
+int pxDimY;
 
-
-public MyPanel(ArrayList<Line> j, ArrayList<Arc> k, double scaleFactor, double auxilliaryScale) {
+public MyPanel(ArrayList<Line> j, ArrayList<Arc> k, double scaleFactor, double auxilliaryScale, int pxdy) {
         setBorder(BorderFactory.createLineBorder(Color.black));
         theLines = j;
         theArcs = k;
         scale = scaleFactor;
         auxScale = auxilliaryScale;
+        pxDimY = pxdy;
+
+        //Set up GUI elements
+        upToThisPointLines = theLines.size();
+        upToThisPointArcs = theArcs.size();
+        JSlider upToLines = new JSlider(0, upToThisPointLines, upToThisPointLines);
+        JSlider upToArcs = new JSlider(0, upToThisPointArcs, upToThisPointArcs);
+        JLabel upToLinesText = new JLabel("Lines: " + Integer.toString(upToThisPointLines));
+        JLabel upToArcsText = new JLabel("Arcs: " + Integer.toString(upToThisPointArcs));
+        JButton getInfo = new JButton ("Get Arc info");
+
+
+
+
+
+        upToLines.addChangeListener(new ChangeListener() {
+                        public void stateChanged(ChangeEvent e) {
+                                upToThisPointLines = upToLines.getValue();
+                                upToLinesText.setText("Lines: " + Integer.toString(upToThisPointLines));
+                                repaint();
+                        }
+                });
+
+        upToArcs.addChangeListener(new ChangeListener() {
+                        public void stateChanged(ChangeEvent e) {
+                                upToThisPointArcs = upToArcs.getValue();
+                                upToArcsText.setText("Arcs: " + Integer.toString(upToThisPointArcs));
+                                repaint();
+                        }
+                });
+
+        getInfo.addActionListener(new ActionListener() {
+                        public void actionPerformed(ActionEvent e) {
+                                System.out.println(theArcs.get(upToArcs.getValue()-1).toString());
+                        }
+                });
+
+        this.add(upToLines);
+        this.add(upToLinesText);
+        this.add(upToArcs);
+        this.add(upToArcsText);
+        this.add(getInfo);
 }
+
 
 public Dimension getPreferredSize() {
         return new Dimension(250,200);
 }
+
 
 protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
         Graphics2D g2 = (Graphics2D) g;
 
-        for (Line l : theLines) {
+        for (int i = 0; i < upToThisPointLines; i++) {
+                Line l = theLines.get(i);
                 g2.setStroke(new BasicStroke((float)(scale*l.getLineWidth())));
-                g.drawLine((int)Math.round(l.getStartX()*scale * auxScale), (int)Math.round(l.getStartY()*scale * auxScale),
-                           (int)Math.round(l.getEndX()*scale * auxScale), (int)Math.round(l.getEndY()*scale * auxScale));
+                g.drawLine((int)Math.round(l.getStartX()*scale * auxScale), pxDimY - (int)Math.round(l.getStartY()*scale * auxScale),
+                           (int)Math.round(l.getEndX()*scale* auxScale),  pxDimY - (int)Math.round(l.getEndY()*scale * auxScale));
+
+                // System.out.println("StartX " + (int)Math.round(l.getStartX()*scale * auxScale) + " StartY " + (int)Math.round(l.getStartY()*scale * auxScale)
+                //            + " EndX " + (int)Math.round(l.getEndX()*scale* auxScale) + " EndY " + (int)Math.round(l.getEndY()*scale * auxScale));
         }
 
-        for (Arc a : theArcs) {
+        for (int i = 0; i < upToThisPointArcs; i++) {
+                Arc a = theArcs.get(i);
                 double[] dInfo = a.getDrawingInfo();
                 g2.setStroke(new BasicStroke((float)(scale*a.getLineWidth())));
-                g.drawArc((int)Math.round(dInfo[0]), (int)Math.round(dInfo[1]),
-                          (int)Math.round(dInfo[2]), (int)Math.round(dInfo[3]), (int)Math.round(dInfo[4]),
+                g.drawArc((int)Math.round(dInfo[0]*scale * auxScale), (int)Math.round(dInfo[1]*scale * auxScale),
+                          (int)Math.round(dInfo[2]*scale * auxScale), (int)Math.round(dInfo[3]*scale * auxScale), (int)Math.round(dInfo[4]),
                           (int)Math.round(dInfo[5]));
         }
+
+        g2.setStroke(new BasicStroke(1f));
+
+
+          //so at the end of the day what i've got is that sometimes it should be inverted but it's not registering as needing to be inverted
+          //TODO
+            //add a line number or something to arcs so that I can access the gcode line that give that result
+            //Deal with that
+        g.drawArc((int)(4*scale * auxScale), (int)(6*scale * auxScale), (
+                          (int)Math.round(5.763999938964844*scale * auxScale)),
+                  ((int)Math.round(5.763999938964844*scale * auxScale)),
+                  (int)Math.round(-167.62976487793446), (int)Math.round(306.9495106973294 - 360));
+
+
+
 }
 }

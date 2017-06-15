@@ -37,6 +37,7 @@ double[] drawingInfo;
 
 //CONSTRUCTOR WITH RADIUS AND TWO POINTS
 public Arc (double r, double x0, double y0, double x1, double y1, int e, double lineWidth){
+
         this.r = r;
         this.x0 = x0;
         this.y0 = y0;
@@ -60,8 +61,8 @@ public Arc (double r, double x0, double y0, double x1, double y1, int e, double 
         h = Math.sqrt(Math.pow(r,2) - (Math.pow(d,2)/4));
 
         //get the center
-        a = m1- e*h*v;
-        b = m2 + e*h*u;
+        a = m1 + e*h*v;
+        b = m2 - e*h*u;
 
         //find rectangle dimensions
         rectx =  (int)Math.round(a - r);
@@ -73,7 +74,6 @@ public Arc (double r, double x0, double y0, double x1, double y1, int e, double 
         deltaAngle = endAngle - startAngle;
 
         drawingInfo = new double[] {rectx, recty, 2*r, 2*r, (int)Math.round(startAngle), (int)Math.round(deltaAngle)};
-
 }
 
 //CONSTRUCTOR WITH CENTER AND TWO POINTS
@@ -87,8 +87,9 @@ public Arc (double a, double b, double x0, double y0, double x1, double y1, int 
         this.e = e;
         this.lineWidth = lineWidth;
 
+
         //calculate the distance between them
-        r = Math.sqrt(Math.pow((x1-a), 2) + Math.pow((y1-a), 2));
+        r = Math.sqrt(Math.pow((x1-a), 2) + Math.pow((y1-b), 2));
 
         //find the midpoint
         m1 = (x0+x1)/2;
@@ -108,22 +109,9 @@ public Arc (double a, double b, double x0, double y0, double x1, double y1, int 
 
 
 /* Returns the inverse of the arc (the remainder of the circle the arc is a section of)
-To get the reverse of the arc, swap the start and end points and subtract 360 from the deltaAngle */
+To get the reverse of the arc, swap the deltaAngle for deltaAngle-(360*e) */
 public void inverseArc(){
-        double xtemp = x0;
-        double ytemp = y0;
-        x0 = x1;
-        y0 = y1;
-        x1 = xtemp;
-        y1 = ytemp;
-
-        //recalculate the angles
-        startAngle = (180/Math.PI * Math.atan2(b-y0, x0-a));
-        endAngle = (180/Math.PI * Math.atan2(b-y1, x1-a));
-        deltaAngle = endAngle - startAngle;
-
-        //update the drawingInfo
-        drawingInfo[4] = (int)Math.round(startAngle);
+        deltaAngle -= 360*e;
         drawingInfo[5] = (int)Math.round(deltaAngle) - 360;
 }
 
