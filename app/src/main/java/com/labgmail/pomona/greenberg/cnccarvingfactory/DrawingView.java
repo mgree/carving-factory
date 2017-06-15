@@ -40,6 +40,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     private float stockLength = -1;
     private float stockWidth = -1;
     private float stockDepth = -1;
+    private float strokeWidth = -1;
     private float cutoffRight = -1;
     private float cutoffBottom = -1;
     private String stockUnit = "undef";
@@ -56,7 +57,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
     private void initializeBrush() {
         brush.setStyle(Paint.Style.STROKE);
-        brush.setStrokeWidth(5);
         brush.setARGB(255, 0, 0, 0);
         brush.setAntiAlias(true);
     }
@@ -93,17 +93,17 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         // BOTTOM
         canvas.drawRect(0, cutoffBottom, width, height, brush);
 
-        //Multiply by the scale factor and the value the user gives and then open a window with those dimensions
 
         brush.setStyle(Paint.Style.STROKE);
         for (Stroke s : strokes) {
             brush.setColor(s.getColor());
+            brush.setStrokeWidth(s.getStrokeWidth() * scale);
             canvas.drawPath(s.getPath(), brush);
 
         }
 
         brush.setColor(curColor);
-
+        brush.setStrokeWidth(strokeWidth * scale);
         if (curStroke != null) {
             canvas.drawPath(curStroke.getPath(), brush);
         }
@@ -177,7 +177,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
 
         if (curStroke == null) {
-            curStroke = new Stroke(brush.getColor());
+            curStroke = new Stroke(brush.getColor(), strokeWidth);
         }
 
         curStroke.addPoint(time, x, y);
@@ -187,6 +187,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         ObjectOutputStream out = new ObjectOutputStream(state);
 
         out.writeInt(brush.getColor());
+        out.writeFloat(brush.getStrokeWidth());
         out.writeObject(strokes);
         out.flush();
     }
@@ -195,6 +196,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         ObjectInputStream in = new ObjectInputStream(state);
 
         brush.setColor(in.readInt());
+        brush.setStrokeWidth(in.readFloat());
         try {
             //noinspection unchecked
             strokes = (LinkedList<Stroke>) in.readObject();
@@ -220,6 +222,9 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             case DisplaySettingsActivity.KEY_UNIT:
                 stockUnit = sharedPreferences.getString(key, "in");
                 break;
+            case DisplaySettingsActivity.KEY_SWIDTH:
+                strokeWidth = sharedPreferences.getInt(key, 0);
+                break;
         }
 
         postInvalidate();
@@ -229,6 +234,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         stockLength = prefs.getInt(DisplaySettingsActivity.KEY_LENGTH, -1);
         stockWidth = prefs.getInt(DisplaySettingsActivity.KEY_WIDTH, -1);
         stockDepth = prefs.getInt(DisplaySettingsActivity.KEY_DEPTH, -1);
+        strokeWidth = prefs.getInt(DisplaySettingsActivity.KEY_SWIDTH, -1);
     }
 
     public void exportGCode() {
@@ -319,10 +325,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                             out.printf("N%d G01 X%1.4f Y%1.4f\n", line++, point.x * ipp, stockLength - point.y * ipp);
                         }
                     }
-
                     last = point;
                 }
-
                 // emit pull out
                 if (last != null) {
                     out.printf("N%d G00 X%1.4f Y%1.4f\n", line++, last.x * ipp, stockLength - last.y * ipp);
