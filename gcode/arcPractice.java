@@ -42,7 +42,7 @@ public static void main(String[] args) {
 
 //Create the GUI
                 private static void createAndShowGUI() {
-        JFrame f = new JFrame("GCode Results");
+        JFrame f = new JFrame("Arc Practice");
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         f.add(new MyPanel());
         f.setPreferredSize(new Dimension(300, 300));
@@ -67,85 +67,85 @@ public Dimension getPreferredSize() {
 protected void paintComponent(Graphics g) {
         //these are inputs
         // N14 G02 X20.2112 Y10.1784 R=6.7108 F250.0
-        // double scalar = 12;
-        // double r = 3.1377 * scalar;
-        // double x0 = 23.6187 * scalar;
-        // double y0 = 13.7414 * scalar;
-        // double x1 = 22.6248 * scalar;
-        // double y1 = 11.6417 * scalar;
-        // double d; //distance between points
-        // double m1;      //the midpoint x
-        // double m2;      //the midpoint y
-        // double u;       //the normal
-        // double v;       //the normal
-        // double h;       //height (distance to center)
-        // int e = 1;      //counterclockwise pt 1 to pt2 is 1
-        //                 //clockwise pt 1 to pt 2 is -1
-        // double a, b;    //the x and y of the center
+        double scalar = 12;
+        double r = 3.1377 * scalar;
+        double x0 = 23.6187 * scalar;
+        double y0 = 13.7414 * scalar;
+        double x1 = 22.6248 * scalar;
+        double y1 = 11.6417 * scalar;
+        double d; //distance between points
+        double m1;      //the midpoint x
+        double m2;      //the midpoint y
+        double u;       //the normal
+        double v;       //the normal
+        double h;       //height (distance to center)
+        int e = 1;      //counterclockwise pt 1 to pt2 is 1
+                        //clockwise pt 1 to pt 2 is -1
+        double a, b;    //the x and y of the center
 
         super.paintComponent(g);
 
         Graphics2D g2 = (Graphics2D) g;
 
-        // //draw the start and end points
-        // g2.setStroke(new BasicStroke(3));
-        // g.drawLine((int)Math.round(x0),(int)Math.round(y0),(int)Math.round(x0),(int)Math.round(y0));
-        // g.drawLine((int)Math.round(x1),(int)Math.round(y1),(int)Math.round(x1),(int)Math.round(y1));
-        //
-        // //draw the line between them
-        // g2.setStroke(new BasicStroke(1));
-        // g.drawLine((int)Math.round(x0),(int)Math.round(y0),(int)Math.round(x1),(int)Math.round(y1));
-        //
-        // //calculate the distance between them
-        // d = Math.sqrt(Math.pow((x1-x0), 2) + Math.pow((y1-y0), 2));
-        //
-        // //find the midpoint
-        // m1 = (x0+x1)/2;
-        // m2 = (y0 + y1)/2;
-        //
-        // //find the normal
-        // u = (x1-x0)/d;
-        // v = (y1 - y0)/d;
-        //
-        // //find the height
-        // h = Math.sqrt(Math.pow(r,2) - (Math.pow(d,2)/4));
-        //
-        // //get the center
-        // a = m1 + e*h*v;
-        // b = m2 - e*h*u;
-        //
-        // System.out.println ("a: " + a + " b: " + b);
-        // //drawing results
-        // //points to center
-        // g.drawLine((int)Math.round(x0),(int)Math.round(y0), (int)Math.round(a),(int)Math.round(b));
-        // g.drawLine((int)Math.round(x1),(int)Math.round(y1), (int)Math.round(a), (int)Math.round(b));
-        //
-        // //draw center
-        // g2.setStroke(new BasicStroke(5));
-        // g.drawLine((int)Math.round(a),(int)Math.round(b),(int)Math.round(a),(int)Math.round(b));
-        //
-        //
-        // //find rectangle dimensions
-        // int rectx =  (int)Math.round(a - r);
-        // int recty = (int)Math.round(b - r);
-        //
-        // //draw bounding box
-        // g2.setStroke(new BasicStroke(1));
-        // g.drawRect(rectx, recty, (int)Math.round(2*r), (int)Math.round(2*r));
-        //
-        //
-        // //calculate angles
-        // double startAngle = (180/Math.PI * Math.atan2(b-y0, x0-a));
-        // double endAngle = (180/Math.PI * Math.atan2(b-y1, x1-a));
-        //  double deltaAngle = endAngle - startAngle;
-        //
-        // //double deltaAngle = startAngle - endAngle;
-        // System.out.println("deltaAngle: "+ deltaAngle);
-        //
-        //
-        // //draw the arc
-        // g.drawArc(rectx, recty, (int)Math.round(2*r), (int)Math.round(2*r), (int)Math.round(startAngle), (int)Math.round(deltaAngle));
-        // //g.drawArc(rectx, recty, (int)Math.round(2*r), (int)Math.round(2*r), (int)Math.round(startAngle), (int)Math.round(deltaAngle-(360*e)));
+        //draw the start and end points
+        g2.setStroke(new BasicStroke(3));
+        g.drawLine((int)Math.round(x0),(int)Math.round(y0),(int)Math.round(x0),(int)Math.round(y0));
+        g.drawLine((int)Math.round(x1),(int)Math.round(y1),(int)Math.round(x1),(int)Math.round(y1));
+
+        //draw the line between them
+        g2.setStroke(new BasicStroke(1));
+        g.drawLine((int)Math.round(x0),(int)Math.round(y0),(int)Math.round(x1),(int)Math.round(y1));
+
+        //calculate the distance between them
+        d = Math.sqrt(Math.pow((x1-x0), 2) + Math.pow((y1-y0), 2));
+
+        //find the midpoint
+        m1 = (x0+x1)/2;
+        m2 = (y0 + y1)/2;
+
+        //find the normal
+        u = (x1-x0)/d;
+        v = (y1 - y0)/d;
+
+        //find the height
+        h = Math.sqrt(Math.pow(r,2) - (Math.pow(d,2)/4));
+
+        //get the center
+        a = m1 + e*h*v;
+        b = m2 - e*h*u;
+
+        System.out.println ("a: " + a + " b: " + b);
+        //drawing results
+        //points to center
+        g.drawLine((int)Math.round(x0),(int)Math.round(y0), (int)Math.round(a),(int)Math.round(b));
+        g.drawLine((int)Math.round(x1),(int)Math.round(y1), (int)Math.round(a), (int)Math.round(b));
+
+        //draw center
+        g2.setStroke(new BasicStroke(5));
+        g.drawLine((int)Math.round(a),(int)Math.round(b),(int)Math.round(a),(int)Math.round(b));
+
+
+        //find rectangle dimensions
+        int rectx =  (int)Math.round(a - r);
+        int recty = (int)Math.round(b - r);
+
+        //draw bounding box
+        g2.setStroke(new BasicStroke(1));
+        g.drawRect(rectx, recty, (int)Math.round(2*r), (int)Math.round(2*r));
+
+
+        //calculate angles
+        double startAngle = (180/Math.PI * Math.atan2(b-y0, x0-a));
+        double endAngle = (180/Math.PI * Math.atan2(b-y1, x1-a));
+         double deltaAngle = endAngle - startAngle;
+
+        //double deltaAngle = startAngle - endAngle;
+        System.out.println("deltaAngle: "+ deltaAngle);
+
+
+        //draw the arc
+        g.drawArc(rectx, recty, (int)Math.round(2*r), (int)Math.round(2*r), (int)Math.round(startAngle), (int)Math.round(deltaAngle));
+        //g.drawArc(rectx, recty, (int)Math.round(2*r), (int)Math.round(2*r), (int)Math.round(startAngle), (int)Math.round(deltaAngle-(360*e)));
 
 
 

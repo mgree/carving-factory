@@ -20,6 +20,7 @@ import java.util.*;
 public class Arc {
 
 double r, x0, y0, x1, y1, lineWidth; //inputs
+int linenum;
 
 double d;         //distance between points
 double m1;        //the midpoint x
@@ -30,13 +31,13 @@ double h;         //height (distance to center)
 int e = 1;        //counterclockwise pt 1 to pt2 is 1
                   //clockwise pt 1 to pt 2 is -1
 double a, b;      //the x and y of the center
-int rectx, recty; //bounding box top left corner
+double rectx, recty; //bounding box top left corner
 double startAngle, endAngle, deltaAngle; //the calculated angles
 
 double[] drawingInfo;
 
 //CONSTRUCTOR WITH RADIUS AND TWO POINTS
-public Arc (double r, double x0, double y0, double x1, double y1, int e, double lineWidth){
+public Arc (double r, double x0, double y0, double x1, double y1, int e, double lineWidth, int linenum){
 
         this.r = r;
         this.x0 = x0;
@@ -45,6 +46,7 @@ public Arc (double r, double x0, double y0, double x1, double y1, int e, double 
         this.y1 = y1;
         this.e = e;
         this.lineWidth = lineWidth;
+        this.linenum = linenum;
 
         //calculate the distance between them
         d = Math.sqrt(Math.pow((x1-x0), 2) + Math.pow((y1-y0), 2));
@@ -65,19 +67,26 @@ public Arc (double r, double x0, double y0, double x1, double y1, int e, double 
         b = m2 - e*h*u;
 
         //find rectangle dimensions
-        rectx =  (int)Math.round(a - r);
-        recty = (int)Math.round(b - r);
+        rectx =  a - r;
+        recty = b - r;
 
         //calculate angles
-        startAngle = (180/Math.PI * Math.atan2(b-y0, x0-a));
-        endAngle = (180/Math.PI * Math.atan2(b-y1, x1-a));
-        deltaAngle = endAngle - startAngle;
+        startAngle = (180/Math.PI) * Math.atan2(b-y0, x0-a);
+        endAngle = (180/Math.PI) * Math.atan2(b-y1, x1-a);
+
+        if (startAngle < 0 && endAngle > 0) {
+          deltaAngle = endAngle - (360 + startAngle);
+        //} else if (startAngle > 0 && endAngle < 0) {
+          //deltaAngle = (360 + endAngle) - startAngle;
+        } else {
+          deltaAngle = endAngle - startAngle;
+        }
 
         drawingInfo = new double[] {rectx, recty, 2*r, 2*r, (int)Math.round(startAngle), (int)Math.round(deltaAngle)};
 }
 
 //CONSTRUCTOR WITH CENTER AND TWO POINTS
-public Arc (double a, double b, double x0, double y0, double x1, double y1, int e, double lineWidth){
+public Arc (double a, double b, double x0, double y0, double x1, double y1, int e, double lineWidth, int linenum){
         this.a = a;
         this.b = b;
         this.x0 = x0;
@@ -86,6 +95,7 @@ public Arc (double a, double b, double x0, double y0, double x1, double y1, int 
         this.y1 = y1;
         this.e = e;
         this.lineWidth = lineWidth;
+        this.linenum = linenum;
 
 
         //calculate the distance between them
@@ -96,13 +106,21 @@ public Arc (double a, double b, double x0, double y0, double x1, double y1, int 
         m2 = (y0 + y1)/2;
 
         //find rectangle dimensions
-        rectx =  (int)Math.round(a - r);
-        recty = (int)Math.round(b - r);
+        rectx =  a - r;
+        recty = b - r;
 
         //calculate angles
         startAngle = (180/Math.PI * Math.atan2(b-y0, x0-a));
         endAngle = (180/Math.PI * Math.atan2(b-y1, x1-a));
         deltaAngle = endAngle - startAngle;
+
+        if (startAngle < 0 && endAngle > 0) {
+          deltaAngle = endAngle - (360 + startAngle);
+        //} else if (startAngle > 0 && endAngle < 0) {
+          //deltaAngle = (360 + endAngle) - startAngle;
+        } else {
+          deltaAngle = endAngle - startAngle;
+        }
 
         drawingInfo = new double[] {rectx, recty, 2*r, 2*r, (int)Math.round(startAngle), (int)Math.round(deltaAngle)};
 }
@@ -112,7 +130,7 @@ public Arc (double a, double b, double x0, double y0, double x1, double y1, int 
 To get the reverse of the arc, swap the deltaAngle for deltaAngle-(360*e) */
 public void inverseArc(){
         deltaAngle -= 360*e;
-        drawingInfo[5] = (int)Math.round(deltaAngle) - 360;
+        drawingInfo[5] = (int)Math.round(deltaAngle);
 }
 
 
@@ -153,10 +171,15 @@ public double getLineWidth(){
         return lineWidth;
 }
 
+/* Returns the line number for that arc */
+public double getLineNum(){
+        return linenum;
+}
+
 /* Creates a string representation of the arc */
 public String toString(){
-        String things =  "Arc:\n" + "Rectangle: (" + rectx + ", " + recty + ", " +
-                        2*r + ", " + 2*r + ", " + ") \nStart Angle: " + startAngle +
+        String things =  "Arc: \nCommand Number: " + linenum + "\nRectangle: (" + rectx + ", " + recty + ", " +
+                        2*r + ", " + 2*r + ") \nStart Angle: " + startAngle +
                         "\nEnd Angle: " + endAngle + "\nChange in angles: " + deltaAngle +
                         "\nCenter: (" + a + ", " + b +")";
         return things;
