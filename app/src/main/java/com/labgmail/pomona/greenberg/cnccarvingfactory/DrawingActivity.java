@@ -7,6 +7,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.graphics.drawable.ColorDrawable;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
@@ -21,6 +23,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.NumberPicker;
+import android.widget.Toast;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -120,17 +123,15 @@ public class DrawingActivity extends AppCompatActivity {
         mContentView.initializeStockDimensions(prefs);
 
         // TOOLBAR SETUP
-        swatch = (ImageView) findViewById(R.id.alpha_swatch);
-        NumberPicker nPicker = (NumberPicker) findViewById(R.id.number_picker);
-        nPicker.setMaxValue(255);
-        nPicker.setMinValue(0);
-        nPicker.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
+        findViewById(R.id.color_view).setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onValueChange(NumberPicker npicker, int oldVal, int newVal) {
-                newVal = npicker.getValue();
-                setAlpha(newVal); }
+            public void onClick(View v) {
+                setAlpha(((ColorView) v).getAlphaSelected());
+                // ??? This is supposed to say "Cutting Depth:" instead of "Alpha:"?
+                Toast.makeText(v.getContext(),"Alpha: " + ((ColorView) v).getAlphaSelected(), Toast.LENGTH_SHORT).show();
+            }
         });
-        setAlpha(255);
+
 
         // FULLSCREEN SETUP
         // Upon interacting with UI controls, delay any scheduled hide()
@@ -188,7 +189,6 @@ public class DrawingActivity extends AppCompatActivity {
         mContentView.setAlpha(alpha);
         ColorDrawable c = new ColorDrawable(getResources().getColor(android.R.color.black, null));
         c.setAlpha(alpha);
-        swatch.setImageDrawable(c);
     }
 
     @Override

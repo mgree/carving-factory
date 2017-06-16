@@ -129,6 +129,10 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         return true;
     }
 
+    public Paint getPaint() {
+        return brush;
+    }
+
     private void saveStroke() {
         if (curStroke != null) {
             strokes.add(curStroke);
