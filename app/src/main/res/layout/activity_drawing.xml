@@ -23,9 +23,7 @@
         android:id="@+id/fullscreen_controls"
         android:layout_width="80dp"
         android:layout_height="match_parent"
-        android:layout_gravity="right"
-        android:layout_marginLeft="8dp"
-        android:layout_marginTop="8dp"
+        android:layout_gravity="right|fill_vertical"
         android:gravity="right"
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -33,17 +31,11 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.0">
 
-        <ImageView
-            android:id="@+id/alpha_swatch"
+        <com.labgmail.pomona.greenberg.cnccarvingfactory.ColorView
+            android:id="@+id/color_view"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            app:srcCompat="?android:attr/colorBackground" />
-
-        <NumberPicker
-            android:id="@+id/number_picker"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_gravity="top|fill_vertical"
             android:layout_weight="1" />
 
         <ImageButton
