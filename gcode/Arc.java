@@ -38,7 +38,11 @@ double[] drawingInfo;
 
 //CONSTRUCTOR WITH RADIUS AND TWO POINTS
 public Arc (double r, double x0, double y0, double x1, double y1, int e, double lineWidth, int linenum){
+  initialize(r, x0, y0, x1, y1, e, lineWidth, linenum);
+}
 
+
+private void initialize(double r, double x0, double y0, double x1, double y1, int e, double lineWidth, int linenum) {
         this.r = r;
         this.x0 = x0;
         this.y0 = y0;
@@ -52,27 +56,29 @@ public Arc (double r, double x0, double y0, double x1, double y1, int e, double 
         d = Math.sqrt(Math.pow((x1-x0), 2) + Math.pow((y1-y0), 2));
 
         //find the midpoint
-        m1 = (x0+x1)/2;
+        m1 = (x0 + x1)/2;
         m2 = (y0 + y1)/2;
 
         //find the normal
-        u = (x1-x0)/d;
+        u = (x1 - x0)/d;
         v = (y1 - y0)/d;
 
         //find the height
         h = Math.sqrt(Math.pow(r,2) - (Math.pow(d,2)/4));
 
         //get the center
-        a = m1 + e*h*v;
-        b = m2 - e*h*u;
+        a = m1 + (e * h * v);
+        b = m2 - (e * h * u);
 
         //find rectangle dimensions
-        rectx =  a - r;
+        rectx = a - r;
         recty = b - r;
 
+
         //calculate angles
-        startAngle = (180/Math.PI) * Math.atan2(b-y0, x0-a);
-        endAngle = (180/Math.PI) * Math.atan2(b-y1, x1-a);
+        startAngle = (180/Math.PI) * Math.atan2(b - y0, x0 - a);
+        endAngle = (180/Math.PI) * Math.atan2(b - y1, x1 - a);
+
 
         if (startAngle < 0 && endAngle > 0) {
           deltaAngle = endAngle - (360 + startAngle);
@@ -83,6 +89,11 @@ public Arc (double r, double x0, double y0, double x1, double y1, int e, double 
         }
 
         drawingInfo = new double[] {rectx, recty, 2*r, 2*r, (int)Math.round(startAngle), (int)Math.round(deltaAngle)};
+
+        if ((int) Math.round(deltaAngle) == 0) {
+          System.out.println("rescaling from " + r + " to r/2");
+          initialize(r/2, x0, y0, x1, y1, e, lineWidth, linenum);
+        }
 }
 
 //CONSTRUCTOR WITH CENTER AND TWO POINTS
@@ -102,11 +113,11 @@ public Arc (double a, double b, double x0, double y0, double x1, double y1, int 
         r = Math.sqrt(Math.pow((x1-a), 2) + Math.pow((y1-b), 2));
 
         //find the midpoint
-        m1 = (x0+x1)/2;
+        m1 = (x0 + x1)/2;
         m2 = (y0 + y1)/2;
 
         //find rectangle dimensions
-        rectx =  a - r;
+        rectx = a - r;
         recty = b - r;
 
         //calculate angles
@@ -178,10 +189,11 @@ public double getLineNum(){
 
 /* Creates a string representation of the arc */
 public String toString(){
-        String things =  "Arc: \nCommand Number: " + linenum + "\nRectangle: (" + rectx + ", " + recty + ", " +
+        String things =  "Arc: \nCommand Number: " + linenum + "\nCoordinates: (" + x0 + ", " + y0 + "), (" +
+                        x1 + ", " + y1 + ")\nRectangle: (" + rectx + ", " + recty + ", " +
                         2*r + ", " + 2*r + ") \nStart Angle: " + startAngle +
                         "\nEnd Angle: " + endAngle + "\nChange in angles: " + deltaAngle +
-                        "\nCenter: (" + a + ", " + b +")";
+                        "\nCenter: (" + a + ", " + b +")\nRadius: " + r;
         return things;
 }
 

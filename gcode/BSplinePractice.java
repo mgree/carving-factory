@@ -30,7 +30,27 @@ import java.awt.geom.*;
 
 public class BSplinePractice {
 
+static BSpline bspline;
+static Point2D.Double[] pointsToDraw;
+
 public static void main(String[] args) {
+
+        bspline = new BSpline();
+        double[] xpoints = {10.0, 20.0, 50.0, 120.0};
+        double[] ypoints = {30.0, 10.0, 40.0, 10.0};
+
+        //I have no idea what numPts and steps specifically refer to
+        pointsToDraw = bspline.curvePoints(xpoints, ypoints, 4, 4);
+
+
+        for (Point2D.Double p : pointsToDraw) {
+                if (p!=null) {
+                        System.out.println(p.toString());
+                } else {
+                        System.out.println("P is real null");
+                }
+        }
+
         //Show the GUI
         SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
@@ -44,11 +64,11 @@ public static void main(String[] args) {
 private static void createAndShowGUI() {
         JFrame f = new JFrame("BSpline Practice");
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        f.add(new MyPanel());
+        f.add(new MyPanel(pointsToDraw));
         f.setPreferredSize(new Dimension(300, 300));
         f.pack();
         f.setVisible(true);
-        }
+}
 
 }
 
@@ -56,8 +76,11 @@ private static void createAndShowGUI() {
 //The panel sets up and displays the GUI in the end
 class MyPanel extends JPanel {
 
-public MyPanel() {
+Point2D.Double[] pointsToDraw;
+
+public MyPanel(Point2D.Double[] pointsToDraw) {
         setBorder(BorderFactory.createLineBorder(Color.black));
+        this.pointsToDraw = pointsToDraw;
 }
 
 public Dimension getPreferredSize() {
@@ -65,6 +88,32 @@ public Dimension getPreferredSize() {
 }
 
 protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+
+        Graphics2D g2 = (Graphics2D) g;
+
+        Double prevX = -99.0;
+        Double prevY = -99.0;
+        if (pointsToDraw.length > 0) {
+                prevX = pointsToDraw[0].getX();
+                prevY = pointsToDraw[0].getY();
+                g2.setStroke(new BasicStroke(2f));
+                g.drawLine((int)Math.round(prevX), (int)Math.round(prevY), (int)Math.round(prevX),
+                           (int)Math.round(prevY));
+        }
+        for (int i = 1; i < pointsToDraw.length; i++) {
+                g.drawLine((int)Math.round(prevX), (int)Math.round(prevY), (int)Math.round(pointsToDraw[i].getX()),
+                           (int)Math.round(pointsToDraw[i].getY()));
+
+                prevX = pointsToDraw[i].getX();
+                prevY = pointsToDraw[i].getY();
+        }
+
+
+
+
+
+
 
 
 }

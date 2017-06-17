@@ -45,7 +45,7 @@ public static void main(String[] args) {
         JFrame f = new JFrame("Arc Practice");
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         f.add(new MyPanel());
-        f.setPreferredSize(new Dimension(300, 300));
+        f.setPreferredSize(new Dimension(1000, 1000));
         f.pack();
         f.setVisible(true);
         }
@@ -66,20 +66,19 @@ public Dimension getPreferredSize() {
 
 protected void paintComponent(Graphics g) {
         //these are inputs
-        // N14 G02 X20.2112 Y10.1784 R=6.7108 F250.0
         double scalar = 12;
-        double r = 3.1377 * scalar;
-        double x0 = 23.6187 * scalar;
-        double y0 = 13.7414 * scalar;
-        double x1 = 22.6248 * scalar;
-        double y1 = 11.6417 * scalar;
+        double r = 376.3768005371094 * scalar;
+        double x0 = 32.1134 * scalar;
+        double y0 = 15.210200309753418 * scalar;
+        double x1 = 34.42850112915039 * scalar;
+        double y1 = 14.8951997756958 * scalar;
         double d; //distance between points
         double m1;      //the midpoint x
         double m2;      //the midpoint y
         double u;       //the normal
         double v;       //the normal
         double h;       //height (distance to center)
-        int e = 1;      //counterclockwise pt 1 to pt2 is 1
+        int e = -1;      //counterclockwise pt 1 to pt2 is 1
                         //clockwise pt 1 to pt 2 is -1
         double a, b;    //the x and y of the center
 
@@ -104,7 +103,7 @@ protected void paintComponent(Graphics g) {
         m2 = (y0 + y1)/2;
 
         //find the normal
-        u = (x1-x0)/d;
+        u = (x1 - x0)/d;
         v = (y1 - y0)/d;
 
         //find the height
@@ -187,7 +186,9 @@ a: 245.8464518801175 b: 167.2634518247136*/
         // // g.drawArc(rectx, recty, (int)Math.round(2*r), (int)Math.round(2*r), (int)Math.round(startAngle), (int)Math.round(deltaAngle));
         // g.drawArc(rectx, recty, (int)Math.round(2*r), (int)Math.round(2*r), (int)Math.round(startAngle), (int)Math.round(deltaAngle-(360*e)));
 
-        g.drawArc(24, 15, (int)Math.round(6.252799987792969), (int)Math.round(6.252799987792969), (int)Math.round(161.28263535967145), (int)Math.round(103.73780822646073));
+        // g.drawArc((int)Math.round(393.8491429314827/3),(int)Math.round(734.2627677000046/3),
+        // (int)Math.round(752.7536010742188/3), (int)Math.round(752.7536010742188/3),
+        // (int)Math.round(-82.42956218077691), (int)Math.round(0.3556754444397967));
 
 
 }

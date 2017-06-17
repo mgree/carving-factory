@@ -745,10 +745,6 @@ int upToThisPointLines;
 int upToThisPointArcs;
 int pxDimY;
 
-double arcoffset = 0;
-double lineoffsetX = 0;
-double lineoffsetY = 0;
-
 public MyPanel(ArrayList<Line> j, ArrayList<Arc> k, double scaleFactor, double auxilliaryScale, int pxdy) {
         setBorder(BorderFactory.createLineBorder(Color.black));
         theLines = j;
@@ -765,14 +761,6 @@ public MyPanel(ArrayList<Line> j, ArrayList<Arc> k, double scaleFactor, double a
         JLabel upToLinesText = new JLabel("Lines: " + Integer.toString(upToThisPointLines));
         JLabel upToArcsText = new JLabel("Arcs: " + Integer.toString(upToThisPointArcs));
         JButton getInfo = new JButton ("Get Current Arc Info");
-
-        //Offsets used for debugging
-        // JSlider arcOffset = new JSlider(-200, 200, 0);
-        // JSlider lineOffsetX = new JSlider(-200, 200, 0);
-        // JSlider lineOffsetY = new JSlider(-200, 200, 0);
-        // JLabel arcOffsetText = new JLabel("Arc Offset: " + Double.toString(arcoffset));
-        // JLabel lineOffsetTextX = new JLabel("Line X Offset: " + Double.toString(lineoffsetX));
-        // JLabel lineOffsetTextY = new JLabel("Line YOffset: " + Double.toString(lineoffsetY));
 
 
         upToLines.addChangeListener(new ChangeListener() {
@@ -791,31 +779,6 @@ public MyPanel(ArrayList<Line> j, ArrayList<Arc> k, double scaleFactor, double a
                 });
 
 
-        // arcOffset.addChangeListener(new ChangeListener() {
-        //                 public void stateChanged(ChangeEvent e) {
-        //                         arcoffset = arcOffset.getValue();
-        //                         arcOffsetText.setText("Arc Offset: " + Double.toString(arcoffset/100));
-        //                         repaint();
-        //                 }
-        //         });
-        //
-        // lineOffsetX.addChangeListener(new ChangeListener() {
-        //                 public void stateChanged(ChangeEvent e) {
-        //                         lineoffsetX = lineOffsetX.getValue();
-        //                         lineOffsetTextX.setText("Line X Offset: " + Double.toString(lineoffsetX/100));
-        //                         repaint();
-        //                 }
-        //         });
-        //
-        //
-        // lineOffsetY.addChangeListener(new ChangeListener() {
-        //                 public void stateChanged(ChangeEvent e) {
-        //                         lineoffsetY = lineOffsetY.getValue();
-        //                         lineOffsetTextY.setText("Line Y Offset: " + Double.toString(lineoffsetY/100));
-        //                         repaint();
-        //                 }
-        //         });
-
 
         getInfo.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
@@ -828,13 +791,6 @@ public MyPanel(ArrayList<Line> j, ArrayList<Arc> k, double scaleFactor, double a
         this.add(upToArcs);
         this.add(upToArcsText);
         this.add(getInfo);
-        // this.add(arcOffsetText);
-        // this.add(arcOffset);
-        // this.add(new JLabel("                                                     "));//spacer
-        // this.add(lineOffsetTextX);
-        // this.add(lineOffsetX);
-        // this.add(lineOffsetTextY);
-        // this.add(lineOffsetY);
 }
 
 
@@ -850,44 +806,21 @@ protected void paintComponent(Graphics g) {
         for (int i = 0; i < upToThisPointLines; i++) {
                 Line l = theLines.get(i);
                 g2.setStroke(new BasicStroke((float)(scale*l.getLineWidth())));
-                g.drawLine((int)Math.round((l.getStartX()-lineoffsetX/100)*scale * auxScale), pxDimY - (int)Math.round((l.getStartY()+lineoffsetY/100)*scale * auxScale),
-                           (int)Math.round((l.getEndX()-lineoffsetX/100)*scale* auxScale),  pxDimY - (int)Math.round((l.getEndY()+lineoffsetY/100)*scale * auxScale));
-
+                g.drawLine((int)Math.round(l.getStartX()*scale * auxScale), pxDimY - (int)Math.round(l.getStartY()*scale * auxScale),
+                           (int)Math.round(l.getEndX()*scale* auxScale),  pxDimY - (int)Math.round(l.getEndY()*scale * auxScale));
 
         }
+
+
         for (int i = 0; i < upToThisPointArcs; i++) {
                 Arc a = theArcs.get(i);
                 double[] dInfo = a.getDrawingInfo();
                 g2.setStroke(new BasicStroke((float)(scale*a.getLineWidth())));
-                g.drawArc((int)Math.round((dInfo[0]-arcoffset/100)*scale * auxScale), (int)Math.round((dInfo[1]-arcoffset/100)*scale * auxScale),
+
+                g.drawArc((int)Math.round(dInfo[0]*scale * auxScale), (int)Math.round(dInfo[1]*scale * auxScale),
                           (int)Math.round(dInfo[2]*scale * auxScale), (int)Math.round(dInfo[3]*scale * auxScale), (int)Math.round(dInfo[4]),
                           (int)Math.round(dInfo[5]));
         }
 }
 
-
-/*
-WEIRD ARC:
-
-Command Number: 164
-Rectangle: (24.602671123510007, 2.1778030891279556, 13.102999687194824, 13.102999687194824)
-Start Angle: -95.30882470848113
-End Angle: -81.5808550187568
-Change in angles: 13.727969689724333
-Center: (31.15417096710742, 8.729302932725368)
-Arc:
-Command Number: 165
-Rectangle: (-393.8491429314827, -734.2627677000046, 752.7536010742188, 752.7536010742188)
-Start Angle: -82.42956218077691
-End Angle: -82.07388673633712
-Change in angles: 0.3556754444397967
-Center: (-17.472342394373285, -357.88596716289527)
-Arc:
-Command Number: 166
-Rectangle: (26.22471445790675, 14.798072712197992, 19.12660026550293, 19.12660026550293)
-Start Angle: 98.17282348388902
-End Angle: 80.81095834522836
-Change in angles: -17.36186513866066
-Center: (35.788014590658214, 24.361372844949457)
-*/
 }

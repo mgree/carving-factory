@@ -1,5 +1,10 @@
 CLASSPATH=antlr-4.7-complete.jar:.
 
+test-curves : build-curves
+	java -cp $(CLASSPATH) CurveFitting points_simplified.txt
+
+build-curves: PrgPointsLexer.tokens CurveFitting.class
+
 test-gui : build-gui
 	java -cp $(CLASSPATH) GCodeReader Heart.txt s8
 
@@ -10,14 +15,13 @@ test-gen : build-gen
 
 build-gen : PrgLexer.tokens Line.class Arc.class Command.class GCodeGenerator.class
 
-test-parser : build-parser
-	java PrgTest parser_test1.txt
-
-build-parser : PrgLexer.tokens Command.class PrgTest.class
-
 PrgLexer.tokens : Prg.g4
 	java -jar antlr-4.7-complete.jar $<
 	javac Prg*.java
+
+PrgPointsLexer.tokens : PrgPoints.g4
+		java -jar antlr-4.7-complete.jar $<
+		javac PrgPoints*.java
 
 %.class : %.java
 	javac -cp $(CLASSPATH) $<
@@ -25,3 +29,4 @@ PrgLexer.tokens : Prg.g4
 clean :
 	-rm -f *.class *.tokens
 	-rm -f PrgLexer.java PrgParser.java PrgBaseListener.java PrgListener.java
+	-rm -f PrgPointsLexer.java PrgPointsParser.java PrgPointsBaseListener.java PrgPointsListener.java
