@@ -2,4 +2,5 @@
     <string name="app_name">CNC Carving Factory</string>
     <string name="dummy_button">dummy_button</string>
     <string name="pref_unit_default">in</string>
+    <string name="pref_spoil_default">spoil depth</string>
 </resources>

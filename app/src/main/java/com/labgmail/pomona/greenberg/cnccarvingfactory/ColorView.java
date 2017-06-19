@@ -59,17 +59,7 @@ public class ColorView extends android.support.v7.widget.AppCompatImageButton {
         if (event.getAction() == MotionEvent.ACTION_UP) {
             Log.d("COLOR","clicked @ " + mAlpha);
             performClick();
-//             updateLine(); breaks code
         }
-
-        //Works but problem is it pops up for all the values passed over until the final selection
-//        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-//        builder.setCancelable(true);
-//        builder.setTitle("Alpha Value");
-//        builder.setMessage(" " + mAlpha);
-//
-//        AlertDialog dialog = builder.create();
-//        dialog.show();
 
         return true;
     }

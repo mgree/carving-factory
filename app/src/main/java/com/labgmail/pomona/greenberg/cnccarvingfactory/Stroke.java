@@ -2,6 +2,7 @@ package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
 import android.graphics.Path;
 import android.graphics.PointF;
+import android.util.Log;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -90,6 +91,7 @@ public class Stroke extends Path implements Serializable, Iterable<PointF> {
             float x = in.readFloat();
             float y = in.readFloat();
             points.add(new PointF(x,y));
+            Log.d("POINTS", "" + points);
         }
     }
 
