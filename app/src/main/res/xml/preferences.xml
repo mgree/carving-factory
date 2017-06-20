@@ -7,32 +7,35 @@
         android:entries="@array/units"
         android:entryValues="@array/unit_values"
         android:defaultValue="@string/pref_unit_default" />
-    <com.labgmail.pomona.greenberg.cnccarvingfactory.NumberPickerPreference
+    <EditTextPreference
         android:key="pref_wLength"
         android:id="@+id/length_patch"
         android:title="Stock length"
-        android:defaultValue="@integer/pref_length_default" />
-    <com.labgmail.pomona.greenberg.cnccarvingfactory.NumberPickerPreference
+        android:inputType="numberDecimal"
+        android:defaultValue="@string/pref_stock_length" />
+    <EditTextPreference
         android:key="pref_wWidth"
         android:id="@+id/width_patch"
         android:title="Stock width"
-        android:defaultValue="@integer/pref_width_default" />
-        <com.labgmail.pomona.greenberg.cnccarvingfactory.NumberPickerPreference
+        android:inputType="numberDecimal"
+        android:defaultValue="@string/pref_stock_width" />
+        <EditTextPreference
             android:key="pref_wDepth"
             android:id="@+id/depth_patch"
             android:title="Stock depth"
-            android:defaultValue="@integer/pref_depth_default" />
+            android:inputType="numberDecimal"
+            android:defaultValue="@string/pref_stock_depth" />
         <EditTextPreference
             android:key="pref_spoilB"
             android:id="@+id/spoil_patch"
-            android:title="Stock spoil board depth"
+            android:title="Spoil board depth"
             android:inputType="numberDecimal"
-            android:defaultValue="@integer/pref_spoil_default" />
-        <com.labgmail.pomona.greenberg.cnccarvingfactory.NumberPickerPreference
+            android:defaultValue="@string/pref_spoil_default" />
+        <EditTextPreference
             android:key="pref_sWidth"
             android:id="@+id/stroke_patch"
             android:title="Drill bit dimameter"
             android:inputType="numberDecimal"
-            android:defaultValue="@integer/pref_stroke_default" />
+            android:defaultValue="@string/pref_stroke_default" />
     </PreferenceCategory>
 </PreferenceScreen>

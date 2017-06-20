@@ -218,33 +218,37 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         switch (key) {
             case DisplaySettingsActivity.KEY_LENGTH:
-                stockLength = sharedPreferences.getInt(key, 0);
+                stockLength = Float.parseFloat(sharedPreferences.getString(key, "0"));
                 break;
             case DisplaySettingsActivity.KEY_WIDTH:
-                stockWidth = sharedPreferences.getInt(key, 0);
+                stockWidth = Float.parseFloat(sharedPreferences.getString(key, "0"));
                 break;
             case DisplaySettingsActivity.KEY_DEPTH:
-                stockDepth = sharedPreferences.getInt(key, 0);
+                stockDepth = Float.parseFloat(sharedPreferences.getString(key, "0"));
                 break;
             case DisplaySettingsActivity.KEY_UNIT:
                 stockUnit = sharedPreferences.getString(key, "in");
                 break;
             case DisplaySettingsActivity.KEY_SWIDTH:
-                strokeWidth = sharedPreferences.getInt(key, 0);
+                strokeWidth = Float.parseFloat(sharedPreferences.getString(key, "0"));
                 break;
             case DisplaySettingsActivity.KEY_SDEPTH:
-                stockSpoil = Float.parseFloat((Float.toString(Float.parseFloat(sharedPreferences.getString(key, String.valueOf(0))))));
+                stockSpoil = Float.parseFloat(sharedPreferences.getString(key, "0"));
+                Log.d("PREF", "spoil board depth is now " + stockSpoil);
+                break;
+            default:
+                Log.d("PREF", "unknown preference " + key);
         }
 
         postInvalidate();
     }
 
     public void initializeStockDimensions(SharedPreferences prefs) {
-        stockLength = prefs.getInt(DisplaySettingsActivity.KEY_LENGTH, -1);
-        stockWidth = prefs.getInt(DisplaySettingsActivity.KEY_WIDTH, -1);
-        stockDepth = prefs.getInt(DisplaySettingsActivity.KEY_DEPTH, -1);
-        strokeWidth = prefs.getInt(DisplaySettingsActivity.KEY_SWIDTH, -1);
-//        stockSpoil = prefs.getFloat(DisplaySettingsActivity.KEY_SDEPTH,-1);
+        stockLength = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_LENGTH, "-1"));
+        stockWidth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_WIDTH, "-1"));
+        stockDepth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_DEPTH, "-1"));
+        strokeWidth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_SWIDTH, "-1"));
+        stockSpoil = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_SDEPTH, "-1"));
     }
 
     public void exportGCode() {

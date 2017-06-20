@@ -3,6 +3,7 @@ package com.labgmail.pomona.greenberg.cnccarvingfactory;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.preference.EditTextPreference;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
 import android.support.annotation.Nullable;
@@ -46,19 +47,8 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
             mCurUnit = prefs.getString(KEY_UNIT, defaultUnit);
             findPreference(KEY_UNIT).setSummary(mCurUnit);
 
-
-            for (String key : new String[] { KEY_LENGTH, KEY_WIDTH , KEY_DEPTH, KEY_SWIDTH }) {
-                findPreference(key).setSummary(Integer.toString(prefs.getInt(key, 0)) + mCurUnit );
-            }
-            for (String key: new String[] {KEY_SDEPTH}) {
-                try {
-                    findPreference(key);
-                    float depth = parseFloat(key);
-                    Log.d("DEPTH","" + depth + "");
-                }
-                catch (NumberFormatException e) {
-                    Log.d("TYPE ERROR","Incorrect Input: (" + e.getLocalizedMessage() + ")" );
-                }
+            for (String key : new String[] { KEY_LENGTH, KEY_WIDTH, KEY_DEPTH, KEY_SDEPTH, KEY_SWIDTH }) {
+                findPreference(key).setSummary((prefs.getString(key, "0") + mCurUnit ));
             }
         }
 
@@ -67,18 +57,13 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
             Preference pref = findPreference(key);
 
             switch (key) {
-                case KEY_SWIDTH:
-                case KEY_LENGTH:
-                case KEY_WIDTH:
-                case KEY_DEPTH:
                     // Keeps track of length, width, depth, and spoil board depth inputs
-                    pref.setSummary(Integer.toString(sharedPreferences.getInt(key, 0)) + mCurUnit);
-                    break;
+                case KEY_SWIDTH:
+                case KEY_DEPTH:
+                case KEY_WIDTH:
+                case KEY_LENGTH:
                 case KEY_SDEPTH:
-                    String newDepth = sharedPreferences.getString(KEY_SDEPTH, defaultUnit);
-                    Float f1 = Float.parseFloat(newDepth);
-                    Log.d("FLOAT",f1.toString());
-                    pref.setSummary(Float.toString(Float.parseFloat(sharedPreferences.getString(key, String.valueOf(0)))) + mCurUnit);
+                    pref.setSummary(sharedPreferences.getString(key, "0") + mCurUnit);
                     break;
                 case KEY_UNIT:
                     String newUnit = sharedPreferences.getString(KEY_UNIT, defaultUnit);
@@ -97,15 +82,15 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
         private void convertDimensionsTo(String newUnit) {
             // either: in -> cm or cm -> in
 
-            double factor;
+            float factor;
             int descIndex;
             switch (newUnit) {
                 case "in":
-                    factor = 1 / 2.54;
+                    factor = 1f / 2.54f;
                     descIndex = 0;
                     break;
                 case "cm":
-                    factor = 2.54;
+                    factor = 2.54f;
                     descIndex = 1;
                     break;
                 default:
@@ -116,18 +101,20 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
             mCurUnit = newUnit;
 
             SharedPreferences prefs = getPreferenceManager().getSharedPreferences();
-            int w = prefs.getInt(KEY_WIDTH, 0);
-            int l = prefs.getInt(KEY_LENGTH, 0);
-            int d = prefs.getInt(KEY_DEPTH, 0);
-            float s = prefs.getFloat(KEY_SDEPTH,0);
-            int b = prefs.getInt(KEY_SWIDTH,0);
+            float w = Float.parseFloat(prefs.getString(KEY_WIDTH, "0"));
+            float l = Float.parseFloat(prefs.getString(KEY_LENGTH, "0"));
+            float d = Float.parseFloat(prefs.getString(KEY_DEPTH, "0"));
+            float s = Float.parseFloat(prefs.getString(KEY_SDEPTH, "0"));
+            Log.d("PREF", String.format("updating sdepth to %f", s * factor));
+            float b = Float.parseFloat(prefs.getString(KEY_SWIDTH, "0"));
             prefs.edit()
-                    .putInt(KEY_WIDTH, (int) Math.round(w * factor))
-                    .putInt(KEY_LENGTH, (int) Math.round(l * factor))
-                    .putInt(KEY_DEPTH, (int) Math.round(d * factor))
-                    .putFloat(KEY_SDEPTH, (float) Math.round(s * factor))
-                    .putInt(KEY_SWIDTH, (int) Math.round(b * factor))
                     .apply();
+
+            ((EditTextPreference) findPreference(KEY_LENGTH)).setText(Float.toString(l * factor));
+            ((EditTextPreference) findPreference(KEY_DEPTH)).setText(Float.toString(d * factor));
+            ((EditTextPreference) findPreference(KEY_WIDTH)).setText(Float.toString(w * factor));
+            ((EditTextPreference) findPreference(KEY_SDEPTH)).setText(Float.toString(s * factor));
+            ((EditTextPreference) findPreference(KEY_SWIDTH)).setText(Float.toString(b * factor));
 
             Toast.makeText(
                     getContext(),
