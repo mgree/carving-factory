@@ -20,10 +20,10 @@ import android.view.MotionEvent;
 // TODO: Use gradient and shape to create a gradient of color.
 public class ColorView extends android.support.v7.widget.AppCompatImageButton {
 
-    private int mAlpha = 255;
+    private int grayValue = 255;
     private final Paint paint = new Paint();
 
-    public float clickX,clickY,eventX;
+    public float clickX, clickY, eventX;
 
     public ColorView(Context ctx) { this(ctx, null, 0); }
 
@@ -43,7 +43,7 @@ public class ColorView extends android.support.v7.widget.AppCompatImageButton {
         super.onDraw(canvas);
         Log.d("COLOR","drawing line at " + clickY);
 
-        float y = (1 - ((float) (mAlpha / 255f))) * canvas.getHeight();
+        float y = (1 - ((float) (grayValue / 255f))) * canvas.getHeight();
         canvas.drawLine(0, y, canvas.getWidth(), y, paint);
     }
 
@@ -52,19 +52,19 @@ public class ColorView extends android.support.v7.widget.AppCompatImageButton {
         // proportion on the widget may go out of [0,1], so we bound it
         float proportionDownWidget = Math.max(Math.min(event.getY() / getHeight(), 1), 0);
 
-        mAlpha = Math.round(255 * (1 - proportionDownWidget));
+        grayValue = Math.round(255 * (1 - proportionDownWidget));
         postInvalidate();
 
-        Log.d("COLOR",Integer.toString(mAlpha));
+        Log.d("COLOR",Integer.toString(grayValue));
         if (event.getAction() == MotionEvent.ACTION_UP) {
-            Log.d("COLOR","clicked @ " + mAlpha);
+            Log.d("COLOR","clicked @ " + grayValue);
             performClick();
         }
 
         return true;
     }
 
-    public int getAlphaSelected() {
-        return mAlpha;
+    public float getDepthSelected() {
+        return (grayValue / 255f );
     }
 }

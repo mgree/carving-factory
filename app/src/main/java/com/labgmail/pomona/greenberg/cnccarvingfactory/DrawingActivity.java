@@ -51,6 +51,7 @@ public class DrawingActivity extends AppCompatActivity {
      * and a change of the status and navigation bar.
      */
     private static final int UI_ANIMATION_DELAY = 300;
+    private static final float MAX_CUT_DEPTH = .4f;
     private final Handler mHideHandler = new Handler();
     private DrawingView mContentView;
     private ImageView swatch;
@@ -126,9 +127,9 @@ public class DrawingActivity extends AppCompatActivity {
         findViewById(R.id.color_view).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                setAlpha(((ColorView) v).getAlphaSelected());
+                setDepth(((ColorView) v).getDepthSelected());
                 // ??? This is supposed to say "Cutting Depth:" instead of "Alpha:"?
-                Toast.makeText(v.getContext(),"Alpha: " + ((ColorView) v).getAlphaSelected(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(v.getContext(),"Cutting Depth: " + ((ColorView) v).getDepthSelected()*MAX_CUT_DEPTH, Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -185,10 +186,10 @@ public class DrawingActivity extends AppCompatActivity {
         }
     }
 
-    private void setAlpha(int alpha) {
-        mContentView.setAlpha(alpha);
-        ColorDrawable c = new ColorDrawable(getResources().getColor(android.R.color.black, null));
-        c.setAlpha(alpha);
+    private void setDepth(float depth) {
+        mContentView.setDepth(depth);
+        int grayVal = (int)Math.round(depth*255);
+        ColorDrawable c = new ColorDrawable(Color.rgb(grayVal, grayVal, grayVal));
     }
 
     @Override

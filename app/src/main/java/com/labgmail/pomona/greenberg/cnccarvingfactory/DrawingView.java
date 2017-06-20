@@ -3,6 +3,7 @@ package com.labgmail.pomona.greenberg.cnccarvingfactory;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PointF;
@@ -28,6 +29,8 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
+import static android.graphics.Color.red;
+
 /**
  * Full-screen drawing view.
  *
@@ -37,6 +40,7 @@ import java.util.List;
 public class DrawingView extends View implements SharedPreferences.OnSharedPreferenceChangeListener {
     private static final int SMOOTHING_FACTOR = 3;
     private static final int CURVE_STEPS = 20;
+    private static final float MAX_CUT_DEPTH = .4f;
 
     private Stroke curStroke;
     private List<Stroke> strokes = new LinkedList<>();
@@ -183,8 +187,9 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
     }
 
-    public void setAlpha(int alpha) {
-        brush.setAlpha(alpha);
+    public void setDepth(float gray) {
+        int grayScale = (int) Math.round((1-gray)*255);
+        brush.setColor(Color.rgb(grayScale, grayScale, grayScale));
         // ??? Do anything about the current stroke?
     }
 
@@ -306,7 +311,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
             float boardHeight = spoilBoard + stockDepth;
             float clearancePlane = boardHeight + 0.25f;
-            float cuttingDepth = boardHeight - 0.25f;
+//          float cuttingDepth = boardHeight - 0.25f;
 
             float ipp = stockWidth / cutoffRight; // scaling factor
 
@@ -350,7 +355,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                         // emit G00 moves, move in w/slow feed rate (first iteration)
                         out.printf("N%d G00 X%1.4f Y%1.4f\n", line++, point.x * ipp, stockLength - point.y * ipp);
                         out.printf("N%d G00 Z%1.4f\n", line++, clearancePlane);
-                        out.printf("N%d G01 Z%1.4f F80.0\n", line++, cuttingDepth);
+                        out.printf("N%d G01 Z%1.4f F80.0\n", line++, boardHeight - ((1 - (red(s.getColor())/255f)) * MAX_CUT_DEPTH));
 
                         cutting = true;
                     } else {

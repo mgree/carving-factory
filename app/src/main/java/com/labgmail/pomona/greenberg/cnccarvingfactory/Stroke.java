@@ -26,6 +26,7 @@ public class Stroke extends Path implements Serializable, Iterable<PointF> {
     private float sWidth;
     private List<PointF> points = new LinkedList<>();
 
+
     /**
      * Are we a degenerate stroke, i.e., a point?
      *
@@ -141,7 +142,8 @@ public class Stroke extends Path implements Serializable, Iterable<PointF> {
      * y[n] The first segment is returned as C[0].a + C[0].b*u + C[0].c*u^2 +
      * C[0].d*u^3 0<=u <1 the other segments are in C[1], C[2], ... C[n-1]
      *
-     * taken from TODO find the source
+     * taken from Tim Lambert at
+     * https://github.com/deric/curve-fit-demo/blob/master/src/main/java/org/clueminer/curve/fit/splines/NatCubic.java
      */
     private Cubic[] calcNatCubic(Double[] x) {
         int n = x.length - 1;
@@ -176,6 +178,10 @@ public class Stroke extends Path implements Serializable, Iterable<PointF> {
         return C;
     }
 
+    /*
+     * Taken from Tim Lambert at
+     *  https://github.com/deric/curve-fit-demo/blob/master/src/main/java/org/clueminer/curve/fit/splines/Cubic.java
+     */
     private static class Cubic {
         private double a, b, c, d;
 
