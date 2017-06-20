@@ -31,11 +31,14 @@
             android:title="Spoil board depth"
             android:inputType="numberDecimal"
             android:defaultValue="@string/pref_spoil_default" />
-        <EditTextPreference
-            android:key="pref_sWidth"
-            android:id="@+id/stroke_patch"
-            android:title="Drill bit dimameter"
-            android:inputType="numberDecimal"
-            android:defaultValue="@string/pref_stroke_default" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="Tool Selection">
+        <ListPreference
+            android:key="pref_tool"
+            android:title="Selected Tool"
+            android:summary="%s"
+            android:entries="@array/tool_selection"
+            android:entryValues="@array/tool_values"
+            android:defaultValue="@string/pref_tool_default"/>
     </PreferenceCategory>
 </PreferenceScreen>

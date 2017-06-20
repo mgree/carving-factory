@@ -49,6 +49,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     private float cutoffRight = -1;
     private float cutoffBottom = -1;
     private String stockUnit = "undef";
+    private String stockTool = "undef";
 
     private boolean debugPoints = false;
 
@@ -254,7 +255,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             case DisplaySettingsActivity.KEY_UNIT:
                 stockUnit = sharedPreferences.getString(key, "in");
                 break;
-            case DisplaySettingsActivity.KEY_SWIDTH:
+            case DisplaySettingsActivity.KEY_TOOL:
                 strokeWidth = Float.parseFloat(sharedPreferences.getString(key, "0"));
                 break;
             case DisplaySettingsActivity.KEY_SDEPTH:
@@ -272,7 +273,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         stockLength = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_LENGTH, "-1"));
         stockWidth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_WIDTH, "-1"));
         stockDepth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_DEPTH, "-1"));
-        strokeWidth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_SWIDTH, "-1"));
+        strokeWidth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_TOOL, "-1"));
         stockSpoil = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_SDEPTH, "-1"));
     }
 
