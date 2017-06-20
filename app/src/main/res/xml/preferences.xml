@@ -22,15 +22,17 @@
             android:id="@+id/depth_patch"
             android:title="Stock depth"
             android:defaultValue="@integer/pref_depth_default" />
-        <com.labgmail.pomona.greenberg.cnccarvingfactory.NumberPickerPreference
+        <EditTextPreference
             android:key="pref_spoilB"
             android:id="@+id/spoil_patch"
             android:title="Stock spoil board depth"
+            android:inputType="numberDecimal"
             android:defaultValue="@integer/pref_spoil_default" />
         <com.labgmail.pomona.greenberg.cnccarvingfactory.NumberPickerPreference
             android:key="pref_sWidth"
             android:id="@+id/stroke_patch"
             android:title="Drill bit dimameter"
+            android:inputType="numberDecimal"
             android:defaultValue="@integer/pref_stroke_default" />
     </PreferenceCategory>
 </PreferenceScreen>

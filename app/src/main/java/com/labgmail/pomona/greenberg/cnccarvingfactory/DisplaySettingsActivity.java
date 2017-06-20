@@ -13,6 +13,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import static java.lang.Float.parseFloat;
+
 /**
  * Preference screen.
  *
@@ -44,8 +46,19 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
             mCurUnit = prefs.getString(KEY_UNIT, defaultUnit);
             findPreference(KEY_UNIT).setSummary(mCurUnit);
 
-            for (String key : new String[] { KEY_LENGTH, KEY_WIDTH , KEY_DEPTH, KEY_SDEPTH, KEY_SWIDTH }) {
+
+            for (String key : new String[] { KEY_LENGTH, KEY_WIDTH , KEY_DEPTH, KEY_SWIDTH }) {
                 findPreference(key).setSummary(Integer.toString(prefs.getInt(key, 0)) + mCurUnit );
+            }
+            for (String key: new String[] {KEY_SDEPTH}) {
+                try {
+                    findPreference(key);
+                    float depth = parseFloat(key);
+                    Log.d("DEPTH","" + depth + "");
+                }
+                catch (NumberFormatException e) {
+                    Log.d("TYPE ERROR","Incorrect Input: (" + e.getLocalizedMessage() + ")" );
+                }
             }
         }
 
@@ -55,20 +68,23 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
 
             switch (key) {
                 case KEY_SWIDTH:
-                case KEY_SDEPTH:
                 case KEY_LENGTH:
                 case KEY_WIDTH:
                 case KEY_DEPTH:
                     // Keeps track of length, width, depth, and spoil board depth inputs
                     pref.setSummary(Integer.toString(sharedPreferences.getInt(key, 0)) + mCurUnit);
                     break;
+                case KEY_SDEPTH:
+                    String newDepth = sharedPreferences.getString(KEY_SDEPTH, defaultUnit);
+                    Float f1 = Float.parseFloat(newDepth);
+                    Log.d("FLOAT",f1.toString());
+                    pref.setSummary(Float.toString(Float.parseFloat(sharedPreferences.getString(key, String.valueOf(0)))) + mCurUnit);
+                    break;
                 case KEY_UNIT:
                     String newUnit = sharedPreferences.getString(KEY_UNIT, defaultUnit);
-
                     if (newUnit.equals(mCurUnit)) {
                         return;
                     }
-
                     convertDimensionsTo(newUnit);
                     pref.setSummary(newUnit);
                     break;
@@ -103,13 +119,13 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
             int w = prefs.getInt(KEY_WIDTH, 0);
             int l = prefs.getInt(KEY_LENGTH, 0);
             int d = prefs.getInt(KEY_DEPTH, 0);
-            int s = prefs.getInt(KEY_SDEPTH,0);
+            float s = prefs.getFloat(KEY_SDEPTH,0);
             int b = prefs.getInt(KEY_SWIDTH,0);
             prefs.edit()
                     .putInt(KEY_WIDTH, (int) Math.round(w * factor))
                     .putInt(KEY_LENGTH, (int) Math.round(l * factor))
                     .putInt(KEY_DEPTH, (int) Math.round(d * factor))
-                    .putInt(KEY_SDEPTH, (int) Math.round(s * factor))
+                    .putFloat(KEY_SDEPTH, (float) Math.round(s * factor))
                     .putInt(KEY_SWIDTH, (int) Math.round(b * factor))
                     .apply();
 

@@ -40,6 +40,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     private float stockLength = -1;
     private float stockWidth = -1;
     private float stockDepth = -1;
+    private float stockSpoil = -1;
     private float strokeWidth = -1;
     private float cutoffRight = -1;
     private float cutoffBottom = -1;
@@ -139,6 +140,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
 
         curStroke = null;
+
+       Log.d("STROKES","( " + strokes + ")");
     }
 
 
@@ -229,6 +232,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             case DisplaySettingsActivity.KEY_SWIDTH:
                 strokeWidth = sharedPreferences.getInt(key, 0);
                 break;
+            case DisplaySettingsActivity.KEY_SDEPTH:
+                stockSpoil = Float.parseFloat((Float.toString(Float.parseFloat(sharedPreferences.getString(key, String.valueOf(0))))));
         }
 
         postInvalidate();
@@ -239,6 +244,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         stockWidth = prefs.getInt(DisplaySettingsActivity.KEY_WIDTH, -1);
         stockDepth = prefs.getInt(DisplaySettingsActivity.KEY_DEPTH, -1);
         strokeWidth = prefs.getInt(DisplaySettingsActivity.KEY_SWIDTH, -1);
+//        stockSpoil = prefs.getFloat(DisplaySettingsActivity.KEY_SDEPTH,-1);
     }
 
     public void exportGCode() {
