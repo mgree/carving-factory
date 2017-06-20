@@ -3,7 +3,7 @@
     <PreferenceCategory android:title="Stock dimensions">
     <ListPreference
         android:key="pref_units"
-        android:title="Unit of measure"
+        android:title="Unit of measure (clears drawing when changed)"
         android:entries="@array/units"
         android:entryValues="@array/unit_values"
         android:defaultValue="@string/pref_unit_default" />

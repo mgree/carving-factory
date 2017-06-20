@@ -31,7 +31,6 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
     public static final String KEY_SDEPTH = "pref_spoilB";
     public static final String KEY_TOOL = "pref_tool";
 
-
     public static class SettingsFragment extends PreferenceFragment implements SharedPreferences.OnSharedPreferenceChangeListener {
 
         private String defaultUnit;
@@ -72,6 +71,8 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
                     }
                     convertDimensionsTo(newUnit);
                     pref.setSummary(newUnit);
+                    break;
+                case KEY_TOOL:
                     break;
                 default:
                     Log.d("PREF", String.format("unknown key %s", key));
@@ -116,7 +117,7 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
 
             Toast.makeText(
                     getContext(),
-                    "Converted to " + getResources().getStringArray(R.array.units)[descIndex] + ", adjusted stock dimensions",
+                    "Converted to " + getResources().getStringArray(R.array.units)[descIndex] + ", adjusted stock dimensions and cleared drawing",
                     Toast.LENGTH_SHORT)
                     .show();
         }
