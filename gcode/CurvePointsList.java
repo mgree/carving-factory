@@ -7,123 +7,71 @@ import java.lang.*;
 /*
  * CurvePointsList
  * This class literally only exists because I wanted to make my own iterator
- * This is an arraylist of doubles (eventually I should expand this to any type)
- * with a custom iterator
+ * This is an arraylist with a custom iterator
  */
-public class CurvePointsList {
+public class CurvePointsList<E> {
 
-private final CurvePointsIterator curveItr;
-private List<Double> points;
+private List<E> points;
 
 public CurvePointsList() {
-        curveItr = new CurvePointsIterator();
-        points = new ArrayList<Double>();
+        points = new ArrayList<E>();
 }
 
-public CurvePointsList(List<Double> list) {
-        curveItr = new CurvePointsIterator();
-        points = list;
+public CurvePointsList(List<E> list) {
+        points = (ArrayList<E>)list;
 }
 
-public CurvePointsIterator iterator() {
-        return curveItr;
+public Iterator<E> iterator(int n) {
+        return new Iterator<E>() {
+          private int currPos = 0;
+
+          public boolean hasNext() {
+            return currPos < points.size();
+          }
+
+          public E next() {
+            E v = null;
+
+            if (currPos < points.size()) {
+                v = points.get(currPos);
+            }
+
+            if (currPos + n < points.size()) {
+              currPos += n;
+            } else if (currPos < points.size() - 1) {
+              currPos = points.size() - 1;
+            } else {
+              currPos = points.size(); // which will stop hasNext/next
+            }
+
+            return v;
+          }
+        };
 }
 
-public List<Double> getPoints(){
+public List<E> getPoints(){
         return points;
 }
 
-public boolean add(Double d){
+public boolean add(E d){
         return points.add(d);
 }
 
-public void add(int index, Double d){
+public void add(int index, E d){
         points.add(index,d);
 }
 
-public Double get(int i){
+public E get(int i){
         return points.get(i);
 }
 
-public Double set (int i, Double d){
+public E set (int i, E d){
         return points.set(i, d);
 }
 
-public Double[] toArray(){
-        return points.toArray(new Double[points.size()]);
-}
 
 public int size(){
         return points.size();
-}
-
-
-
-
-
-
-/*
- * Iterator for the CurvePointsList class. Allows you to get the
- * list of every nth element including the first and last points
- */
-public class CurvePointsIterator {
-private int currPos = 0;
-
-public CurvePointsIterator() {
-}
-
-public boolean hasNext() {
-        return (currPos < points.size());
-}
-
-public Double next() {
-        if (!hasNext()) { return 0.0; }
-        Double d = points.get(currPos);
-        currPos++;
-        return d;
-}
-
-//Go forward n elements and return the value
-//If you reach the end, return that value instead
-public Double nextNth(int n) {
-        //skip the ones you don't care about
-        for (int i = 0; i < (n-1); i++) {
-                //if you can skip forward, do so
-                if(hasNext()) {
-                        next();
-                }
-                //Otherwise just return the last point
-                else {
-                        return points.get(currPos-1);
-                }
-        }
-        //if you successfully skipped the unwanted values, return the next val
-        if (hasNext()) {
-                return next();
-        }
-        //if there is no next value, return the last value
-        else {
-                return points.get(currPos-1);
-        }
-}
-
-
-/*
- * This returns the list of every nth element including the first and last items
- */
-public CurvePointsList getNthList(int n){
-        currPos = 0;
-        CurvePointsList ans = new CurvePointsList();
-
-        if(points.size() < 1) { return ans;}
-
-        ans.add(next());
-        while (hasNext()) {
-                ans.add(nextNth(n));
-        }
-        return ans;
-}
-
 }
 
 }

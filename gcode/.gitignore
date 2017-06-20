@@ -5,6 +5,12 @@ PrgLexer.java
 PrgParser.java
 PrgLexer.tokens
 PrgParser.java
+PrgPoints.tokens
+PrgPointsBaseListener.java
+PrgPointsLexer.java
+PrgPointsLexer.tokens
+PrgPointsListener.java
+PrgPointsParser.java
 Scorpion.txt
 ToDo.txt
 outputGCode.txt

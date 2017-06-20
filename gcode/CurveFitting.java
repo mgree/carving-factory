@@ -23,8 +23,8 @@ import javax.swing.event.*;
 
 public class CurveFitting {
 
-static CurvePointsList xpoints;
-static CurvePointsList ypoints;
+static CurvePointsList<Double> xpoints;
+static CurvePointsList<Double> ypoints;
 
 public static void main(String[] args) {
 
@@ -45,8 +45,8 @@ public static void main(String[] args) {
                 PrgPointsParser.DrawingContext ctx = parser.drawing();
                 List<PrgPointsParser.PointContext> pointList = ctx.point();
 
-                xpoints = new CurvePointsList ();
-                ypoints = new CurvePointsList ();
+                xpoints = new CurvePointsList<Double> ();
+                ypoints = new CurvePointsList<Double> ();
 
                 for (PrgPointsParser.PointContext p : pointList) {
                         xpoints.add((double)toFloat(p.xCoord().floatNum()));
@@ -118,18 +118,17 @@ private static float toFloat(PrgPointsParser.FloatNumContext fnc) {
 class MyPanel extends JPanel {
 
 //Set up x and y point lists;
-CurvePointsList xpoints, ypoints;
+CurvePointsList<Double> xpoints, ypoints;
 
 //set up default values that can be altered through the GUI
 double scalar = .75;
-int calculatedCurveSkips = 1;
 int ogPointsSkips = 1;
 int steps = 1;
 boolean curvePts = false;
 boolean ogPts = true;
 
 
-public MyPanel(CurvePointsList xpts, CurvePointsList ypts) {
+public MyPanel(CurvePointsList<Double> xpts, CurvePointsList<Double> ypts) {
         setBorder(BorderFactory.createLineBorder(Color.black));
 
         xpoints = xpts; //the original points (x)
@@ -141,9 +140,6 @@ public MyPanel(CurvePointsList xpts, CurvePointsList ypts) {
         //Set up all GUI elements
         JSlider scaleSlider = new JSlider(1, 200, 75);
         JLabel scaleText = new JLabel("Scale: " + Double.toString(scalar));
-
-        JSlider curveSkipSlider = new JSlider(1, (int)curvePoints.size(), 1);
-        JLabel curveSkipText = new JLabel("Showing the curve: Pick 1 out of every " + Integer.toString(calculatedCurveSkips) + " calculated points");
 
         JSlider OGPointSkipSlider = new JSlider(1, (int)xpoints.size(), 1);
         JLabel OGPointSkipText = new JLabel("Calculating the Curve: Pick 1 out of every " + Integer.toString(ogPointsSkips) + " original points");
@@ -158,14 +154,6 @@ public MyPanel(CurvePointsList xpts, CurvePointsList ypts) {
                         public void stateChanged(ChangeEvent e) {
                                 scalar = scaleSlider.getValue() / 100.0;
                                 scaleText.setText("Scale: " + Double.toString(scalar));
-                                repaint();
-                        }
-                });
-
-        curveSkipSlider.addChangeListener(new ChangeListener() {
-                        public void stateChanged(ChangeEvent e) {
-                                calculatedCurveSkips = curveSkipSlider.getValue();
-                                curveSkipText.setText("Showing the curve: Pick 1 out of every " + Integer.toString(calculatedCurveSkips) + " calculated points");
                                 repaint();
                         }
                 });
@@ -201,17 +189,12 @@ public MyPanel(CurvePointsList xpts, CurvePointsList ypts) {
                 });
 
 
-
-
-
         this.add(scaleText);
         this.add(scaleSlider);
         this.add(stepText);
         this.add(stepSlider);
         this.add(OGPointSkipText);
         this.add(OGPointSkipSlider);
-        this.add(curveSkipText);
-        this.add(curveSkipSlider);
         this.add(new JLabel ("                                    "));
         this.add(ogPtsBtn);
         this.add(curvePtsBtn);
@@ -267,14 +250,14 @@ public Cubic[] calcNaturalCubic(int n, double[] x) {
 /*
  * Calculates the points defining a curve
  */
-public ArrayList<Point2D.Double> curvePoints(CurvePointsList xpts, CurvePointsList ypts) {
+public ArrayList<Point2D.Double> curvePoints(CurvePointsList<Double> xpts, CurvePointsList<Double> ypts) {
         int numPts = xpts.size();
 
         ArrayList<Point2D.Double> curve = new ArrayList<Point2D.Double>();
         if (numPts >= 2) {
 
-                Double[] xpoints = xpts.toArray();
-                Double [] ypoints = ypts.toArray();
+                Double[] xpoints = xpts.getPoints().toArray(new Double[xpts.getPoints().size()]);
+                Double [] ypoints = ypts.getPoints().toArray(new Double[xpts.getPoints().size()]);
                 Cubic[] X = calcNaturalCubic(numPts - 1, toPrimitive(xpoints));
                 Cubic[] Y = calcNaturalCubic(numPts - 1, toPrimitive(ypoints));
 
@@ -316,10 +299,18 @@ protected void paintComponent(Graphics g) {
         double prevY = 0;
 
         //Use the iterator to create lists using every nth element
-        CurvePointsList.CurvePointsIterator xitr = xpoints.iterator();
-        CurvePointsList.CurvePointsIterator yitr = ypoints.iterator();
-        CurvePointsList currXPoints = xitr.getNthList(ogPointsSkips);
-        CurvePointsList currYPoints = yitr.getNthList(ogPointsSkips);
+        Iterator<Double> xitr = xpoints.iterator(ogPointsSkips);
+        Iterator<Double> yitr = ypoints.iterator(ogPointsSkips);
+
+        CurvePointsList<Double> currXPoints = new CurvePointsList<>();
+        while (xitr.hasNext()) {
+          currXPoints.add(xitr.next());
+        }
+
+        CurvePointsList<Double> currYPoints = new CurvePointsList<>();
+        while (yitr.hasNext()) {
+          currYPoints.add(yitr.next());
+        }
 
         //Recalculate the curve points
         ArrayList<Point2D.Double> curvePoints = curvePoints(currXPoints, currYPoints);
@@ -336,7 +327,7 @@ protected void paintComponent(Graphics g) {
         //If you want the curve points, draw them
         if (curvePts) {
                 g2.setStroke(new BasicStroke(4f));
-                for (int i = 0; i < curvePoints.size(); i += calculatedCurveSkips) {
+                for (int i = 0; i < curvePoints.size(); i ++) {
                         g.drawLine((int)Math.round(curvePoints.get(i).getX()*scalar), (int)Math.round(curvePoints.get(i).getY()*scalar),
                                    (int)Math.round(curvePoints.get(i).getX()*scalar), (int)Math.round(curvePoints.get(i).getY()*scalar));
                 }
@@ -349,7 +340,7 @@ protected void paintComponent(Graphics g) {
                 prevX = curvePoints.get(0).getX();
                 prevY = curvePoints.get(0).getY();
         }
-        for (int i = 1; i < curvePoints.size(); i += calculatedCurveSkips) {
+        for (int i = 1; i < curvePoints.size(); i ++) {
                 g.drawLine((int)Math.round(prevX*scalar), (int)Math.round(prevY*scalar),
                            (int)Math.round(curvePoints.get(i).getX()*scalar), (int)Math.round(curvePoints.get(i).getY()*scalar));
                 prevX = curvePoints.get(i).getX();
