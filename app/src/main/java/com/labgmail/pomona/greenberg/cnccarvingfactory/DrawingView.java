@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.PointF;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
@@ -34,6 +35,9 @@ import java.util.List;
  */
 
 public class DrawingView extends View implements SharedPreferences.OnSharedPreferenceChangeListener {
+    private static final int SMOOTHING_FACTOR = 3;
+    private static final int CURVE_STEPS = 20;
+
     private Stroke curStroke;
     private List<Stroke> strokes = new LinkedList<>();
     private final Paint brush = new Paint();
@@ -45,6 +49,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     private float cutoffRight = -1;
     private float cutoffBottom = -1;
     private String stockUnit = "undef";
+
+    private boolean debugPoints = false;
 
     public DrawingView(Context ctx) { this(ctx, null); }
 
@@ -94,26 +100,43 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         // BOTTOM
         canvas.drawRect(0, cutoffBottom, width, height, brush);
 
-
-        brush.setStyle(Paint.Style.STROKE);
         for (Stroke s : strokes) {
-            brush.setColor(s.getColor());
-            brush.setStrokeWidth(s.getStrokeWidth() * scale);
-            canvas.drawPath(s.getPath(), brush);
+            drawStroke(canvas, s, brush, scale);
 
+            if (debugPoints) {
+                brush.setColor(s.getColor() | 0x00FF0000);
+                brush.setStrokeWidth(1);
+                for (PointF p : s.getPoints()) {
+                    canvas.drawPoint(p.x, p.y, brush);
+                }
+            }
         }
 
-        brush.setColor(curColor);
-        brush.setStrokeWidth(strokeWidth * scale);
         if (curStroke != null) {
+            brush.setColor(curColor);
+            brush.setStrokeWidth(strokeWidth * scale);
+            brush.setStyle(Paint.Style.STROKE);
             canvas.drawPath(curStroke.getPath(), brush);
+        }
+    }
+
+    private void drawStroke(Canvas canvas, Stroke s, Paint brush, float scale) {
+        brush.setColor(s.getColor());
+        brush.setStrokeWidth(s.getStrokeWidth() * scale);
+
+        if (s.isDegenerate()) {
+            brush.setStyle(Paint.Style.FILL);
+
+            PointF p = s.centroid();
+            canvas.drawCircle(p.x, p.y, s.getStrokeWidth() * scale / 2, brush);
+        } else {
+            brush.setStyle(Paint.Style.STROKE);
+            canvas.drawPath(s.getPath(), brush);
         }
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        Log.d("UI", event.toString());
-
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_MOVE:
@@ -136,12 +159,14 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
     private void saveStroke() {
         if (curStroke != null) {
-            strokes.add(curStroke);
+            Stroke fitted = curStroke.fitToNatCubic(SMOOTHING_FACTOR, CURVE_STEPS);
+            Log.d("FIT", String.format("fitted curve with %d points to nat cubic with %d points",
+                            curStroke.size(), fitted.size()));
+
+            strokes.add(fitted);
         }
 
         curStroke = null;
-
-       Log.d("STROKES","( " + strokes + ")");
     }
 
 
