@@ -3,7 +3,7 @@ CLASSPATH=antlr-4.7-complete.jar:.
 test-curves : build-curves
 	java -cp $(CLASSPATH) CurveFitting points_simplified.txt
 
-build-curves: PrgPointsLexer.tokens CurveFitting.class
+build-curves: PrgPointsLexer.tokens CurveFitting.class CurvePointsList.class
 
 test-gui : build-gui
 	java -cp $(CLASSPATH) GCodeReader Heart.txt s8
