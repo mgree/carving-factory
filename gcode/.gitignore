@@ -17,3 +17,10 @@ outputGCode.txt
 Star Trek.txt
 StarTrek.txt
 starterseq.txt
+../.idea/
+../build.gradle
+../gradle.properties
+../gradle/
+../gradlew
+../gradlew.bat
+../settings.gradle
