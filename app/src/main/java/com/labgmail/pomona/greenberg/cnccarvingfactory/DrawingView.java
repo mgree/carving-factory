@@ -5,7 +5,6 @@ import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Path;
 import android.graphics.PointF;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
@@ -52,9 +51,12 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     private float strokeWidth = -1;
     private float cutoffRight = -1;
     private float cutoffBottom = -1;
+    private int curDepth = 255;
     private String stockUnit = "undef";
+    private String stockTool = "undef";
 
     private boolean debugPoints = false;
+    private boolean clearStrokes = false;
 
     public DrawingView(Context ctx) { this(ctx, null); }
 
@@ -75,8 +77,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-
-        int curColor = brush.getColor();
 
         float height = canvas.getHeight();
         float width = canvas.getWidth();
@@ -117,10 +117,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
 
         if (curStroke != null) {
-            brush.setColor(curColor);
-            brush.setStrokeWidth(strokeWidth * scale);
-            brush.setStyle(Paint.Style.STROKE);
-            canvas.drawPath(curStroke.getPath(), brush);
+            drawStroke(canvas, curStroke, brush, scale);
         }
     }
 
@@ -189,8 +186,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
     public void setDepth(float gray) {
         int grayScale = (int) Math.round((1-gray)*255);
-        brush.setColor(Color.rgb(grayScale, grayScale, grayScale));
-        // ??? Do anything about the current stroke?
+        curDepth = Color.rgb(grayScale, grayScale, grayScale);
     }
 
     private void addMotionEvent(MotionEvent event) {
@@ -214,7 +210,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
 
         if (curStroke == null) {
-            curStroke = new Stroke(brush.getColor(), strokeWidth);
+            curStroke = new Stroke(curDepth, strokeWidth);
         }
 
         curStroke.addPoint(time, x, y);
@@ -235,8 +231,13 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         brush.setColor(in.readInt());
         brush.setStrokeWidth(in.readFloat());
         try {
-            //noinspection unchecked
-            strokes = (LinkedList<Stroke>) in.readObject();
+            if (clearStrokes) {
+                strokes = new LinkedList<>();
+                clearStrokes = false;
+            } else {
+                //noinspection unchecked
+                strokes = (LinkedList<Stroke>) in.readObject();
+            }
         } catch (ClassNotFoundException e) {
             throw new IOException(e);
         }
@@ -258,9 +259,15 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                 break;
             case DisplaySettingsActivity.KEY_UNIT:
                 stockUnit = sharedPreferences.getString(key, "in");
+
+                scaleTool(sharedPreferences.getString(DisplaySettingsActivity.KEY_TOOL, "0"));
+                Log.d("DIM", "clearing");
+                clearStrokes = true;
+
                 break;
-            case DisplaySettingsActivity.KEY_SWIDTH:
-                strokeWidth = Float.parseFloat(sharedPreferences.getString(key, "0"));
+            case DisplaySettingsActivity.KEY_TOOL:
+                scaleTool(sharedPreferences.getString(key, "0"));
+
                 break;
             case DisplaySettingsActivity.KEY_SDEPTH:
                 stockSpoil = Float.parseFloat(sharedPreferences.getString(key, "0"));
@@ -273,11 +280,28 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         postInvalidate();
     }
 
+    private void scaleTool(String toolDim) {
+        float tool = Float.parseFloat(toolDim);
+
+        // NB all tool dimensions MUST be in inches
+        float factor = 1.0f;
+        if (stockUnit.equals("in")) {
+            factor = 1.0f;
+        } else if (stockUnit.equals("cm")){
+            factor = 2.54f;
+        } else {
+            Log.d("DIM", "funny unit " + stockUnit);
+        }
+
+        strokeWidth = tool * factor;
+        Log.d("DIM","tool dimension/stroke width is now " + tool + " (converts to " + strokeWidth + ")");
+    }
+
     public void initializeStockDimensions(SharedPreferences prefs) {
         stockLength = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_LENGTH, "-1"));
         stockWidth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_WIDTH, "-1"));
         stockDepth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_DEPTH, "-1"));
-        strokeWidth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_SWIDTH, "-1"));
+        strokeWidth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_TOOL, "-1"));
         stockSpoil = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_SDEPTH, "-1"));
     }
 

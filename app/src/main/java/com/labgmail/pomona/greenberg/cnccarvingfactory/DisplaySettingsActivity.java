@@ -29,7 +29,7 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
     public static final String KEY_WIDTH = "pref_wWidth";
     public static final String KEY_UNIT = "pref_units";
     public static final String KEY_SDEPTH = "pref_spoilB";
-    public static final String KEY_SWIDTH = "pref_sWidth";
+    public static final String KEY_TOOL = "pref_tool";
 
     public static class SettingsFragment extends PreferenceFragment implements SharedPreferences.OnSharedPreferenceChangeListener {
 
@@ -47,7 +47,7 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
             mCurUnit = prefs.getString(KEY_UNIT, defaultUnit);
             findPreference(KEY_UNIT).setSummary(mCurUnit);
 
-            for (String key : new String[] { KEY_LENGTH, KEY_WIDTH, KEY_DEPTH, KEY_SDEPTH, KEY_SWIDTH }) {
+            for (String key : new String[] { KEY_LENGTH, KEY_WIDTH, KEY_DEPTH, KEY_SDEPTH }) {
                 findPreference(key).setSummary((prefs.getString(key, "0") + mCurUnit ));
             }
         }
@@ -58,7 +58,6 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
 
             switch (key) {
                     // Keeps track of length, width, depth, and spoil board depth inputs
-                case KEY_SWIDTH:
                 case KEY_DEPTH:
                 case KEY_WIDTH:
                 case KEY_LENGTH:
@@ -72,6 +71,8 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
                     }
                     convertDimensionsTo(newUnit);
                     pref.setSummary(newUnit);
+                    break;
+                case KEY_TOOL:
                     break;
                 default:
                     Log.d("PREF", String.format("unknown key %s", key));
@@ -106,7 +107,6 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
             float d = Float.parseFloat(prefs.getString(KEY_DEPTH, "0"));
             float s = Float.parseFloat(prefs.getString(KEY_SDEPTH, "0"));
             Log.d("PREF", String.format("updating sdepth to %f", s * factor));
-            float b = Float.parseFloat(prefs.getString(KEY_SWIDTH, "0"));
             prefs.edit()
                     .apply();
 
@@ -114,15 +114,13 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
             ((EditTextPreference) findPreference(KEY_DEPTH)).setText(Float.toString(d * factor));
             ((EditTextPreference) findPreference(KEY_WIDTH)).setText(Float.toString(w * factor));
             ((EditTextPreference) findPreference(KEY_SDEPTH)).setText(Float.toString(s * factor));
-            ((EditTextPreference) findPreference(KEY_SWIDTH)).setText(Float.toString(b * factor));
 
             Toast.makeText(
                     getContext(),
-                    "Converted to " + getResources().getStringArray(R.array.units)[descIndex] + ", adjusted stock dimensions",
+                    "Converted to " + getResources().getStringArray(R.array.units)[descIndex] + ", adjusted stock dimensions and cleared drawing",
                     Toast.LENGTH_SHORT)
                     .show();
         }
-
 
         @Override
         public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {

@@ -3,7 +3,7 @@
     <PreferenceCategory android:title="Stock dimensions">
     <ListPreference
         android:key="pref_units"
-        android:title="Unit of measure"
+        android:title="Unit of measure (clears drawing when changed)"
         android:entries="@array/units"
         android:entryValues="@array/unit_values"
         android:defaultValue="@string/pref_unit_default" />
@@ -31,11 +31,14 @@
             android:title="Spoil board depth"
             android:inputType="numberDecimal"
             android:defaultValue="@string/pref_spoil_default" />
-        <EditTextPreference
-            android:key="pref_sWidth"
-            android:id="@+id/stroke_patch"
-            android:title="Drill bit dimameter"
-            android:inputType="numberDecimal"
-            android:defaultValue="@string/pref_stroke_default" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="Tool Selection">
+        <ListPreference
+            android:key="pref_tool"
+            android:title="Selected Tool"
+            android:summary="%s"
+            android:entries="@array/tool_selection"
+            android:entryValues="@array/tool_values"
+            android:defaultValue="@string/pref_tool_default"/>
     </PreferenceCategory>
 </PreferenceScreen>

@@ -9,4 +9,12 @@
         <item>in</item>
         <item>cm</item>
     </string-array>
+    <string-array name="tool_selection">
+        <item>half-inch (.5)</item>
+        <item>quarter-inch (.25)</item>
+    </string-array>
+    <string-array name="tool_values">
+        <item>.5</item>
+        <item>.25</item>
+    </string-array>
 </resources>
