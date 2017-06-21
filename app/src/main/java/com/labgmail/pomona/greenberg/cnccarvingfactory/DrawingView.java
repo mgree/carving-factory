@@ -236,7 +236,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                 for (Stroke s : strokes) {
                     for (Anchor p : s) {
                         if (p.distance2D(x, y) <= scale * cuttingDiameter) {
-                            neighboringDepth = Math.max(neighboringDepth, p.z) + 0.01f;
+                            neighboringDepth = Math.max(neighboringDepth, p.z);
                         }
                     }
                 }

@@ -4,3 +4,7 @@ identify clusters, smooth out (same as initial point compensation?)
 min cut depth to avoid wasting time
 
 overdraw mode is too aggressive
+  switch to alpha mode for more realistic/less ugly output?
+  can we do better than drawing a million lines?
+
+use depth map globally to calculate z
