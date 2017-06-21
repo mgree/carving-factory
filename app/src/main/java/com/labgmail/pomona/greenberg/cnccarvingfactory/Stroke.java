@@ -1,9 +1,7 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
 import android.graphics.Path;
-import android.graphics.PointF;
 import android.util.Log;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -16,15 +14,14 @@ import java.util.List;
 /**
  * Custom pseudo-wrapper on paths, so we can actually save them. (android.os.Path isn't Parcelable!)
  *
- * Created by edinameshietedoho on 5/25/17.
+ * Created by edinameshietedoho and soniagrunwald on 5/25/17.
  */
 
 @SuppressWarnings("WeakerAccess")
-public class Stroke extends Path implements Serializable, Iterable<PointF> {
+public class Stroke extends Path implements Serializable, Iterable<Anchor>{
 
-    private int color;
     private float sWidth;
-    private List<PointF> points = new LinkedList<>();
+    private List<Anchor> points = new LinkedList<>();
 
 
     /**
@@ -34,15 +31,14 @@ public class Stroke extends Path implements Serializable, Iterable<PointF> {
      */
     private boolean degenerate = true;
 
-    public Stroke(int color, float sWidth) {
-        this.color = color;
+    public Stroke(float sWidth) {
         this.sWidth = sWidth;
     }
 
     public Path getPath() {
         Path path = new Path();
 
-        for (PointF p : points) {
+        for (Anchor p : points) {
             if (path.isEmpty()) {
                 path.moveTo(p.x, p.y);
             } else {
@@ -53,30 +49,39 @@ public class Stroke extends Path implements Serializable, Iterable<PointF> {
         return path;
     }
 
-    public void addPoint(@SuppressWarnings("UnusedParameters") long time, float x, float y) {
-        points.add(new PointF(x, y));
+    public void addPoint(float x, float y, float z, float t) {
+        points.add(new Anchor(x, y, z, t));
     }
 
     public int getColor() {
-        return color;
+        return Math.round(points.get(0).z);
     }
 
     public float getStrokeWidth() { return sWidth; }
 
     public int size() { return points.size(); }
 
-    public List<PointF> getPoints() { return new LinkedList<>(points); }
+    public List<Anchor> getPoints() { return new LinkedList<>(points); }
 
-    public PointF centroid() {
+    @Override
+    public Iterator<Anchor> iterator() {
+        return points.iterator();
+    }
+
+    public Anchor centroid() {
         float meanX = 0;
         float meanY = 0;
+        float meanZ = 0;
+        float meanTime = 0;
 
-        for (PointF p : points) {
-            meanX += p.x;
-            meanY += p.y;
+        for (Anchor a : points) {
+            meanX += a.x;
+            meanY += a.y;
+            meanZ += a.z;
+            meanTime += a.time;
         }
 
-        return new PointF(meanX / points.size(), meanY / points.size());
+        return new Anchor(meanX / points.size(), meanY / points.size(), meanZ / points.size(), meanTime / points.size());
     }
 
     public boolean isDegenerate() {
@@ -84,10 +89,10 @@ public class Stroke extends Path implements Serializable, Iterable<PointF> {
             return false;
         }
 
-        PointF centroid = centroid();
+        Anchor centroid = centroid();
 
-        for (PointF p : points) {
-            double distance = Math.sqrt(Math.pow(p.x - centroid.x, 2) + Math.pow(p.y - centroid.y, 2));
+        for (Anchor a : points) {
+            double distance = Math.sqrt(Math.pow(a.x - centroid.x, 2) + Math.pow(a.y - centroid.y, 2));
             if (distance >= 2 * sWidth) {
                 Log.d("FIT", "non-degenerate distance " + distance + " " + sWidth);
                 degenerate = false;
@@ -106,9 +111,9 @@ public class Stroke extends Path implements Serializable, Iterable<PointF> {
         int i = 0;
         while (i < points.size()) {
             // save the current point
-            PointF p = points.get(i);
-            selectedX.add((double) p.x);
-            selectedY.add((double) p.y);
+            Anchor a = points.get(i);
+            selectedX.add((double) a.x);
+            selectedY.add((double) a.y);
 
             // advance n steps (or stop at the end, keeping the last element)
             if (i + everyN < points.size()) {
@@ -125,12 +130,13 @@ public class Stroke extends Path implements Serializable, Iterable<PointF> {
         Cubic[] fittedY = calcNatCubic(selectedY.toArray(new Double[selectedY.size()]));
 
         // construct new stroke from curves
-        Stroke fitted = new Stroke(color, sWidth);
-        fitted.addPoint(0, fittedX[0].eval(0), fittedY[0].eval(0));
+        //TODO: Do nat cubic for the z dimension???
+        Stroke fitted = new Stroke(sWidth);
+        fitted.addPoint(fittedX[0].eval(0), fittedY[0].eval(0), points.get(0).z, points.get(0).time );
         for (i = 0; i < fittedX.length; i += 1) {
             for (int j = 1; j <= steps; j += 1) {
                 double u = j / (double) steps;
-                fitted.addPoint(0, fittedX[i].eval(u), fittedY[i].eval(u));
+                fitted.addPoint(fittedX[i].eval(u), fittedY[i].eval(u), points.get(i).z, points.get(i).time);
             }
         }
 
@@ -201,28 +207,27 @@ public class Stroke extends Path implements Serializable, Iterable<PointF> {
     public String toString() {
         StringBuilder string = new StringBuilder();
 
-        for(PointF p : points  ) {
-            string.append(p.toString());
+        for(Anchor a : points) {
+            string.append(a.toString());
             string.append("\n");
         }
         return string.toString();
     }
 
     private void writeObject(ObjectOutputStream out) throws IOException {
-        out.writeInt(color);
         out.writeFloat(sWidth);
 
         out.writeInt(points.size());
-        for (PointF p : points) {
-            out.writeFloat(p.x);
-            out.writeFloat(p.y);
+        for (Anchor a : points) {
+            out.writeFloat(a.x);
+            out.writeFloat(a.y);
+            out.writeFloat(a.z);
+            out.writeFloat(a.time);
         }
-
         out.flush();
     }
 
     private void readObject(ObjectInputStream in) throws IOException {
-        color = in.readInt();
         sWidth = in.readFloat();
 
         int size = in.readInt();
@@ -230,7 +235,9 @@ public class Stroke extends Path implements Serializable, Iterable<PointF> {
         for (int i = 0; i < size; i++) {
             float x = in.readFloat();
             float y = in.readFloat();
-            points.add(new PointF(x,y));
+            float z = in.readFloat();
+            float time = in.readFloat();
+            points.add(new Anchor(x, y, z, time));
         }
     }
 
@@ -239,8 +246,4 @@ public class Stroke extends Path implements Serializable, Iterable<PointF> {
 
     public static final long serialVersionUID = 42L;
 
-    @Override
-    public Iterator<PointF> iterator() {
-        return points.iterator();
-    }
 }

@@ -5,7 +5,6 @@ import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.PointF;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Environment;
@@ -33,7 +32,7 @@ import static android.graphics.Color.red;
 /**
  * Full-screen drawing view.
  *
- * Created by edinameshietedoho on 5/25/17.
+ * Created by edinameshietedoho and soniagrunwaldon 5/25/17.
  */
 
 public class DrawingView extends View implements SharedPreferences.OnSharedPreferenceChangeListener {
@@ -110,8 +109,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             if (debugPoints) {
                 brush.setColor(s.getColor() | 0x00FF0000);
                 brush.setStrokeWidth(1);
-                for (PointF p : s.getPoints()) {
-                    canvas.drawPoint(p.x, p.y, brush);
+                for (Anchor a : s.getPoints()) {
+                    canvas.drawPoint(a.x, a.y, brush);
                 }
             }
         }
@@ -128,7 +127,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         if (s.isDegenerate()) {
             brush.setStyle(Paint.Style.FILL);
 
-            PointF p = s.centroid();
+            Anchor p = s.centroid();
             canvas.drawCircle(p.x, p.y, s.getStrokeWidth() * scale / 2, brush);
         } else {
             brush.setStyle(Paint.Style.STROKE);
@@ -210,10 +209,10 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
 
         if (curStroke == null) {
-            curStroke = new Stroke(curDepth, strokeWidth);
+            curStroke = new Stroke(strokeWidth);
         }
 
-        curStroke.addPoint(time, x, y);
+        curStroke.addPoint(x, y, curDepth, time);
     }
 
     public void saveState(OutputStream state) throws IOException {
@@ -369,8 +368,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                 numStrokes += 1;
                 out.printf("(stroke %d)\n", numStrokes);
 
-                PointF last = null;
-                for (PointF point : s) {
+                Anchor last = null;
+                for (Anchor point : s.getPoints()) {
                     if (point.equals(last)) {
                         continue;
                     }
@@ -379,7 +378,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                         // emit G00 moves, move in w/slow feed rate (first iteration)
                         out.printf("N%d G00 X%1.4f Y%1.4f\n", line++, point.x * ipp, stockLength - point.y * ipp);
                         out.printf("N%d G00 Z%1.4f\n", line++, clearancePlane);
-                        out.printf("N%d G01 Z%1.4f F80.0\n", line++, boardHeight - ((1 - (red(s.getColor())/255f)) * MAX_CUT_DEPTH));
+                        out.printf("N%d G01 Z%1.4f F80.0\n", line++, boardHeight - ((1 - (point.z/255f)) * MAX_CUT_DEPTH));
 
                         cutting = true;
                     } else {
