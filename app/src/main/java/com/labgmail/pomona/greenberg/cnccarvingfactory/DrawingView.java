@@ -64,6 +64,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         OVERDRAW
     };
 
+    // TODO make the mode changeable
     private Mode drawingMode = Mode.OVERDRAW;
 
     public DrawingView(Context ctx) { this(ctx, null); }
@@ -424,24 +425,38 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                         out.printf("N%d G00 Z%1.4f\n", line++, clearancePlane);
 
                         // bound the z insertion depth!
-                        float insertion = boardHeight - (point.z * MAX_SINGLE_CUT_DEPTH);
-                        insertion = Math.max(insertion, maxCutDepth);
-                        insertion = Math.min(insertion, clearancePlane);
-                        Log.d("GCODE", String.format("cutting to z %f: %1.4f (bounded from %1.4f)",
-                                point.z, boardHeight - (point.z * MAX_SINGLE_CUT_DEPTH), insertion));
-
-                        out.printf("N%d G01 Z%1.4f F80.0\n", line++, insertion);
+                        float z = boardHeight - (point.z * MAX_SINGLE_CUT_DEPTH);
+                        z = Math.max(z, maxCutDepth);
+                        z = Math.min(z, clearancePlane);
+                        out.printf("N%d G01 Z%1.4f F80.0\n", line++, z);
 
                         cutting = true;
                     } else {
                         if (!fast) {
                             // first G01 move, set high feedrate (second iteration)
-                            out.printf("N%d G01 X%1.4f Y%1.4f F250.0\n", line++, point.x * ipp, stockLength - point.y * ipp);
+                            // bound the z insertion depth!
+                            float z = boardHeight - (point.z * MAX_SINGLE_CUT_DEPTH);
+                            z = Math.max(z, maxCutDepth);
+                            z = Math.min(z, clearancePlane);
+
+                            out.printf("N%d G01 X%1.4f Y%1.4f Z%1.4f F250.0\n",
+                                    line++,
+                                    point.x * ipp,
+                                    stockLength - point.y * ipp,
+                                    z);
 
                             fast = true;
                         } else {
                             // general moves (other iterations)
-                            out.printf("N%d G01 X%1.4f Y%1.4f\n", line++, point.x * ipp, stockLength - point.y * ipp);
+                            // bound the z insertion depth!
+                            float z = boardHeight - (point.z * MAX_SINGLE_CUT_DEPTH);
+                            z = Math.max(z, maxCutDepth);
+                            z = Math.min(z, clearancePlane);
+                            out.printf("N%d G01 X%1.4f Y%1.4f Z%1.4f\n",
+                                    line++,
+                                    point.x * ipp,
+                                    stockLength - point.y * ipp,
+                                    z);
                         }
                     }
                     last = point;
