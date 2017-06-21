@@ -1,0 +1,6 @@
+clean up initial insertion points
+identify clusters, smooth out (same as initial point compensation?)
+
+min cut depth to avoid wasting time
+
+overdraw mode is too aggressive
