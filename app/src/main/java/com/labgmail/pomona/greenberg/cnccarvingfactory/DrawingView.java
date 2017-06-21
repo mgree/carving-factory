@@ -5,8 +5,6 @@ import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Environment;
@@ -47,17 +45,26 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     private float stockWidth = -1;
     private float stockDepth = -1;
     private float spoilDepth = -1;
-    private float strokeWidth = -1;
+
+    private float cuttingDiameter = -1;
+
     private float cutoffRight = -1;
     private float cutoffBottom = -1;
 
     private float curDepth = 1.0f; /* between 0 and 1.0, ratio of valid cutting depth */
 
     private String stockUnit = "undef";
-    private String stockTool = "undef";
 
     private boolean debugPoints = false;
     private boolean clearStrokes = false;
+    private float scale;
+
+    public static enum Mode {
+        MANUAL_DEPTH,
+        OVERDRAW
+    };
+
+    private Mode drawingMode = Mode.OVERDRAW;
 
     public DrawingView(Context ctx) { this(ctx, null); }
 
@@ -89,7 +96,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         float wPPI = stockWidth > 0 ? width / stockWidth  : 1;
         float lPPI = stockLength > 0 ? height / stockLength : 1;
 
-        float scale = Math.min(wPPI, lPPI);
+        scale = Math.min(wPPI, lPPI);
 
         cutoffBottom = scale * stockLength;
         cutoffRight = scale * stockWidth;
@@ -120,17 +127,27 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
     private void drawStroke(Canvas canvas, Stroke s, Paint brush, float scale) {
-        brush.setColor(s.getColor());
         brush.setStrokeWidth(s.getStrokeWidth() * scale);
 
         if (s.isDegenerate()) {
             brush.setStyle(Paint.Style.FILL);
 
             Anchor p = s.centroid();
+            brush.setColor(p.getColor());
             canvas.drawCircle(p.x, p.y, s.getStrokeWidth() * scale / 2, brush);
         } else {
             brush.setStyle(Paint.Style.STROKE);
-            canvas.drawPath(s.getPath(), brush);
+
+            Anchor last = null;
+            for (Anchor p : s) {
+                brush.setColor(p.getColor());
+
+                if (last != null) {
+                    canvas.drawLine(last.x, last.y, p.x, p.y, brush);
+                }
+
+                last = p;
+            }
         }
     }
 
@@ -159,9 +176,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     private void saveStroke() {
         if (curStroke != null) {
             Stroke fitted = curStroke.fitToNatCubic(SMOOTHING_FACTOR, CURVE_STEPS);
-            Log.d("FIT", String.format("fitted curve with %d points to nat cubic with %d points",
-                            curStroke.size(), fitted.size()));
-
             strokes.add(fitted);
         }
 
@@ -190,26 +204,59 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         for (int h = 0; h < event.getHistorySize(); h += 1) {
             addPoint(event.getHistoricalX(h),
                      event.getHistoricalY(h),
-                     curDepth,
                      event.getHistoricalEventTime(h));
         }
 
         addPoint(event.getX(),
                  event.getY(),
-                 curDepth,
                  event.getEventTime());
 
         postInvalidate();
     }
 
-    private void addPoint(float x, float y, float z, long time) {
+    private void addPoint(float x, float y, long time) {
         if (x > cutoffRight || y > cutoffBottom) {
             saveStroke();
             return;
         }
 
         if (curStroke == null) {
-            curStroke = new Stroke(strokeWidth);
+            curStroke = new Stroke(cuttingDiameter);
+        }
+
+        float z = 0.0f;
+
+        switch (drawingMode) {
+            case OVERDRAW:
+                float neighboringDepth = 0.0f;
+                z = 0.1f;
+
+                // count neighbors in existing strokes
+                for (Stroke s : strokes) {
+                    for (Anchor p : s) {
+                        if (p.distance2D(x, y) <= scale * cuttingDiameter) {
+                            neighboringDepth = Math.max(neighboringDepth, p.z) + 0.01f;
+                        }
+                    }
+                }
+
+                // count neighbors in current stroke
+                /*
+                for (Anchor p : curStroke) {
+                    if (p.distance2D(x, y) <= cuttingDiameter && time - p.time > 30) {
+                        neighboringDepth = Math.max(neighboringDepth, p.z) + 0.01f;
+                    }
+                }
+                */
+
+                z += neighboringDepth;
+                z = Math.max(0.1f, Math.min(z, 1.0f));
+
+                break;
+
+            case MANUAL_DEPTH:
+                z = curDepth;
+                break;
         }
 
         curStroke.addPoint(x, y, z, time);
@@ -244,8 +291,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        Log.d("DIM", "updated key " + key);
-
         switch (key) {
             case DisplaySettingsActivity.KEY_LENGTH:
                 stockLength = Float.parseFloat(sharedPreferences.getString(key, "0"));
@@ -260,7 +305,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                 stockUnit = sharedPreferences.getString(key, "in");
 
                 scaleTool(sharedPreferences.getString(DisplaySettingsActivity.KEY_TOOL, "0"));
-                Log.d("DIM", "clearing");
                 clearStrokes = true;
 
                 break;
@@ -270,7 +314,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                 break;
             case DisplaySettingsActivity.KEY_SDEPTH:
                 spoilDepth = Float.parseFloat(sharedPreferences.getString(key, "0"));
-                Log.d("PREF", "spoil board depth is now " + spoilDepth);
                 break;
             default:
                 Log.d("PREF", "unknown preference " + key);
@@ -292,15 +335,14 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             Log.d("DIM", "funny unit " + stockUnit);
         }
 
-        strokeWidth = tool * factor;
-        Log.d("DIM","tool dimension/stroke width is now " + tool + " (converts to " + strokeWidth + ")");
+        cuttingDiameter = tool * factor;
     }
 
     public void initializeStockDimensions(SharedPreferences prefs) {
         stockLength = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_LENGTH, "-1"));
         stockWidth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_WIDTH, "-1"));
         stockDepth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_DEPTH, "-1"));
-        strokeWidth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_TOOL, "-1"));
+        cuttingDiameter = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_TOOL, "-1"));
         spoilDepth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_SDEPTH, "-1"));
     }
 
@@ -344,7 +386,16 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             out.printf("N%d G00 G17 G40 G90\n", line++);
             out.printf("N%d G70\n", line++);
             out.printf("N%d G54\n", line++);
-            out.printf("N%d T1 M06\n", line++);
+
+            // TODO generate tool selection
+            int toolNumber = 1;
+            if (cuttingDiameter == 0.5f) {
+                toolNumber = 1;
+            } else if (cuttingDiameter == 0.25f) {
+                toolNumber = 2;
+            }
+
+            out.printf("N%d T%d M06\n", line++, toolNumber);
             out.printf("N%d D1\n", line++);
             out.printf("N%d M03 S18000\n", line++);
 

@@ -62,9 +62,7 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
      */
     public int getColor() {
         if (!points.isEmpty()) {
-            int gray = (int) Math.round(255 * (1 - points.get(0).z));
-            Log.d("COLOR", String.format("z %f color %x", points.get(0).z, gray));
-            return Color.argb(255, gray, gray, gray);
+            return points.get(0).getColor();
         } else {
             return Color.argb(255, 0, 0, 0);
         }

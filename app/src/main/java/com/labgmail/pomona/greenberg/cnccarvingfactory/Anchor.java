@@ -1,5 +1,8 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
+import android.graphics.Color;
+import android.util.Log;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -28,6 +31,17 @@ public class Anchor  implements Serializable{
 
     public String toString(){
         return new String("Anchor Point at (" + x + ", " + y + ", " + z + ") at time " + time);
+    }
+
+    public int getColor() {
+        float bounded = Math.max(Math.min(z, 1.0f), 0.0f);
+
+        int gray = (int) Math.round(255 * (1 - bounded));
+        return Color.argb(255, gray, gray, gray);
+    }
+
+    public double distance2D(float x, float y) {
+        return Math.sqrt(Math.pow(this.x - x, 2) + Math.pow(this.y - y, 2));
     }
 
     private void writeObject(ObjectOutputStream out) throws IOException {
