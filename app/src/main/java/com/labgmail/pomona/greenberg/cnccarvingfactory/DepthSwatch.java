@@ -16,22 +16,24 @@ import android.view.MotionEvent;
  * Created by edinameshietedoho on 6/15/17.
  */
 
+public class DepthSwatch extends android.support.v7.widget.AppCompatImageButton {
 
-// TODO: Use gradient and shape to create a gradient of color.
-public class ColorView extends android.support.v7.widget.AppCompatImageButton {
-
-    private int grayValue = 255;
+    private float depth = 1.0f;
     private final Paint paint = new Paint();
 
     public float clickX, clickY, eventX;
 
-    public ColorView(Context ctx) { this(ctx, null, 0); }
+    public DepthSwatch(Context ctx) { this(ctx, null, 0); }
 
-    public ColorView(Context ctx, AttributeSet attrs) { this(ctx, attrs, 0); }
+    public DepthSwatch(Context ctx, AttributeSet attrs) { this(ctx, attrs, 0); }
 
-    public ColorView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public DepthSwatch(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        setImageDrawable(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[] { 0xff000000, 0x00000000 }));
+
+        this.setBackgroundColor(Color.WHITE);
+
+        setImageDrawable(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[] { Color.BLACK, Color.WHITE}));
+
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(10);
         paint.setColor(Color.RED);
@@ -43,7 +45,7 @@ public class ColorView extends android.support.v7.widget.AppCompatImageButton {
         super.onDraw(canvas);
         Log.d("COLOR","drawing line at " + clickY);
 
-        float y = (1 - ((float) (grayValue / 255f))) * canvas.getHeight();
+        float y = (1 - depth) * canvas.getHeight();
         canvas.drawLine(0, y, canvas.getWidth(), y, paint);
     }
 
@@ -52,19 +54,26 @@ public class ColorView extends android.support.v7.widget.AppCompatImageButton {
         // proportion on the widget may go out of [0,1], so we bound it
         float proportionDownWidget = Math.max(Math.min(event.getY() / getHeight(), 1), 0);
 
-        grayValue = Math.round(255 * (1 - proportionDownWidget));
+        depth = 1 - proportionDownWidget;
         postInvalidate();
 
-        Log.d("COLOR",Integer.toString(grayValue));
         if (event.getAction() == MotionEvent.ACTION_UP) {
-            Log.d("COLOR","clicked @ " + grayValue);
             performClick();
         }
 
         return true;
     }
 
+    /**
+     *
+     * @return 1.0 for maximum depth to 0.0 for minimum depth
+     */
     public float getDepthSelected() {
-        return (grayValue / 255f );
+        return depth;
+    }
+
+    public void setDepth(float depth) {
+        this.depth = depth;
+        postInvalidate();
     }
 }

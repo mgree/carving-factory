@@ -16,26 +16,25 @@ import java.io.Serializable;
 @SuppressWarnings("WeakerAccess")
 public class Anchor  implements Serializable{
 
-    public float x, y, z, time;
+    public float x, y, z;
+    long time;
 
-    public Anchor(float x, float y, float z, float time) {
+    public Anchor(float x, float y, float z, long time) {
         this.x = x;
         this.y = y;
         this.z = z;
         this.time = time;
     }
 
-
     public String toString(){
         return new String("Anchor Point at (" + x + ", " + y + ", " + z + ") at time " + time);
     }
-
 
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.writeFloat(x);
         out.writeFloat(y);
         out.writeFloat(z);
-        out.writeFloat(time);
+        out.writeLong(time);
         out.flush();
     }
 
@@ -43,12 +42,11 @@ public class Anchor  implements Serializable{
         x = in.readFloat();
         y = in.readFloat();
         z = in.readFloat();
-        time = in.readFloat();
+        time = in.readLong();
     }
 
     @SuppressWarnings({"EmptyMethod", "RedundantThrows", "unused"})
     private void readObjectNoData() throws ObjectStreamException { }
 
     public static final long serialVersionUID = 42L;
-
 }

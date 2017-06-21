@@ -1,5 +1,6 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
+import android.graphics.Color;
 import android.graphics.Path;
 import android.util.Log;
 import java.io.IOException;
@@ -22,7 +23,6 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
 
     private float sWidth;
     private List<Anchor> points = new LinkedList<>();
-
 
     /**
      * Are we a degenerate stroke, i.e., a point?
@@ -49,30 +49,39 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
         return path;
     }
 
-    public void addPoint(float x, float y, float z, float t) {
+    public void addPoint(float x, float y, float z, long t) {
         points.add(new Anchor(x, y, z, t));
     }
 
+    /**
+     * Gets the color of the stroke (based on the first point).
+     *
+     * TODO deprecate this in favor of drawing each segment as its own (gradient) color
+     *
+     * @return
+     */
     public int getColor() {
-        return Math.round(points.get(0).z);
+        if (!points.isEmpty()) {
+            int gray = (int) Math.round(255 * (1 - points.get(0).z));
+            Log.d("COLOR", String.format("z %f color %x", points.get(0).z, gray));
+            return Color.argb(255, gray, gray, gray);
+        } else {
+            return Color.argb(255, 0, 0, 0);
+        }
     }
 
     public float getStrokeWidth() { return sWidth; }
 
     public int size() { return points.size(); }
 
-    public List<Anchor> getPoints() { return new LinkedList<>(points); }
-
     @Override
-    public Iterator<Anchor> iterator() {
-        return points.iterator();
-    }
+    public Iterator<Anchor> iterator() { return points.iterator(); }
 
     public Anchor centroid() {
         float meanX = 0;
         float meanY = 0;
         float meanZ = 0;
-        float meanTime = 0;
+        long meanTime = 0;
 
         for (Anchor a : points) {
             meanX += a.x;
@@ -107,6 +116,8 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
         // select every everyN points from the user's input, split into X and Y components
         List<Double> selectedX = new LinkedList<>();
         List<Double> selectedY = new LinkedList<>();
+        List<Double> selectedZ = new LinkedList<>();
+        List<Long> selectedTime = new LinkedList<>();
 
         int i = 0;
         while (i < points.size()) {
@@ -114,6 +125,8 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
             Anchor a = points.get(i);
             selectedX.add((double) a.x);
             selectedY.add((double) a.y);
+            selectedZ.add((double) a.z);
+            selectedTime.add(a.time);
 
             // advance n steps (or stop at the end, keeping the last element)
             if (i + everyN < points.size()) {
@@ -128,15 +141,15 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
         // fit curves
         Cubic[] fittedX = calcNatCubic(selectedX.toArray(new Double[selectedX.size()]));
         Cubic[] fittedY = calcNatCubic(selectedY.toArray(new Double[selectedY.size()]));
+        Cubic[] fittedZ = calcNatCubic(selectedZ.toArray(new Double[selectedZ.size()]));
 
         // construct new stroke from curves
-        //TODO: Do nat cubic for the z dimension???
         Stroke fitted = new Stroke(sWidth);
-        fitted.addPoint(fittedX[0].eval(0), fittedY[0].eval(0), points.get(0).z, points.get(0).time );
+        fitted.addPoint(fittedX[0].eval(0), fittedY[0].eval(0), points.get(0).z, selectedTime.get(0));
         for (i = 0; i < fittedX.length; i += 1) {
             for (int j = 1; j <= steps; j += 1) {
                 double u = j / (double) steps;
-                fitted.addPoint(fittedX[i].eval(u), fittedY[i].eval(u), points.get(i).z, points.get(i).time);
+                fitted.addPoint(fittedX[i].eval(u), fittedY[i].eval(u), fittedZ[i].eval(u), selectedTime.get(i));
             }
         }
 
@@ -216,28 +229,17 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
 
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.writeFloat(sWidth);
-
-        out.writeInt(points.size());
-        for (Anchor a : points) {
-            out.writeFloat(a.x);
-            out.writeFloat(a.y);
-            out.writeFloat(a.z);
-            out.writeFloat(a.time);
-        }
-        out.flush();
+        out.writeObject(points);
     }
 
     private void readObject(ObjectInputStream in) throws IOException {
         sWidth = in.readFloat();
 
         int size = in.readInt();
-        points = new LinkedList<>();
-        for (int i = 0; i < size; i++) {
-            float x = in.readFloat();
-            float y = in.readFloat();
-            float z = in.readFloat();
-            float time = in.readFloat();
-            points.add(new Anchor(x, y, z, time));
+        try {
+            points = (LinkedList<Anchor>) in.readObject();
+        } catch (ClassNotFoundException e) {
+            throw new IOException(e);
         }
     }
 

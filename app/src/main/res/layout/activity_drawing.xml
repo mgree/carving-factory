@@ -31,8 +31,8 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.0">
 
-        <com.labgmail.pomona.greenberg.cnccarvingfactory.ColorView
-            android:id="@+id/color_view"
+        <com.labgmail.pomona.greenberg.cnccarvingfactory.DepthSwatch
+            android:id="@+id/depth_swatch"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="top|fill_vertical"

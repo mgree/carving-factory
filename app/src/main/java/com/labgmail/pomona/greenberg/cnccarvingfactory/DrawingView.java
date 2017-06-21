@@ -5,6 +5,8 @@ import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Environment;
@@ -27,8 +29,6 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
-import static android.graphics.Color.red;
-
 /**
  * Full-screen drawing view.
  *
@@ -38,7 +38,7 @@ import static android.graphics.Color.red;
 public class DrawingView extends View implements SharedPreferences.OnSharedPreferenceChangeListener {
     private static final int SMOOTHING_FACTOR = 3;
     private static final int CURVE_STEPS = 20;
-    private static final float MAX_CUT_DEPTH = .4f;
+    private static final float MAX_SINGLE_CUT_DEPTH = .4f;
 
     private Stroke curStroke;
     private List<Stroke> strokes = new LinkedList<>();
@@ -46,11 +46,13 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     private float stockLength = -1;
     private float stockWidth = -1;
     private float stockDepth = -1;
-    private float stockSpoil = -1;
+    private float spoilDepth = -1;
     private float strokeWidth = -1;
     private float cutoffRight = -1;
     private float cutoffBottom = -1;
-    private int curDepth = 255;
+
+    private float curDepth = 1.0f; /* between 0 and 1.0, ratio of valid cutting depth */
+
     private String stockUnit = "undef";
     private String stockTool = "undef";
 
@@ -61,6 +63,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
     public DrawingView(Context ctx, AttributeSet attrs) {
         super(ctx, attrs);
+        this.setBackgroundColor(Color.WHITE);
 
         cutoffRight = getWidth();
         cutoffBottom = getHeight();
@@ -71,6 +74,9 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         brush.setStyle(Paint.Style.STROKE);
         brush.setARGB(255, 0, 0, 0);
         brush.setAntiAlias(true);
+
+        // TODO PorterDuff modes only apply to bitmaps. might need to do this custom
+        // brush.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DARKEN));
     }
 
     @Override
@@ -88,15 +94,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         cutoffBottom = scale * stockLength;
         cutoffRight = scale * stockWidth;
 
-        Log.d("DIM",String.format("canvas %1.4fx%1.4f, stock %1.4fx%1.4f, wScale %1.4f lScale %1.4f, scaled to %1.4f %1.4f",
-                width, height,
-                stockWidth, stockLength,
-                wPPI, lPPI,
-                cutoffRight, cutoffBottom));
-
         brush.setARGB(255,0,0,0);
         brush.setStyle(Paint.Style.FILL);
-        Log.d("DIM",String.format("drawing rectangle at %1.4f %1.4f %1.4f %1.4f", cutoffRight, 0f, width, height));
 
         // RIGHT
         canvas.drawRect(cutoffRight, 0, width, height, brush);
@@ -109,7 +108,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             if (debugPoints) {
                 brush.setColor(s.getColor() | 0x00FF0000);
                 brush.setStrokeWidth(1);
-                for (Anchor a : s.getPoints()) {
+                for (Anchor a : s) {
                     canvas.drawPoint(a.x, a.y, brush);
                 }
             }
@@ -183,26 +182,27 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
     }
 
-    public void setDepth(float gray) {
-        int grayScale = (int) Math.round((1-gray)*255);
-        curDepth = Color.rgb(grayScale, grayScale, grayScale);
+    public void setDepth(float depth) {
+        curDepth = depth;
     }
 
     private void addMotionEvent(MotionEvent event) {
         for (int h = 0; h < event.getHistorySize(); h += 1) {
-            addPoint(event.getHistoricalEventTime(h),
-                     event.getHistoricalX(h),
-                     event.getHistoricalY(h));
+            addPoint(event.getHistoricalX(h),
+                     event.getHistoricalY(h),
+                     curDepth,
+                     event.getHistoricalEventTime(h));
         }
 
-        addPoint(event.getEventTime(),
-                 event.getX(),
-                 event.getY());
+        addPoint(event.getX(),
+                 event.getY(),
+                 curDepth,
+                 event.getEventTime());
 
         postInvalidate();
     }
 
-    private void addPoint(long time, float x, float y) {
+    private void addPoint(float x, float y, float z, long time) {
         if (x > cutoffRight || y > cutoffBottom) {
             saveStroke();
             return;
@@ -212,7 +212,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             curStroke = new Stroke(strokeWidth);
         }
 
-        curStroke.addPoint(x, y, curDepth, time);
+        curStroke.addPoint(x, y, z, time);
     }
 
     public void saveState(OutputStream state) throws IOException {
@@ -269,8 +269,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
                 break;
             case DisplaySettingsActivity.KEY_SDEPTH:
-                stockSpoil = Float.parseFloat(sharedPreferences.getString(key, "0"));
-                Log.d("PREF", "spoil board depth is now " + stockSpoil);
+                spoilDepth = Float.parseFloat(sharedPreferences.getString(key, "0"));
+                Log.d("PREF", "spoil board depth is now " + spoilDepth);
                 break;
             default:
                 Log.d("PREF", "unknown preference " + key);
@@ -301,7 +301,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         stockWidth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_WIDTH, "-1"));
         stockDepth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_DEPTH, "-1"));
         strokeWidth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_TOOL, "-1"));
-        stockSpoil = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_SDEPTH, "-1"));
+        spoilDepth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_SDEPTH, "-1"));
     }
 
     public void exportGCode() {
@@ -327,22 +327,15 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
             PrintWriter out = new PrintWriter(new FileOutputStream(prg, false));
 
-            // manual override of cutting parameters TODO make this configurable
-            float oldStockDepth = stockDepth;
-            float spoilBoard = 0.495f;
-            stockDepth = 0.72f; // manual override
-
-            float boardHeight = spoilBoard + stockDepth;
-            float clearancePlane = boardHeight + 0.25f;
-//          float cuttingDepth = boardHeight - 0.25f;
+            float boardHeight = spoilDepth + stockDepth;
+            final float clearancePlane = boardHeight + 0.25f;
+            final float maxCutDepth = spoilDepth + stockDepth - MAX_SINGLE_CUT_DEPTH; // TODO we only support a single cut
 
             float ipp = stockWidth / cutoffRight; // scaling factor
 
-            stockDepth = oldStockDepth;
-
             // write metadata comments
             out.println("(generated by CNC Carving Factory)");
-            out.printf("(expected stock dimensions: %1.4fx%1.4fx%1.4f[override] %s)\n",
+            out.printf("(expected stock dimensions: %1.4fx%1.4fx%1.4f %s)\n",
                     stockWidth, stockLength, stockDepth, stockUnit);
 
             // write prelude
@@ -369,7 +362,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                 out.printf("(stroke %d)\n", numStrokes);
 
                 Anchor last = null;
-                for (Anchor point : s.getPoints()) {
+                for (Anchor point : s) {
                     if (point.equals(last)) {
                         continue;
                     }
@@ -378,7 +371,15 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                         // emit G00 moves, move in w/slow feed rate (first iteration)
                         out.printf("N%d G00 X%1.4f Y%1.4f\n", line++, point.x * ipp, stockLength - point.y * ipp);
                         out.printf("N%d G00 Z%1.4f\n", line++, clearancePlane);
-                        out.printf("N%d G01 Z%1.4f F80.0\n", line++, boardHeight - ((1 - (point.z/255f)) * MAX_CUT_DEPTH));
+
+                        // bound the z insertion depth!
+                        float insertion = boardHeight - (point.z * MAX_SINGLE_CUT_DEPTH);
+                        insertion = Math.max(insertion, maxCutDepth);
+                        insertion = Math.min(insertion, clearancePlane);
+                        Log.d("GCODE", String.format("cutting to z %f: %1.4f (bounded from %1.4f)",
+                                point.z, boardHeight - (point.z * MAX_SINGLE_CUT_DEPTH), insertion));
+
+                        out.printf("N%d G01 Z%1.4f F80.0\n", line++, insertion);
 
                         cutting = true;
                     } else {

@@ -2,11 +2,10 @@
     <string name="app_name">CNC Carving Factory</string>
     <string name="dummy_button">dummy_button</string>
     <string name="pref_unit_default">in</string>
-    <string name="pref_spoil_default">".75"</string>
+    <string name="pref_spoil_default">".495"</string>
     <string name="pref_stock_length">"24"</string>
     <string name="pref_stock_width">"48"</string>
-    <string name="pref_stock_depth">"1"</string>
+    <string name="pref_stock_depth">".72"</string>
     <string name="pref_stroke_default">".5"</string>
     <string name="pref_tool_default">.5</string>
-
 </resources>

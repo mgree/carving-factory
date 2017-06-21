@@ -7,9 +7,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
-import android.graphics.PorterDuff;
-import android.graphics.drawable.ColorDrawable;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -22,7 +19,6 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.NumberPicker;
 import android.widget.Toast;
 
 import java.io.FileInputStream;
@@ -124,15 +120,16 @@ public class DrawingActivity extends AppCompatActivity {
         mContentView.initializeStockDimensions(prefs);
 
         // TOOLBAR SETUP
-        findViewById(R.id.color_view).setOnClickListener(new View.OnClickListener() {
+        DepthSwatch swatch = (DepthSwatch) findViewById(R.id.depth_swatch);
+        swatch.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                setDepth(((ColorView) v).getDepthSelected());
+                mContentView.setDepth(((DepthSwatch) v).getDepthSelected());
                 // ??? This is supposed to say "Cutting Depth:" instead of "Alpha:"?
-                Toast.makeText(v.getContext(),"Cutting Depth: " + ((ColorView) v).getDepthSelected()*MAX_CUT_DEPTH, Toast.LENGTH_SHORT).show();
+                Toast.makeText(v.getContext(),"Cutting Depth: " + ((DepthSwatch) v).getDepthSelected()*MAX_CUT_DEPTH, Toast.LENGTH_SHORT).show();
             }
         });
-
+        swatch.setDepth(1.0f);
 
         // FULLSCREEN SETUP
         // Upon interacting with UI controls, delay any scheduled hide()
@@ -184,12 +181,6 @@ public class DrawingActivity extends AppCompatActivity {
             pendingSave = false;
             findViewById(R.id.save_button).performClick();
         }
-    }
-
-    private void setDepth(float depth) {
-        mContentView.setDepth(depth);
-        int grayVal = (int)Math.round(depth*255);
-        ColorDrawable c = new ColorDrawable(Color.rgb(grayVal, grayVal, grayVal));
     }
 
     @Override
