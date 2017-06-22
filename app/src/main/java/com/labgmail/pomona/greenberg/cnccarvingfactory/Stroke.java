@@ -60,11 +60,11 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
      *
      * @return
      */
-    public int getColor() {
+    public int getAlpha() {
         if (!points.isEmpty()) {
-            return points.get(0).getColor();
+            return points.get(0).getAlpha();
         } else {
-            return Color.argb(255, 0, 0, 0);
+            return 255;
         }
     }
 

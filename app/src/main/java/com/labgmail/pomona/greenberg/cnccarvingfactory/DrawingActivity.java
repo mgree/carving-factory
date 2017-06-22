@@ -125,7 +125,6 @@ public class DrawingActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 mContentView.setDepth(((DepthSwatch) v).getDepthSelected());
-                // ??? This is supposed to say "Cutting Depth:" instead of "Alpha:"?
                 Toast.makeText(v.getContext(),"Cutting Depth: " + ((DepthSwatch) v).getDepthSelected()*MAX_CUT_DEPTH, Toast.LENGTH_SHORT).show();
             }
         });

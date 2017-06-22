@@ -33,11 +33,8 @@ public class Anchor  implements Serializable{
         return new String("Anchor Point at (" + x + ", " + y + ", " + z + ") at time " + time);
     }
 
-    public int getColor() {
-        float bounded = Math.max(Math.min(z, 1.0f), 0.0f);
-
-        int gray = (int) Math.round(255 * (1 - bounded));
-        return Color.argb(255, gray, gray, gray);
+    public int getAlpha() {
+        return Math.round(255 * Math.max(Math.min(z, 1.0f), 0.0f));
     }
 
     public double distance2D(float x, float y) {

@@ -102,7 +102,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         cutoffBottom = scale * stockLength;
         cutoffRight = scale * stockWidth;
 
-        brush.setARGB(255,0,0,0);
+        brush.setColor(Color.BLACK);
         brush.setStyle(Paint.Style.FILL);
 
         // RIGHT
@@ -114,7 +114,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             drawStroke(canvas, s, brush, scale);
 
             if (debugPoints) {
-                brush.setColor(s.getColor() | 0x00FF0000);
+                brush.setColor(Color.argb(s.getAlpha(), 255, 0, 0));
                 brush.setStrokeWidth(1);
                 for (Anchor a : s) {
                     canvas.drawPoint(a.x, a.y, brush);
@@ -134,15 +134,14 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             brush.setStyle(Paint.Style.FILL);
 
             Anchor p = s.centroid();
-            brush.setColor(p.getColor());
+            brush.setAlpha(p.getAlpha());
             canvas.drawCircle(p.x, p.y, s.getStrokeWidth() * scale / 2, brush);
         } else {
             brush.setStyle(Paint.Style.STROKE);
 
             Anchor last = null;
             for (Anchor p : s) {
-                brush.setColor(p.getColor());
-
+                brush.setAlpha(p.getAlpha());
                 if (last != null) {
                     canvas.drawLine(last.x, last.y, p.x, p.y, brush);
                 }
@@ -190,7 +189,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         invalidate();
     }
 
-    public void undo() {
+    public void undo() {  //add removing strokes here
         if (strokes.size() > 0) {
             strokes.remove(strokes.size() - 1);
             invalidate();
@@ -199,7 +198,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
     public void setDepth(float depth) {
         curDepth = depth;
-    }
+    } //where this is used change things
 
     private void addMotionEvent(MotionEvent event) {
         for (int h = 0; h < event.getHistorySize(); h += 1) {
@@ -216,6 +215,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
     private void addPoint(float x, float y, long time) {
+
         if (x > cutoffRight || y > cutoffBottom) {
             saveStroke();
             return;
@@ -225,18 +225,20 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             curStroke = new Stroke(cuttingDiameter);
         }
 
-        float z = 0.0f;
+        float z = curDepth;
+        Log.d("DEPTH", "Current Z: " + z);
 
         switch (drawingMode) {
+
             case OVERDRAW:
                 float neighboringDepth = 0.0f;
-                z = 0.1f;
 
                 // count neighbors in existing strokes
                 for (Stroke s : strokes) {
                     for (Anchor p : s) {
+
                         if (p.distance2D(x, y) <= scale * cuttingDiameter) {
-                            neighboringDepth = Math.max(neighboringDepth, p.z) + 0.01f;
+                            neighboringDepth = Math.max(neighboringDepth, p.z) + 0.1f;
                         }
                     }
                 }
@@ -266,7 +268,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     public void saveState(OutputStream state) throws IOException {
         ObjectOutputStream out = new ObjectOutputStream(state);
 
-        out.writeInt(brush.getColor());
+        out.writeInt(brush.getAlpha());
         out.writeFloat(brush.getStrokeWidth());
         out.writeObject(strokes);
         out.flush();
@@ -275,7 +277,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     public void loadState(InputStream state) throws IOException {
         ObjectInputStream in = new ObjectInputStream(state);
 
-        brush.setColor(in.readInt());
+        brush.setAlpha(in.readInt());
         brush.setStrokeWidth(in.readFloat());
         try {
             if (clearStrokes) {
