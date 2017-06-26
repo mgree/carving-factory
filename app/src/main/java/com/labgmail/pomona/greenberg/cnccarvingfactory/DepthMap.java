@@ -1,6 +1,7 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
-import java.util.ArrayList;
+import android.util.Log;
+
 import java.util.LinkedList;
 import java.util.List;
 
@@ -10,74 +11,117 @@ import java.util.List;
 
 public class DepthMap {
 
+    private static final long TIME_THRESHOLD = 400;
     float stockWidth;
     float stockHeight;
     float minRadius;
+    float scale;
+    LinkedList<Anchor>[][] depthMap;
+    int numBucketsX;
+    int numBucketsY;
 
-    public DepthMap(float stockWidth, float stockHeight, float minRadius) {
+    public DepthMap(float stockWidth, float stockHeight, float minRadius, float scale) {
         this.stockWidth = stockWidth;
         this.stockHeight = stockHeight;
         this.minRadius = minRadius;
+        this.scale = scale;
 
         //Calculate number of buckets
-        int numBucketsX = (int) Math.ceil((double) stockWidth / (double) minRadius);
-        int numBucketsY = (int) Math.ceil((double) stockHeight / (double) minRadius);
+        numBucketsX = (int) Math.ceil((double) stockWidth / (double) minRadius);
+        numBucketsY = (int) Math.ceil((double) stockHeight / (double) minRadius);
 
-        //create the overall data structure
-        //This is a 2D array of buckets. Buckets are represented as LinkedLists of Anchors
-        LinkedList<Anchor>[][] depthMap = (LinkedList<Anchor>[][])new Object[numBucketsX][numBucketsY];
-        //is this already initialized???
-        //why are the previous points not working????
-
-
+        //create and initialize the overall data structure
+        depthMap = (LinkedList<Anchor>[][]) new LinkedList[numBucketsY][numBucketsX];
+        for (int i = 0; i < numBucketsY; i++){
+            for (int j = 0; j < numBucketsX; j ++){
+                depthMap[i][j] = new LinkedList<>();
+            }
+        }
     }
 
     /* Takes an anchor and returns a new anchor with an updated Z value according to the depth map*/
-    public Anchor updateZ (Anchor oldZ){
-        //LinkedList<Anchor> potentialPoints = findNeighborPoints(findBuckets(oldZ, currentRadius))
-        //for all potential points do math
+    public Anchor updateZ (Anchor oldPoint, float currentRadius){
+        //Find all relevant points
+        LinkedList<Anchor> potentialPoints = (LinkedList<Anchor>) findNeighborPoints(findBuckets(oldPoint, currentRadius));
 
-        return null;
+        // count neighbors in neighboring buckets after some time threshold
+        float neighboringDepth = 0.0f;
+        float newZ = oldPoint.z;
+        for (Anchor a : potentialPoints) {
+            if (oldPoint.distance2D(a.x, a.y) <= currentRadius * scale
+                    && Math.abs(oldPoint.time - a.time) > TIME_THRESHOLD) {
+                neighboringDepth = Math.max(neighboringDepth, oldPoint.z) + Math.max(oldPoint.getAlpha(), .1f);
+
+            }
+        }
+        newZ += neighboringDepth;
+        newZ = Math.max(0.1f, Math.min(newZ, 1.0f));
+        return new Anchor (oldPoint.x, oldPoint.y, newZ, oldPoint.time);
     }
 
     /* Adds an anchor to the existing depth map */
     public void addPoint(Anchor a){
-
+        findBucket(a).add(a);
     }
 
     /* Removes an anchor from the depth map */
     public void removePoint(Anchor a){
-
+        findBucket(a).remove(a);
     }
 
-    /* Finds the x coordinate of the bucket this anchor is in */
-    public float findBucketCoordX (Anchor a){
-        int bucket = (int) (a.x / minRadius);
-        return bucket * minRadius;
+    /* Clears the depth map */
+    public void clear(){
+        for (LinkedList<Anchor>[] aList : depthMap){
+            for (LinkedList<Anchor> a : aList){
+                a.clear();
+            }
+        }
     }
 
-    /* Finds the y coordinate of the bucket this anchor is in */
-    public float findBucketCoordY (Anchor a){
-        int bucket = (int) (a.y / minRadius);
-        return bucket * minRadius;
+    /* Finds the bucket the point is in */
+    public LinkedList<Anchor> findBucket (Anchor a){
+        return depthMap[findBucketIndexY(a)][findBucketIndexX(a)];
+    }
+
+    /* Finds the x index of the bucket this anchor is in in the array*/
+    private int findBucketIndexX (Anchor a){
+        int ans = (int) (a.x / (minRadius * scale));
+        return Math.max(Math.min (ans, numBucketsX - 1), 0);
+    }
+
+    /* Finds the y index of the bucket this anchor is in in the array*/
+    private int findBucketIndexY (Anchor a){
+        int ans = (int) (a.y / (minRadius * scale));
+        return Math.max(Math.min (ans, numBucketsY - 1), 0);
     }
 
     /* Returns all the surrounding buckets within one radius distance */
     public List<LinkedList<Anchor>> findBuckets (Anchor a, float currentRadius){
-        //for (a-currentRadius).getxbucket to (a+currentRadius.getxbucket)
-            //for (a-currentRadius).getybucket to (a+currentRadius).getYbucket
-                //get the bucket from the depthmap (in coordinates)
-                //add to the answer list
+        LinkedList<LinkedList<Anchor>> ans = new LinkedList<LinkedList<Anchor>>();
 
-        return null;
+        int numBucketsAway = (int)Math.ceil(currentRadius/minRadius);
+        int boundaryXMin = Math.max(0, findBucketIndexX(a) - numBucketsAway);
+        int boundaryXMax = Math.min(numBucketsX - 1, findBucketIndexX(a) + numBucketsAway);
+        int boundaryYMin = Math.max(0, findBucketIndexY(a) - numBucketsAway);
+        int boundaryYMax = Math.min(numBucketsY - 1, findBucketIndexY(a) + numBucketsAway);
+
+        for (int i = boundaryYMin; i <= boundaryYMax; i++){
+            for (int j = boundaryXMin; j <= boundaryXMax; j++){
+                    ans.add(depthMap[i][j]);
+            }
+        }
+        return ans;
     }
 
     /* Returns all the neighboring points that are in the surrounding buckets*/
     public List<Anchor> findNeighborPoints(List<LinkedList<Anchor>> listOfBuckets){
-        //for each linkedlist
-            //add all the anchors to the final list
-        return null;
+        LinkedList<Anchor> ans = new LinkedList<Anchor>();
+        for (LinkedList<Anchor> l : listOfBuckets){
+            for (Anchor a : l) {
+                ans.add(a);
+            }
+        }
+        return ans;
+
     }
-
-
 }

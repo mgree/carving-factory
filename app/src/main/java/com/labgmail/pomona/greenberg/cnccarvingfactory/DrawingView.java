@@ -30,13 +30,14 @@ import java.util.List;
 /**
  * Full-screen drawing view.
  *
- * Created by edinameshietedoho and soniagrunwaldon 5/25/17.
+ * Created by edinameshietedoho and soniagrunwald on 5/25/17.
  */
 
 public class DrawingView extends View implements SharedPreferences.OnSharedPreferenceChangeListener {
     private static final int SMOOTHING_FACTOR = 3;
     private static final int CURVE_STEPS = 20;
     private static final float MAX_SINGLE_CUT_DEPTH = .4f;
+    private static final float MIN_RADIUS = .25f; //TODO Don't hard code this in
 
     private Stroke curStroke;
     private List<Stroke> strokes = new LinkedList<>();
@@ -58,6 +59,9 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     private boolean debugPoints = false;
     private boolean clearStrokes = false;
     private float scale;
+
+    private DepthMap depthMap;
+    private boolean initialized = false;
 
     public static enum Mode {
         MANUAL_DEPTH,
@@ -83,9 +87,9 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         brush.setARGB(255, 0, 0, 0);
         brush.setAntiAlias(true);
 
-        // TODO PorterDuff modes only apply to bitmaps. might need to do this custom
-        // brush.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DARKEN));
     }
+
+
 
     @Override
     protected void onDraw(Canvas canvas) {
@@ -101,6 +105,11 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         cutoffBottom = scale * stockLength;
         cutoffRight = scale * stockWidth;
+
+        if (!initialized){
+            depthMap = new DepthMap(stockWidth, stockLength, MIN_RADIUS, scale);
+            initialized = true;
+        }
 
         brush.setColor(Color.BLACK);
         brush.setStyle(Paint.Style.FILL);
@@ -132,21 +141,21 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         if (s.isDegenerate()) {
             brush.setStyle(Paint.Style.FILL);
-
             Anchor p = s.centroid();
             brush.setAlpha(p.getAlpha());
             canvas.drawCircle(p.x, p.y, s.getStrokeWidth() * scale / 2, brush);
+            depthMap.addPoint(p);
         } else {
             brush.setStyle(Paint.Style.STROKE);
 
             Anchor last = null;
-            for (Anchor p : s) {
-                brush.setAlpha(p.getAlpha());
+            for (Anchor a : s) {
+                brush.setAlpha(a.getAlpha());
                 if (last != null) {
-                    canvas.drawLine(last.x, last.y, p.x, p.y, brush);
+                    canvas.drawLine(last.x, last.y, a.x, a.y, brush);
+                    depthMap.addPoint(a); //inside if to avoid duplicates
                 }
-
-                last = p;
+                last = a;
             }
         }
     }
@@ -186,12 +195,16 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     public void clear() {
         curStroke = null;
         strokes.clear();
+        depthMap.clear();
         invalidate();
     }
 
     public void undo() {  //add removing strokes here
         if (strokes.size() > 0) {
             strokes.remove(strokes.size() - 1);
+            for (Anchor a : strokes.get(strokes.size() - 1)){
+                depthMap.removePoint(a);
+            }
             invalidate();
         }
     }
@@ -231,29 +244,9 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         switch (drawingMode) {
 
             case OVERDRAW:
-                float neighboringDepth = 0.0f;
-
-                // count neighbors in existing strokes
-                for (Stroke s : strokes) {
-                    for (Anchor p : s) {
-
-                        if (p.distance2D(x, y) <= scale * cuttingDiameter) {
-                            neighboringDepth = Math.max(neighboringDepth, p.z) + 0.1f;
-                        }
-                    }
-                }
-
-                // count neighbors in current stroke
-                /*
-                for (Anchor p : curStroke) {
-                    if (p.distance2D(x, y) <= cuttingDiameter && time - p.time > 30) {
-                        neighboringDepth = Math.max(neighboringDepth, p.z) + 0.01f;
-                    }
-                }
-                */
-
-                z += neighboringDepth;
-                z = Math.max(0.1f, Math.min(z, 1.0f));
+                Anchor updatedPoint = depthMap.updateZ(new Anchor (x, y, z, time), cuttingDiameter/2f);
+                depthMap.addPoint(updatedPoint);
+                z = updatedPoint.z;
 
                 break;
 
