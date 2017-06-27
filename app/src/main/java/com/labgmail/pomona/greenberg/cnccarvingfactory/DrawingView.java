@@ -101,6 +101,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         tools.add(half_inch);
         tools.add(quarter_inch);
+
+        curTool = tools.get(0);
     }
 
 
@@ -160,7 +162,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
             Anchor p = s.centroid();
             brush.setAlpha(p.getAlpha());
-            canvas.drawCircle(p.x, p.y, s.getTDiameter() * scale / 2, brush);
+            canvas.drawCircle(p.x, p.y, s.getStrokeWidth() * scale / 2, brush);
             depthMap.addPoint(p);
         } else {
             brush.setStyle(Paint.Style.STROKE);

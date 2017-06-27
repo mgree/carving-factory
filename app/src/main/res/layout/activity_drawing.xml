@@ -52,7 +52,7 @@
             android:layout_height="1dp"
             android:layout_weight="1"
             android:contentDescription="Quarter Tool"
-            app:srcCompat="@android:drawable/ic_media_next" />
+            app:srcCompat="@android:drawable/ic_media_pause" />
 
         <ImageButton
             android:id="@+id/clear_button"
