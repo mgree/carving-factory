@@ -102,26 +102,14 @@ public class GCodeGenerator {
 
                     cutting = true;
                 } else {
-                    // TODO see if it's safe to get rid of 'fast' flag and rely on redundancy pruning
-                    if (!fast) {
-                        // first G01 move, set high feedrate (second iteration)
-                        // bound the z insertion depth!
-                        float z = boardHeight - (point.z * MAX_SINGLE_CUT_DEPTH);
-                        z = Math.max(z, maxCutDepth);
-                        z = Math.min(z, clearancePlane);
+                    // first G01 move, set high feedrate (second iteration)
+                    // bound the z insertion depth!
+                    float z = boardHeight - (point.z * MAX_SINGLE_CUT_DEPTH);
+                    z = Math.max(z, maxCutDepth);
+                    z = Math.min(z, clearancePlane);
 
-                        gcg.cmd(new G(1).X(point.x * ipp).Y(stockLength - point.y * ipp).Z(z).F(250.0f)); // TODO use Tool
+                    gcg.cmd(new G(1).X(point.x * ipp).Y(stockLength - point.y * ipp).Z(z).F(250.0f)); // TODO use Tool
 
-                        fast = true;
-                    } else {
-                        // general moves (other iterations)
-                        // bound the z insertion depth!
-                        float z = boardHeight - (point.z * MAX_SINGLE_CUT_DEPTH);
-                        z = Math.max(z, maxCutDepth);
-                        z = Math.min(z, clearancePlane);
-
-                        gcg.cmd(new G(1).X(point.x * ipp).Y(stockLength - point.y * ipp).Z(z));
-                    }
                 }
                 last = point;
             }

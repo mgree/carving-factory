@@ -123,7 +123,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             drawStroke(canvas, s, brush, scale);
 
             if (debugPoints) {
-                brush.setColor(Color.argb(s.getAlpha(), 255, 0, 0));
+                brush.setColor(Color.RED);
                 brush.setStrokeWidth(1);
                 for (Anchor a : s) {
                     canvas.drawPoint(a.x, a.y, brush);
@@ -132,6 +132,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
 
         if (curStroke != null) {
+
             drawStroke(canvas, curStroke, brush, scale);
         }
     }
@@ -153,8 +154,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                 brush.setAlpha(a.getAlpha());
                 if (last != null) {
                     canvas.drawLine(last.x, last.y, a.x, a.y, brush);
-                    depthMap.addPoint(a); //inside if to avoid duplicates
                 }
+                depthMap.addPoint(a);
                 last = a;
             }
         }
@@ -191,7 +192,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         curStroke = null;
     }
 
-
     public void clear() {
         curStroke = null;
         strokes.clear();
@@ -199,7 +199,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         invalidate();
     }
 
-    public void undo() {  //add removing strokes here
+    public void undo() {
         if (strokes.size() > 0) {
             strokes.remove(strokes.size() - 1);
             for (Anchor a : strokes.get(strokes.size() - 1)){
@@ -247,6 +247,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                 Anchor updatedPoint = depthMap.updateZ(new Anchor (x, y, z, time), cuttingDiameter/2f);
                 depthMap.addPoint(updatedPoint);
                 z = updatedPoint.z;
+                Log.d("DEPTH", "Current Z: " + z);
 
                 break;
 

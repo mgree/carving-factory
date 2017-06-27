@@ -8,6 +8,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -21,8 +22,20 @@ import java.util.List;
 @SuppressWarnings("WeakerAccess")
 public class Stroke extends Path implements Serializable, Iterable<Anchor>{
 
+    private static final long TIME_THRESHOLD = 50;
+    private static final double DISTANCE_THRESHOLD = 25;
     private float sWidth;
     private List<Anchor> points = new LinkedList<>();
+
+
+    public static enum SelectionMode {
+        EVERYN,
+        TIME,
+        DISTANCE
+    };
+
+    SelectionMode selectionMode = SelectionMode.DISTANCE;
+
 
     /**
      * Are we a degenerate stroke, i.e., a point?
@@ -53,13 +66,8 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
         points.add(new Anchor(x, y, z, t));
     }
     public void addPoint(Anchor a){ points.add(a); }
-    /**
-     * Gets the color of the stroke (based on the first point).
-     *
-     * TODO deprecate this in favor of drawing each segment as its own (gradient) color
-     *
-     * @return
-     */
+
+    /* Get the alpha value for the first point on the stroke */
     public int getAlpha() {
         if (!points.isEmpty()) {
             return points.get(0).getAlpha();
@@ -117,24 +125,149 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
         List<Double> selectedZ = new LinkedList<>();
         List<Long> selectedTime = new LinkedList<>();
 
-        int i = 0;
-        while (i < points.size()) {
-            // save the current point
-            Anchor a = points.get(i);
-            selectedX.add((double) a.x);
-            selectedY.add((double) a.y);
-            selectedZ.add((double) a.z);
-            selectedTime.add(a.time);
+        if (selectionMode == SelectionMode.EVERYN){
+            int i = 0;
+            while (i < points.size()) {
+                // save the current point
+                Anchor a = points.get(i);
+                selectedX.add((double) a.x);
+                selectedY.add((double) a.y);
+                selectedZ.add((double) a.z);
+                selectedTime.add(a.time);
 
-            // advance n steps (or stop at the end, keeping the last element)
-            if (i + everyN < points.size()) {
-                i += everyN;
-            } else if (i < points.size() - 1) {
-                i = points.size() - 1; // get the last point no matter what
-            } else {
-                i = points.size(); // stop the loop
+                // advance n steps (or stop at the end, keeping the last element)
+                if (i + everyN < points.size()) {
+                    i += everyN;
+                } else if (i < points.size() - 1) {
+                    i = points.size() - 1; // get the last point no matter what
+                } else {
+                    i = points.size(); // stop the loop
+                }
             }
+        } else if (selectionMode == SelectionMode.TIME){
+            if(points.size() > 0){
+                selectedX.add((double) points.get(0).x);
+                selectedY.add((double) points.get(0).y);
+                selectedZ.add((double) points.get(0).z);
+                selectedTime.add(points.get(0).time);
+            }
+
+
+            ArrayList<Anchor> newList = new ArrayList<>();
+            int next = 0;
+
+            float meanX;
+            float meanY;
+            float meanZ;
+            long meanTime;
+            long currTime;
+
+            while (next < points.size() - 1) {
+                newList.clear();
+                newList.add(points.get(next)); //add the first point
+                currTime = points.get(next).time; //save the time of the current point
+                next++;
+
+                //Add all the points within the range
+                while ((next < (points.size() - 1)) && (Math.abs(points.get(next).time - currTime) < TIME_THRESHOLD)) {
+                    newList.add(points.get(next));
+                    next++;
+
+                }
+
+                //average all the points
+                meanX = 0;
+                meanY = 0;
+                meanZ = 0;
+                meanTime = 0;
+                for (Anchor a : newList) {
+                    meanX += a.x;
+                    meanY += a.y;
+                    meanZ += a.z;
+                    meanTime += a.time;
+                }
+
+                //save the average
+                selectedX.add((double) meanX / newList.size());
+                selectedY.add((double) meanY / newList.size());
+                selectedZ.add((double) meanZ / newList.size());
+                selectedTime.add(meanTime / newList.size());
+
+            }
+            //if the last point hasn't been added, add it
+            if(!(newList.get(newList.size() - 1).equals(points.get(points.size() - 1)))){
+                selectedX.add((double) points.get(points.size() - 1).x);
+                selectedY.add((double) points.get(points.size() - 1).y);
+                selectedZ.add((double) points.get(points.size() - 1).z);
+                selectedTime.add(points.get(points.size() - 1).time);
+            }
+
+        } else if (selectionMode == SelectionMode.DISTANCE){
+            if(points.size() > 0){
+                selectedX.add((double) points.get(0).x);
+                selectedY.add((double) points.get(0).y);
+                selectedZ.add((double) points.get(0).z);
+                selectedTime.add(points.get(0).time);
+            }
+
+
+            ArrayList<Anchor> newList = new ArrayList<>();
+            int next = 0;
+
+            float meanX;
+            float meanY;
+            float meanZ;
+            long meanTime;
+            float currX, currY;
+
+
+            while (next < points.size() - 1) {
+                newList.clear();
+                newList.add(points.get(next)); //add the first point
+                currX = points.get(next).x; //save the x value of the current point
+                currY = points.get(next).y; //save the y value of the current point
+                next++;
+
+                //Add all the points within the range
+                while ((next < (points.size() - 1)) && ((points.get(next).distance2D(currX, currY)) < DISTANCE_THRESHOLD)) {
+                    newList.add(points.get(next));
+                    next++;
+
+                }
+
+                //average all the points
+                meanX = 0;
+                meanY = 0;
+                meanZ = 0;
+                meanTime = 0;
+                for (Anchor a : newList) {
+                    meanX += a.x;
+                    meanY += a.y;
+                    meanZ += a.z;
+                    meanTime += a.time;
+                }
+
+                //save the average
+                selectedX.add((double) meanX / newList.size());
+                selectedY.add((double) meanY / newList.size());
+                selectedZ.add((double) meanZ / newList.size());
+                selectedTime.add(meanTime / newList.size());
+
+            }
+            //if the last point hasn't been added, add it
+            if(!(newList.get(newList.size() - 1).equals(points.get(points.size() - 1)))){
+                selectedX.add((double) points.get(points.size() - 1).x);
+                selectedY.add((double) points.get(points.size() - 1).y);
+                selectedZ.add((double) points.get(points.size() - 1).z);
+                selectedTime.add(points.get(points.size() - 1).time);
+            }
+
+
+
+        } else {
+        Log.d("MODE", "Incorrect Mode.");
         }
+
 
         // fit curves
         Cubic[] fittedX = calcNatCubic(selectedX.toArray(new Double[selectedX.size()]));
@@ -144,7 +277,7 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
         // construct new stroke from curves
         Stroke fitted = new Stroke(sWidth);
         fitted.addPoint(fittedX[0].eval(0), fittedY[0].eval(0), points.get(0).z, selectedTime.get(0));
-        for (i = 0; i < fittedX.length; i += 1) {
+        for (int i = 0; i < fittedX.length; i += 1) {
             for (int j = 1; j <= steps; j += 1) {
                 double u = j / (double) steps;
                 fitted.addPoint(fittedX[i].eval(u), fittedY[i].eval(u), fittedZ[i].eval(u), selectedTime.get(i));

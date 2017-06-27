@@ -20,6 +20,9 @@ public class DepthMap {
     int numBucketsX;
     int numBucketsY;
 
+
+
+
     public DepthMap(float stockWidth, float stockHeight, float minRadius, float scale) {
         this.stockWidth = stockWidth;
         this.stockHeight = stockHeight;
@@ -49,7 +52,7 @@ public class DepthMap {
         float newZ = oldPoint.z;
         for (Anchor a : potentialPoints) {
             if (oldPoint.distance2D(a.x, a.y) <= currentRadius * scale
-                    && Math.abs(oldPoint.time - a.time) > TIME_THRESHOLD) {
+                    && Math.abs(oldPoint.time - a.time) > TIME_THRESHOLD) { //prevents it from counting adjacent points
                 neighboringDepth = Math.max(neighboringDepth, oldPoint.z) + Math.max(oldPoint.getAlpha(), .1f);
 
             }
@@ -97,7 +100,7 @@ public class DepthMap {
 
     /* Returns all the surrounding buckets within one radius distance */
     public List<LinkedList<Anchor>> findBuckets (Anchor a, float currentRadius){
-        LinkedList<LinkedList<Anchor>> ans = new LinkedList<LinkedList<Anchor>>();
+        LinkedList<LinkedList<Anchor>> ans = new LinkedList<>();
 
         int numBucketsAway = (int)Math.ceil(currentRadius/minRadius);
         int boundaryXMin = Math.max(0, findBucketIndexX(a) - numBucketsAway);
@@ -113,15 +116,14 @@ public class DepthMap {
         return ans;
     }
 
-    /* Returns all the neighboring points that are in the surrounding buckets*/
+    /* Returns all the neighboring points that are in a list of buckets (will be the surrounding buckets) */
     public List<Anchor> findNeighborPoints(List<LinkedList<Anchor>> listOfBuckets){
-        LinkedList<Anchor> ans = new LinkedList<Anchor>();
+        LinkedList<Anchor> ans = new LinkedList<>();
         for (LinkedList<Anchor> l : listOfBuckets){
             for (Anchor a : l) {
                 ans.add(a);
             }
         }
         return ans;
-
     }
 }
