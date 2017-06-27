@@ -147,10 +147,12 @@ public class DrawingActivity extends AppCompatActivity {
             public void onClick(View v) { mContentView.clear(); }
         });
         findViewById(R.id.half_inch_button).setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {mContentView.setToolHalf(); }
+            public void onClick(View v) {mContentView.setToolHalf();
+                Toast.makeText(v.getContext(),"Selected Tool: Half Inch (.5)", Toast.LENGTH_SHORT).show();}
         });
         findViewById(R.id.quarter_inch_button).setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {mContentView.setToolQuarter(); }
+            public void onClick(View v) {mContentView.setToolQuarter();
+                Toast.makeText(v.getContext(),"Selected Tool: Quarter Inch (.25)", Toast.LENGTH_SHORT).show();}
         });
 
         // SETUP SAVE BUTTON

@@ -83,7 +83,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         cutoffRight = getWidth();
         cutoffBottom = getHeight();
         initializeBrush();
-        intializeTools();
+        initializeTools();
     }
 
     private void initializeBrush() {
@@ -95,7 +95,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         // brush.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DARKEN));
     }
 
-    private void intializeTools() {
+    private void initializeTools() {
         half_inch = new Tools(1,0.5f,0.4f,80f,250f);
         quarter_inch = new Tools(2,0.25f,0.4f,80f,250f);
 
@@ -232,6 +232,10 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         curTool = tools.get(1);
     }
 
+    public void setTool(Tools tools) {
+        tools = curTool;
+    }
+
     public void setDepth(float depth) {
         curDepth = depth;
     } //where this is used change things
@@ -307,6 +311,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         out.writeInt(brush.getAlpha());
         out.writeFloat(brush.getStrokeWidth());
         out.writeObject(strokes);
+        out.writeObject(curTool);
         out.flush();
     }
 
@@ -315,6 +320,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         brush.setAlpha(in.readInt());
         brush.setStrokeWidth(in.readFloat());
+        setTool(curTool);
         try {
             if (clearStrokes) {
                 strokes = new LinkedList<>();
@@ -362,9 +368,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
     private void scaleTool(String toolDim) {
-        float tool = Float.parseFloat(toolDim);
-        float teet = half_inch.getDiameter();
-
         // NB all tool dimensions MUST be in inches
         float factor = 1.0f;
         if (stockUnit.equals("in")) {
