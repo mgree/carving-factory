@@ -147,7 +147,10 @@ public class DrawingActivity extends AppCompatActivity {
             public void onClick(View v) { mContentView.clear(); }
         });
         findViewById(R.id.half_inch_button).setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {}
+            public void onClick(View v) {mContentView.setToolHalf(); }
+        });
+        findViewById(R.id.quarter_inch_button).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {mContentView.setToolQuarter(); }
         });
 
         // SETUP SAVE BUTTON

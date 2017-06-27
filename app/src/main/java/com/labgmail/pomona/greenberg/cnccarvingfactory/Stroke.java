@@ -367,13 +367,12 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
 
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.writeFloat(sWidth);
-//        out.writeFloat(tool.getDiameter());
+        out.writeFloat(tool.getDiameter());
         out.writeObject(points);
     }
 
     private void readObject(ObjectInputStream in) throws IOException {
         sWidth = in.readFloat();
-//        tool.getDiameter() = in.readFloat();
 
         int size = in.readInt();
         try {

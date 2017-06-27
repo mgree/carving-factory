@@ -153,14 +153,14 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
     private void drawStroke(Canvas canvas, Stroke s, Paint brush, float scale) {
-        brush.setStrokeWidth(s.getStrokeWidth() * scale);
+        brush.setStrokeWidth(s.getTDiameter() * scale);
 
         if (s.isDegenerate()) {
             brush.setStyle(Paint.Style.FILL);
 
             Anchor p = s.centroid();
             brush.setAlpha(p.getAlpha());
-            canvas.drawCircle(p.x, p.y, s.getStrokeWidth() * scale / 2, brush);
+            canvas.drawCircle(p.x, p.y, s.getTDiameter() * scale / 2, brush);
             depthMap.addPoint(p);
         } else {
             brush.setStyle(Paint.Style.STROKE);
@@ -222,8 +222,12 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
     }
 
-    public void setTool() {
+    public void setToolHalf() {
         curTool = tools.get(0);
+    }
+
+    public void setToolQuarter() {
+        curTool = tools.get(1);
     }
 
     public void setDepth(float depth) {
@@ -252,7 +256,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
 
         if (curStroke == null) {
-            curStroke = new Stroke(cuttingDiameter);
+            curStroke = new Stroke(cuttingDiameter,curTool);
         }
 
         float z = curDepth;
@@ -357,7 +361,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
     private void scaleTool(String toolDim) {
         float tool = Float.parseFloat(toolDim);
-//        float teet = half_inch.getDiameter();
+        float teet = half_inch.getDiameter();
 
         // NB all tool dimensions MUST be in inches
         float factor = 1.0f;
@@ -368,8 +372,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         } else {
             Log.d("DIM", "funny unit " + stockUnit);
         }
-
-        cuttingDiameter = tool * factor;
+        // Gets the current Tool being used and gets Diameter of that instead of reading in the string from Settings.
+        cuttingDiameter = curTool.getDiameter() * factor;
     }
 
 
@@ -377,7 +381,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         stockLength = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_LENGTH, "-1"));
         stockWidth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_WIDTH, "-1"));
         stockDepth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_DEPTH, "-1"));
-        cuttingDiameter = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_TOOL, "-1"));
+//        cuttingDiameter = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_TOOL, "-1"));
         spoilDepth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_SDEPTH, "-1"));
 
 
