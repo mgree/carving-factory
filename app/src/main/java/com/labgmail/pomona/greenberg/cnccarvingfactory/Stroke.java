@@ -28,6 +28,7 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
     private static final long TIME_THRESHOLD = 50;
     private static final double DISTANCE_THRESHOLD = 25;
     private float sWidth;
+    private Tools tool;
     private List<Anchor> points = new LinkedList<>();
 
 
@@ -47,8 +48,9 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
      */
     private boolean degenerate = true;
 
-    public Stroke(float sWidth) {
+    public Stroke(float sWidth, Tools tool) {
         this.sWidth = sWidth;
+        this.tool = tool;
     }
 
     public Path getPath() {
@@ -80,6 +82,8 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
     }
 
     public float getStrokeWidth() { return sWidth; }
+
+    public float getTDiameter() { return tool.getDiameter(); }
 
     public int size() { return points.size(); }
 
@@ -268,7 +272,7 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
 
 
         } else {
-        Log.d("MODE", "Incorrect Mode.");
+            Log.d("MODE", "Incorrect Mode.");
         }
 
 
@@ -278,7 +282,7 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
         Cubic[] fittedZ = calcNatCubic(selectedZ.toArray(new Double[selectedZ.size()]));
 
         // construct new stroke from curves
-        Stroke fitted = new Stroke(sWidth);
+        Stroke fitted = new Stroke(sWidth,tool);
         fitted.addPoint(fittedX[0].eval(0), fittedY[0].eval(0), points.get(0).z, selectedTime.get(0));
         for (int i = 0; i < fittedX.length; i += 1) {
             for (int j = 1; j <= steps; j += 1) {
@@ -363,11 +367,13 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
 
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.writeFloat(sWidth);
+//        out.writeFloat(tool.getDiameter());
         out.writeObject(points);
     }
 
     private void readObject(ObjectInputStream in) throws IOException {
         sWidth = in.readFloat();
+//        tool.getDiameter() = in.readFloat();
 
         int size = in.readInt();
         try {

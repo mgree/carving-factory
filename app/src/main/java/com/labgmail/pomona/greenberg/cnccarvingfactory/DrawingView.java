@@ -30,14 +30,14 @@ import java.util.List;
 /**
  * Full-screen drawing view.
  *
- * Created by edinameshietedoho and soniagrunwald on 5/25/17.
+ * Created by edinameshietedoho and soniagrunwaldon 5/25/17.
  */
 
 public class DrawingView extends View implements SharedPreferences.OnSharedPreferenceChangeListener {
     private static final int SMOOTHING_FACTOR = 3;
     private static final int CURVE_STEPS = 20;
     private static final float MAX_SINGLE_CUT_DEPTH = .4f;
-    private static final float MIN_RADIUS = .25f; //TODO Don't hard code this in
+    private static final float MIN_RADIUS = .25f;
 
     private Stroke curStroke;
     private List<Stroke> strokes = new LinkedList<>();
@@ -46,6 +46,9 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     private float stockWidth = -1;
     private float stockDepth = -1;
     private float spoilDepth = -1;
+    public List<Tools> tools = new LinkedList<>();
+    public Tools half_inch,quarter_inch,curTool;
+
 
     private float cuttingDiameter = -1;
 
@@ -80,6 +83,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         cutoffRight = getWidth();
         cutoffBottom = getHeight();
         initializeBrush();
+        intializeTools();
     }
 
     private void initializeBrush() {
@@ -87,6 +91,16 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         brush.setARGB(255, 0, 0, 0);
         brush.setAntiAlias(true);
 
+        // TODO PorterDuff modes only apply to bitmaps. might need to do this custom
+        // brush.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DARKEN));
+    }
+
+    private void intializeTools() {
+        half_inch = new Tools(1,0.5f,0.4f,80f,250f);
+        quarter_inch = new Tools(2,0.25f,0.4f,80f,250f);
+
+        tools.add(half_inch);
+        tools.add(quarter_inch);
     }
 
 
@@ -106,13 +120,13 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         cutoffBottom = scale * stockLength;
         cutoffRight = scale * stockWidth;
 
-        if (!initialized){
+        brush.setColor(Color.BLACK);
+        brush.setStyle(Paint.Style.FILL);
+
+        if (!initialized) {
             depthMap = new DepthMap(stockWidth, stockLength, MIN_RADIUS, scale);
             initialized = true;
         }
-
-        brush.setColor(Color.BLACK);
-        brush.setStyle(Paint.Style.FILL);
 
         // RIGHT
         canvas.drawRect(cutoffRight, 0, width, height, brush);
@@ -123,16 +137,17 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             drawStroke(canvas, s, brush, scale);
 
             if (debugPoints) {
-                brush.setColor(Color.RED);
+                brush.setColor(Color.argb(s.getAlpha(), 255, 0, 0));
                 brush.setStrokeWidth(1);
                 for (Anchor a : s) {
                     canvas.drawPoint(a.x, a.y, brush);
                 }
             }
+
+
         }
 
         if (curStroke != null) {
-
             drawStroke(canvas, curStroke, brush, scale);
         }
     }
@@ -142,6 +157,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         if (s.isDegenerate()) {
             brush.setStyle(Paint.Style.FILL);
+
             Anchor p = s.centroid();
             brush.setAlpha(p.getAlpha());
             canvas.drawCircle(p.x, p.y, s.getStrokeWidth() * scale / 2, brush);
@@ -150,13 +166,13 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             brush.setStyle(Paint.Style.STROKE);
 
             Anchor last = null;
-            for (Anchor a : s) {
-                brush.setAlpha(a.getAlpha());
+            for (Anchor p : s) {
+                brush.setAlpha(p.getAlpha());
                 if (last != null) {
-                    canvas.drawLine(last.x, last.y, a.x, a.y, brush);
+                    canvas.drawLine(last.x, last.y, p.x, p.y, brush);
                 }
-                depthMap.addPoint(a);
-                last = a;
+
+                last = p;
             }
         }
     }
@@ -192,21 +208,22 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         curStroke = null;
     }
 
+
     public void clear() {
         curStroke = null;
         strokes.clear();
-        depthMap.clear();
         invalidate();
     }
 
-    public void undo() {
+    public void undo() {  //add removing strokes here
         if (strokes.size() > 0) {
             strokes.remove(strokes.size() - 1);
-            for (Anchor a : strokes.get(strokes.size() - 1)){
-                depthMap.removePoint(a);
-            }
             invalidate();
         }
+    }
+
+    public void setTool() {
+        curTool = tools.get(0);
     }
 
     public void setDepth(float depth) {
@@ -244,10 +261,29 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         switch (drawingMode) {
 
             case OVERDRAW:
-                Anchor updatedPoint = depthMap.updateZ(new Anchor (x, y, z, time), cuttingDiameter/2f);
-                depthMap.addPoint(updatedPoint);
-                z = updatedPoint.z;
-                Log.d("DEPTH", "Current Z: " + z);
+                float neighboringDepth = 0.0f;
+
+                // count neighbors in existing strokes
+                for (Stroke s : strokes) {
+                    for (Anchor p : s) {
+
+                        if (p.distance2D(x, y) <= scale * cuttingDiameter) {
+                            neighboringDepth = Math.max(neighboringDepth, p.z) + 0.1f;
+                        }
+                    }
+                }
+
+                // count neighbors in current stroke
+                /*
+                for (Anchor p : curStroke) {
+                    if (p.distance2D(x, y) <= cuttingDiameter && time - p.time > 30) {
+                        neighboringDepth = Math.max(neighboringDepth, p.z) + 0.01f;
+                    }
+                }
+                */
+
+                z += neighboringDepth;
+                z = Math.max(0.1f, Math.min(z, 1.0f));
 
                 break;
 
@@ -321,6 +357,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
     private void scaleTool(String toolDim) {
         float tool = Float.parseFloat(toolDim);
+//        float teet = half_inch.getDiameter();
 
         // NB all tool dimensions MUST be in inches
         float factor = 1.0f;
@@ -335,12 +372,15 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         cuttingDiameter = tool * factor;
     }
 
+
     public void initializeStockDimensions(SharedPreferences prefs) {
         stockLength = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_LENGTH, "-1"));
         stockWidth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_WIDTH, "-1"));
         stockDepth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_DEPTH, "-1"));
         cuttingDiameter = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_TOOL, "-1"));
         spoilDepth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_SDEPTH, "-1"));
+
+
     }
 
     public void exportGCode() {

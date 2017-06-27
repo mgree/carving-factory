@@ -25,6 +25,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Central drawing activity for (eventual) output to a CNC machine.
@@ -52,6 +54,7 @@ public class DrawingActivity extends AppCompatActivity {
     private DrawingView mContentView;
     private ImageView swatch;
     private boolean pendingSave = false;
+
 
     private final Runnable mHidePart2Runnable = new Runnable() {
         @SuppressLint("InlinedApi")
@@ -119,6 +122,8 @@ public class DrawingActivity extends AppCompatActivity {
         prefs.registerOnSharedPreferenceChangeListener(mContentView);
         mContentView.initializeStockDimensions(prefs);
 
+
+
         // TOOLBAR SETUP
         DepthSwatch swatch = (DepthSwatch) findViewById(R.id.depth_swatch);
         swatch.setOnClickListener(new View.OnClickListener() {
@@ -140,6 +145,9 @@ public class DrawingActivity extends AppCompatActivity {
         });
         findViewById(R.id.clear_button).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { mContentView.clear(); }
+        });
+        findViewById(R.id.half_inch_button).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {}
         });
 
         // SETUP SAVE BUTTON
