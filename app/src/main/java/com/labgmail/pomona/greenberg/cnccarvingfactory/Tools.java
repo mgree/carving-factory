@@ -35,7 +35,7 @@ public class Tools {
             return tDiameter;
         }
 
-        public float getDepth () {
+        public float getMaxCutDepth () {
             return mDepth;
         }
 
@@ -51,7 +51,7 @@ public class Tools {
             return tNum;
         }
 
-        public int getSelectedTool(List<Tools> tools) {
+        public int getSelectedTool(List<Tools> tools) { //????
             return tools.lastIndexOf(tools);
 
         }

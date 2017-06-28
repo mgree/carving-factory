@@ -52,11 +52,9 @@ public class DepthMap {
         float neighboringDepth = 0.0f;
         float newZ = oldPoint.z;
         for (Anchor a : potentialPoints) {
-            Log.d("ERR", "Dist: " + oldPoint.distance2D(a.x, a.y));
             if (oldPoint.distance2D(a.x, a.y) <= currentRadius * scale
                     && Math.abs(oldPoint.time - a.time) > TIME_THRESHOLD) { //prevents it from counting adjacent points
                 neighboringDepth = Math.max(neighboringDepth, oldPoint.z) + Math.max(oldPoint.getAlpha(), .1f);
-                Log.d("ERR", "Updated Z");
             }
         }
         newZ += neighboringDepth;

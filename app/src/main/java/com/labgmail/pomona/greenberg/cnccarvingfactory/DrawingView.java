@@ -234,7 +234,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
     public void setTool(Tools tools) {
-        tools = curTool;
+        curTool = tools;
     }
 
     public void setDepth(float depth) {
@@ -400,7 +400,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             GCodeGenerator gcg =
                     GCodeGenerator.singlePass(strokes,
                             stockWidth,stockLength,stockDepth,stockUnit,cutoffRight,
-                            spoilDepth,cuttingDiameter);
+                            spoilDepth,tools);
             out.write(gcg.toString());
             out.close();
 

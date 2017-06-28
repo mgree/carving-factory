@@ -4,6 +4,7 @@ import android.util.Log;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -21,6 +22,7 @@ public class GCodeGenerator {
     private int line = 1; // current line
     private Map<String,Float> fParams = new TreeMap<>(); // current floating-point params
     private Map<String,Integer> iParams = new TreeMap<>(); // current integer params
+    private static Tools curTool;
 
     public static final float MAX_SINGLE_CUT_DEPTH = 0.4f;
     /**
@@ -33,14 +35,14 @@ public class GCodeGenerator {
      * @param stockUnit
      * @param cutoffRight width of drawing canvas in pixels
      * @param spoilDepth depth of spoil board in stockUnit
-     * @param cuttingDiameter cutting diameter of tool in inches
+     * @param toolLibrary linked list of all possible tools
      * @return a GCodeGenerator with all code appropriately generated
      */
     public static GCodeGenerator singlePass(List<Stroke> strokes,
                                             float stockWidth, float stockLength, float stockDepth, String stockUnit,
                                             float cutoffRight,
                                             float spoilDepth,
-                                            float cuttingDiameter) {
+                                            List<Tools> toolLibrary) {
         GCodeGenerator gcg = new GCodeGenerator();
 
         // metadata
@@ -50,24 +52,22 @@ public class GCodeGenerator {
 
         float boardHeight = spoilDepth + stockDepth;
         final float clearancePlane = boardHeight + 0.25f;
-        final float maxCutDepth = spoilDepth + stockDepth - MAX_SINGLE_CUT_DEPTH;
+        final float maxCutDepth = spoilDepth + stockDepth - MAX_SINGLE_CUT_DEPTH; //TODO Tool specific Max cut depth
 
         float ipp = stockWidth / cutoffRight; // scaling factor
 
         // standard prelude
         gcg.prelude();
 
-        // tool selection
-        int toolNumber = 1;
-        if (cuttingDiameter == 0.5f) {
-            toolNumber = 1;
-        } else if (cuttingDiameter == 0.25f) {
-            toolNumber = 2;
-        } else {
-            Log.d("GCODE","weird cutting diameter " + cuttingDiameter + ", using tool 1");
+        //initialize the current tool as the first tool in the library
+        if (toolLibrary.size() < 1 ) {
+            Log.d("ERROR", "No tools in the tool library");
         }
+        curTool = toolLibrary.get(0);
 
-        gcg.tool(toolNumber);
+
+
+        gcg.tool(curTool);
 
         // write the strokes into the file in GCode format
         int numStrokes = strokes.size();
@@ -78,7 +78,6 @@ public class GCodeGenerator {
             // TODO: transformations on strokes (convert to stock coordinate system, Y inversion)
 
             boolean cutting = false;
-            boolean fast = false;
 
             curStroke += 1;
             gcg.comment(String.format("stroke %d/%d", curStroke, numStrokes));
@@ -89,26 +88,31 @@ public class GCodeGenerator {
                     continue;
                 }
 
+                if (s.getTool() != curTool){
+                    gcg.tool(s.getTool());
+                    curTool = s.getTool();
+                }
+
                 if (!cutting) {
                     // emit G00 moves, move in w/slow feed rate (first iteration)
                     gcg.cmd(new G(0).X(point.x * ipp).Y(stockLength - point.y * ipp));
                     gcg.cmd(new G(0).Z(clearancePlane));
 
                     // bound the z insertion depth!
-                    float z = boardHeight - (point.z * MAX_SINGLE_CUT_DEPTH);
+                    float z = boardHeight - (point.z * MAX_SINGLE_CUT_DEPTH); //TODO Change these to tool specific max cut depths???
                     z = Math.max(z, maxCutDepth);
                     z = Math.min(z, clearancePlane);
-                    gcg.cmd(new G(1).Z(z).F(80.0f)); // TODO use Tool
+                    gcg.cmd(new G(1).Z(z).F(curTool.getInSpeed()));
 
                     cutting = true;
                 } else {
                     // first G01 move, set high feedrate (second iteration)
                     // bound the z insertion depth!
-                    float z = boardHeight - (point.z * MAX_SINGLE_CUT_DEPTH);
+                    float z = boardHeight - (point.z * MAX_SINGLE_CUT_DEPTH); //TODO Change these to tool specific max cut depths???
                     z = Math.max(z, maxCutDepth);
                     z = Math.min(z, clearancePlane);
 
-                    gcg.cmd(new G(1).X(point.x * ipp).Y(stockLength - point.y * ipp).Z(z).F(250.0f)); // TODO use Tool
+                    gcg.cmd(new G(1).X(point.x * ipp).Y(stockLength - point.y * ipp).Z(z).F(curTool.getLatSpeed()));
 
                 }
                 last = point;
@@ -214,9 +218,8 @@ public class GCodeGenerator {
         // some samples indicate a % sign after to ensure a newline, but our CNC code checker rejects it
     }
 
-    public void tool(int toolNumber) {
-        // TODO take Tool input, use it
-        cmd(String.format("T%d M06", toolNumber));
+    public void tool(Tools tool) {
+        cmd(String.format("T%d M06", tool.getToolNum()));
         cmd("D1");
         cmd("M03 S18000"); // TODO RPMs is per-tool
     }
