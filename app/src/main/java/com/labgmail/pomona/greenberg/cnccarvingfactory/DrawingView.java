@@ -292,7 +292,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         out.writeInt(brush.getAlpha());
         out.writeFloat(brush.getStrokeWidth());
         out.writeObject(strokes);
-        out.writeObject(curTool);
+        out.writeObject(tools);
         out.flush();
     }
 
@@ -302,6 +302,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         brush.setAlpha(in.readInt());
         brush.setStrokeWidth(in.readFloat());
         setTool(curTool);
+
         try {
             if (clearStrokes) {
                 strokes = new LinkedList<>();
@@ -309,6 +310,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             } else {
                 //noinspection unchecked
                 strokes = (LinkedList<Stroke>) in.readObject();
+                tools = (LinkedList<Tools>) in.readObject();
             }
         } catch (ClassNotFoundException e) {
             throw new IOException(e);

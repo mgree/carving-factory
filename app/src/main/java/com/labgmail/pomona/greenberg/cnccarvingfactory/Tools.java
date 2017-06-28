@@ -1,12 +1,13 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * Created by edinameshietedoho on 6/22/17.
  */
 
-public class Tools {
+public class Tools implements Serializable {
 
     //Includes Tool Diameter, Tool Number, Max Cut Depth, Insertion Speed, and Lateral Speed.
 
