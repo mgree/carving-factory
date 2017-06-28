@@ -39,22 +39,6 @@
             android:layout_weight="1" />
 
         <ImageButton
-            android:id="@+id/half_inch_button"
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_weight="1"
-            android:contentDescription="Half Tool"
-            app:srcCompat="@android:drawable/ic_media_next" />
-
-        <ImageButton
-            android:id="@+id/quarter_inch_button"
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_weight="1"
-            android:contentDescription="Quarter Tool"
-            app:srcCompat="@android:drawable/ic_media_pause" />
-
-        <ImageButton
             android:id="@+id/clear_button"
             android:layout_width="match_parent"
             android:layout_height="1dp"
@@ -85,6 +69,27 @@
             android:layout_weight="1"
             android:contentDescription="Save"
             app:srcCompat="@android:drawable/ic_menu_save" />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <Button
+            android:id="@+id/half_inch_button"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_weight="1"
+            android:contentDescription="Half Tool"
+            android:text="@string/half_tool" />
+
+        <Button
+            android:id="@+id/quarter_inch_button"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_weight="1"
+            android:contentDescription="Quarter Tool"
+            android:text="@string/quarter_tool" />
 
     </LinearLayout>
 

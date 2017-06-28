@@ -331,7 +331,9 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                 stockUnit = sharedPreferences.getString(key, "in");
                 scaleTool();
                 //scaleTool(sharedPreferences.getString(DisplaySettingsActivity.KEY_TOOL, "0"));
-                clearStrokes = true;
+//                clearStrokes = true;
+                strokes.clear();
+                depthMap.clear();
 
                 break;
             case DisplaySettingsActivity.KEY_TOOL:

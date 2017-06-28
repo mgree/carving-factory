@@ -365,7 +365,6 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
     }
 
     private void readObject(ObjectInputStream in) throws IOException {
-        //int size = in.readInt(); ????????
         try {
             tool = (Tools) in.readObject();
             points = (LinkedList<Anchor>) in.readObject();
