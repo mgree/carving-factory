@@ -27,7 +27,6 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
 
     private static final long TIME_THRESHOLD = 50;
     private static final double DISTANCE_THRESHOLD = 25;
-    private float sWidth;
     private Tools tool;
     private List<Anchor> points = new LinkedList<>();
 
@@ -48,8 +47,7 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
      */
     private boolean degenerate = true;
 
-    public Stroke(float sWidth, Tools tool) {
-        this.sWidth = sWidth;
+    public Stroke(Tools tool) {
         this.tool = tool;
     }
 
@@ -63,7 +61,6 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
                 path.lineTo(p.x, p.y);
             }
         }
-
         return path;
     }
 
@@ -81,7 +78,7 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
         }
     }
 
-    public float getStrokeWidth() { return sWidth; }
+    public float getStrokeWidth() { return tool.getDiameter(); }
 
     public float getTDiameter() { return tool.getDiameter(); }
 
@@ -115,8 +112,8 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
 
         for (Anchor a : points) {
             double distance = Math.sqrt(Math.pow(a.x - centroid.x, 2) + Math.pow(a.y - centroid.y, 2));
-            if (distance >= 2 * sWidth) {
-                Log.d("FIT", "non-degenerate distance " + distance + " " + sWidth);
+            if (distance >= 2 * tool.getDiameter()) {
+                Log.d("FIT", "non-degenerate distance " + distance + " " + tool.getDiameter());
                 degenerate = false;
                 return false;
             }
@@ -179,7 +176,6 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
                 while ((next < (points.size() - 1)) && (Math.abs(points.get(next).time - currTime) < TIME_THRESHOLD)) {
                     newList.add(points.get(next));
                     next++;
-
                 }
 
                 //average all the points
@@ -217,7 +213,6 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
                 selectedTime.add(points.get(0).time);
             }
 
-
             ArrayList<Anchor> newList = new ArrayList<>();
             int next = 0;
 
@@ -239,7 +234,6 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
                 while ((next < (points.size() - 1)) && ((points.get(next).distance2D(currX, currY)) < DISTANCE_THRESHOLD)) {
                     newList.add(points.get(next));
                     next++;
-
                 }
 
                 //average all the points
@@ -282,7 +276,7 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
         Cubic[] fittedZ = calcNatCubic(selectedZ.toArray(new Double[selectedZ.size()]));
 
         // construct new stroke from curves
-        Stroke fitted = new Stroke(sWidth,tool);
+        Stroke fitted = new Stroke(tool);
         fitted.addPoint(fittedX[0].eval(0), fittedY[0].eval(0), points.get(0).z, selectedTime.get(0));
         for (int i = 0; i < fittedX.length; i += 1) {
             for (int j = 1; j <= steps; j += 1) {
@@ -366,16 +360,14 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
     }
 
     private void writeObject(ObjectOutputStream out) throws IOException {
-        out.writeFloat(sWidth);
-//        out.writeFloat(tool.getDiameter());
+        out.writeObject(tool);
         out.writeObject(points);
     }
 
     private void readObject(ObjectInputStream in) throws IOException {
-        sWidth = in.readFloat();
-
-        int size = in.readInt();
+        //int size = in.readInt(); ????????
         try {
+            tool = (Tools) in.readObject();
             points = (LinkedList<Anchor>) in.readObject();
         } catch (ClassNotFoundException e) {
             throw new IOException(e);

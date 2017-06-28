@@ -46,9 +46,9 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     private float stockWidth = -1;
     private float stockDepth = -1;
     private float spoilDepth = -1;
-    public List<Tools> tools = new LinkedList<>();
-    public Tools half_inch,quarter_inch,curTool;
 
+    public List<Tools> tools = new LinkedList<>();
+    public Tools half_inch, quarter_inch, curTool;
 
     private float cuttingDiameter = -1;
 
@@ -82,6 +82,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         cutoffRight = getWidth();
         cutoffBottom = getHeight();
+
         initializeBrush();
         intializeTools();
     }
@@ -90,14 +91,11 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         brush.setStyle(Paint.Style.STROKE);
         brush.setARGB(255, 0, 0, 0);
         brush.setAntiAlias(true);
-
-        // TODO PorterDuff modes only apply to bitmaps. might need to do this custom
-        // brush.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DARKEN));
     }
 
     private void intializeTools() {
-        half_inch = new Tools(1,0.5f,0.4f,80f,250f);
-        quarter_inch = new Tools(2,0.25f,0.4f,80f,250f);
+        half_inch = new Tools(1, 0.5f, 0.4f, 80f, 250f);
+        quarter_inch = new Tools(2, 0.25f, 0.4f, 80f, 250f);
 
         tools.add(half_inch);
         tools.add(quarter_inch);
@@ -139,13 +137,12 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             drawStroke(canvas, s, brush, scale);
 
             if (debugPoints) {
-                brush.setColor(Color.argb(s.getAlpha(), 255, 0, 0));
+                brush.setColor(Color.RED);
                 brush.setStrokeWidth(1);
                 for (Anchor a : s) {
                     canvas.drawPoint(a.x, a.y, brush);
                 }
             }
-
 
         }
 
@@ -168,13 +165,13 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             brush.setStyle(Paint.Style.STROKE);
 
             Anchor last = null;
-            for (Anchor p : s) {
-                brush.setAlpha(p.getAlpha());
+            for (Anchor a : s) {
+                brush.setAlpha(a.getAlpha());
                 if (last != null) {
-                    canvas.drawLine(last.x, last.y, p.x, p.y, brush);
+                    canvas.drawLine(last.x, last.y, a.x, a.y, brush);
                 }
-
-                last = p;
+                depthMap.addPoint(a);
+                last = a;
             }
         }
     }
@@ -214,12 +211,16 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     public void clear() {
         curStroke = null;
         strokes.clear();
+        depthMap.clear();
         invalidate();
     }
 
     public void undo() {  //add removing strokes here
         if (strokes.size() > 0) {
             strokes.remove(strokes.size() - 1);
+            for (Anchor a : strokes.get(strokes.size() - 1)){
+                depthMap.removePoint(a);
+            }
             invalidate();
         }
     }
@@ -258,38 +259,18 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
 
         if (curStroke == null) {
-            curStroke = new Stroke(cuttingDiameter,curTool);
+            curStroke = new Stroke(curTool);
         }
 
         float z = curDepth;
-        Log.d("DEPTH", "Current Z: " + z);
 
         switch (drawingMode) {
 
             case OVERDRAW:
-                float neighboringDepth = 0.0f;
-
-                // count neighbors in existing strokes
-                for (Stroke s : strokes) {
-                    for (Anchor p : s) {
-
-                        if (p.distance2D(x, y) <= scale * cuttingDiameter) {
-                            neighboringDepth = Math.max(neighboringDepth, p.z) + 0.1f;
-                        }
-                    }
-                }
-
-                // count neighbors in current stroke
-                /*
-                for (Anchor p : curStroke) {
-                    if (p.distance2D(x, y) <= cuttingDiameter && time - p.time > 30) {
-                        neighboringDepth = Math.max(neighboringDepth, p.z) + 0.01f;
-                    }
-                }
-                */
-
-                z += neighboringDepth;
-                z = Math.max(0.1f, Math.min(z, 1.0f));
+                Anchor updatedPoint = depthMap.updateZ(new Anchor (x, y, z, time), curTool.getDiameter());
+                depthMap.addPoint(updatedPoint);
+                z = updatedPoint.z;
+                Log.d("DEPTH", "Current Z: " + z);
 
                 break;
 
@@ -362,9 +343,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
     private void scaleTool(String toolDim) {
-        float tool = Float.parseFloat(toolDim);
-        float teet = half_inch.getDiameter();
-
         // NB all tool dimensions MUST be in inches
         float factor = 1.0f;
         if (stockUnit.equals("in")) {

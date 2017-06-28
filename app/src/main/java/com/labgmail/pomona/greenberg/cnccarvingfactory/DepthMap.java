@@ -44,6 +44,7 @@ public class DepthMap {
 
     /* Takes an anchor and returns a new anchor with an updated Z value according to the depth map*/
     public Anchor updateZ (Anchor oldPoint, float currentRadius){
+
         //Find all relevant points
         LinkedList<Anchor> potentialPoints = (LinkedList<Anchor>) findNeighborPoints(findBuckets(oldPoint, currentRadius));
 
@@ -51,10 +52,11 @@ public class DepthMap {
         float neighboringDepth = 0.0f;
         float newZ = oldPoint.z;
         for (Anchor a : potentialPoints) {
+            Log.d("ERR", "Dist: " + oldPoint.distance2D(a.x, a.y));
             if (oldPoint.distance2D(a.x, a.y) <= currentRadius * scale
                     && Math.abs(oldPoint.time - a.time) > TIME_THRESHOLD) { //prevents it from counting adjacent points
                 neighboringDepth = Math.max(neighboringDepth, oldPoint.z) + Math.max(oldPoint.getAlpha(), .1f);
-
+                Log.d("ERR", "Updated Z");
             }
         }
         newZ += neighboringDepth;
