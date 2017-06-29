@@ -159,7 +159,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
             Anchor p = s.centroid();
             brush.setAlpha(p.getAlpha());
-            canvas.drawCircle(p.x, p.y, s.getStrokeWidth() * scale / 2, brush);
+            canvas.drawCircle(p.x, p.y, s.getTDiameter() * scale / 2, brush);
             depthMap.addPoint(p);
         } else {
             brush.setStyle(Paint.Style.STROKE);
@@ -215,12 +215,12 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         invalidate();
     }
 
-    public void undo() {  //add removing strokes here
+    public void undo(){
         if (strokes.size() > 0) {
-            strokes.remove(strokes.size() - 1);
             for (Anchor a : strokes.get(strokes.size() - 1)){
                 depthMap.removePoint(a);
             }
+            strokes.remove(strokes.size() - 1);
             invalidate();
         }
     }
@@ -401,8 +401,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             PrintWriter out = new PrintWriter(new FileOutputStream(prg, false));
             GCodeGenerator gcg =
                     GCodeGenerator.singlePass(strokes,
-                            stockWidth,stockLength,stockDepth,stockUnit,cutoffRight,
-                            spoilDepth,tools);
+                            stockWidth, stockLength, stockDepth, stockUnit, cutoffRight,
+                            spoilDepth);
             out.write(gcg.toString());
             out.close();
 

@@ -1,7 +1,5 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
-import android.util.Log;
-
 import java.util.LinkedList;
 import java.util.List;
 

@@ -67,24 +67,10 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
     public void addPoint(float x, float y, float z, long t) {
         points.add(new Anchor(x, y, z, t));
     }
-    public void addPoint(Anchor a){ points.add(a); }
-
-    /* Get the alpha value for the first point on the stroke */
-//    public int getAlpha() {
-//        if (!points.isEmpty()) {
-//            return points.get(0).getAlpha();
-//        } else {
-//            return 255;
-//        }
-//    }
-
-    public float getStrokeWidth() { return tool.getDiameter(); }
 
     public float getTDiameter() { return tool.getDiameter(); }
 
     public Tools getTool() { return tool; }
-
-    public int size() { return points.size(); }
 
     @Override
     public Iterator<Anchor> iterator() { return points.iterator(); }

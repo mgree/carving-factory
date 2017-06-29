@@ -16,15 +16,37 @@ import java.util.TreeMap;
  */
 public class GCodeGenerator {
 
+
+    /**
+     * If we want max cut by tools
+     * 1) Pick deepest val you're willing to go and scale z according to that
+     * 2) store a current max single cut depth
+     * 3) if the z you're trying to cut to is lower than that, cut to the max cut depth and
+     *          calculate the discrepancy between the current depth and the goal depth
+     *          If needed repeat until goal depth is achieved
+     * Issues:
+     *      Make sure to account for starting and ending points on the second cut through
+     *      (finish the first, go deeper, go to start, go to end)
+     *      Remember to raise up before next stroke
+     *      Sort strokes by which cut they're on?
+     *      When do you tell the stroke to go back and do that second cut (especially if you're going in real time)??
+     *
+     */
+
+
+
+
     private final StringWriter buf;
     private final PrintWriter out;
 
     private int line = 1; // current line
     private Map<String,Float> fParams = new TreeMap<>(); // current floating-point params
     private Map<String,Integer> iParams = new TreeMap<>(); // current integer params
-    private static Tools curTool;
+    private static Tools curTool = null;
 
     public static final float MAX_SINGLE_CUT_DEPTH = 0.4f;
+    public static final float CLEARANCE = .25f;
+
     /**
      * Single-pass stroke milling.
      *
@@ -35,14 +57,12 @@ public class GCodeGenerator {
      * @param stockUnit
      * @param cutoffRight width of drawing canvas in pixels
      * @param spoilDepth depth of spoil board in stockUnit
-     * @param toolLibrary linked list of all possible tools
-     * @return a GCodeGenerator with all code appropriately generated
+\     * @return a GCodeGenerator with all code appropriately generated
      */
     public static GCodeGenerator singlePass(List<Stroke> strokes,
                                             float stockWidth, float stockLength, float stockDepth, String stockUnit,
                                             float cutoffRight,
-                                            float spoilDepth,
-                                            List<Tools> toolLibrary) {
+                                            float spoilDepth) {
         GCodeGenerator gcg = new GCodeGenerator();
 
         // metadata
@@ -51,7 +71,7 @@ public class GCodeGenerator {
                 stockWidth, stockLength, stockDepth, stockUnit));
 
         float boardHeight = spoilDepth + stockDepth;
-        final float clearancePlane = boardHeight + 0.25f;
+        final float clearancePlane = boardHeight + CLEARANCE;
         final float maxCutDepth = spoilDepth + stockDepth - MAX_SINGLE_CUT_DEPTH; //TODO Tool specific Max cut depth
 
         float ipp = stockWidth / cutoffRight; // scaling factor
@@ -59,19 +79,10 @@ public class GCodeGenerator {
         // standard prelude
         gcg.prelude();
 
-        //initialize the current tool as the first tool in the library
-        if (toolLibrary.size() < 1 ) {
-            Log.d("ERROR", "No tools in the tool library");
-        }
-        curTool = toolLibrary.get(0);
-
-
-
-        gcg.tool(curTool);
 
         // write the strokes into the file in GCode format
         int numStrokes = strokes.size();
-        gcg.comment("carving " + strokes.size() + " strokes in a single pass");
+        gcg.comment("Carving " + strokes.size() + " strokes in a single pass");
 
         int curStroke = 0;
         for (Stroke s : strokes) {
@@ -80,7 +91,7 @@ public class GCodeGenerator {
             boolean cutting = false;
 
             curStroke += 1;
-            gcg.comment(String.format("stroke %d/%d", curStroke, numStrokes));
+            gcg.comment(String.format("Stroke %d/%d", curStroke, numStrokes));
 
             Anchor last = null;
             for (Anchor point : s) {
@@ -88,6 +99,7 @@ public class GCodeGenerator {
                     continue;
                 }
 
+                //if the tool has changed, add that to the gcode file and update
                 if (s.getTool() != curTool){
                     gcg.tool(s.getTool());
                     curTool = s.getTool();
@@ -237,6 +249,14 @@ public class GCodeGenerator {
         public G Y(float v) { fParams.put("Y", v); return this; }
         public G Z(float v) { fParams.put("Z", v); return this; }
         public G F(float v) { fParams.put("F", v); return this; }
+        /**
+         * Once arcs are implemented, add these
+         * public G R(float v) { fParams.put("R", v); return this; }
+         * public G I(float v) { fParams.put("I", v); return this; }
+         * public G J(float v) { fParams.put("J", v); return this; }
+         * public G K(float v) { fParams.put("K", v); return this; }
+         *
+         */
 
         /**
          * Returns a string representation of the G-Code instruction.

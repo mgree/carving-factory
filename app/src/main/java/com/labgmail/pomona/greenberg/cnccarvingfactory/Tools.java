@@ -20,7 +20,6 @@ public class Tools implements Serializable {
 
     private float tDiameter, mDepth, iSpeed, lSpeed;
     private int tNum;
-    public Tools selectedTool;
 
         public Tools(int toolNum, float diameter, float cutDepth, float inSpeed, float latSpeed) {
 
@@ -52,8 +51,4 @@ public class Tools implements Serializable {
             return tNum;
         }
 
-        public int getSelectedTool(List<Tools> tools) { //????
-            return tools.lastIndexOf(tools);
-
-        }
 }

@@ -81,7 +81,7 @@
             android:layout_height="1dp"
             android:layout_weight="1"
             android:contentDescription="Half Tool"
-            android:text="@string/half_tool" />
+            android:text=".5 inches" />
 
         <Button
             android:id="@+id/quarter_inch_button"
@@ -89,7 +89,7 @@
             android:layout_height="1dp"
             android:layout_weight="1"
             android:contentDescription="Quarter Tool"
-            android:text="@string/quarter_tool" />
+            android:text=".25 inches" />
 
     </LinearLayout>
 
