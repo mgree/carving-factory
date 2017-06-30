@@ -50,8 +50,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     public List<Tools> tools = new LinkedList<>();
     public Tools curTool;
 
-    private float cuttingDiameter = -1;
-
     private float cutoffRight = -1;
     private float cutoffBottom = -1;
 
@@ -66,7 +64,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     private DepthMap depthMap;
     private boolean initialized = false;
 
-    public static enum Mode {
+    public enum Mode {
         MANUAL_DEPTH,
         OVERDRAW
     };
@@ -102,8 +100,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         curTool = tools.get(0);
     }
-
-
+    
 
     @Override
     protected void onDraw(Canvas canvas) {
@@ -157,10 +154,9 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         if (s.isDegenerate()) {
             brush.setStyle(Paint.Style.FILL);
 
-            Anchor p = s.centroid();
-            brush.setAlpha(p.getAlpha());
-            canvas.drawCircle(p.x, p.y, s.getTDiameter() * scale / 2, brush);
-            depthMap.addPoint(p);
+            Anchor a = s.centroid();
+            brush.setAlpha(a.getAlpha());
+            canvas.drawCircle(a.x, a.y, s.getTDiameter() * scale / 2, brush);
         } else {
             brush.setStyle(Paint.Style.STROKE);
 
@@ -170,7 +166,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                 if (last != null) {
                     canvas.drawLine(last.x, last.y, a.x, a.y, brush);
                 }
-                depthMap.addPoint(a);
                 last = a;
             }
         }
@@ -194,14 +189,13 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         return true;
     }
 
-    public Paint getPaint() {
-        return brush;
-    }
-
-    private void saveStroke() {
+    private void saveStroke() { //issue here bc it won't recognize itself for the depthmap
         if (curStroke != null) {
             Stroke fitted = curStroke.fitToNatCubic(SMOOTHING_FACTOR, CURVE_STEPS);
             strokes.add(fitted);
+            for (Anchor a : fitted){ //moved to here so you're only adding points to the depth map that are in strokes
+                depthMap.addPoint(a);
+            }
         }
 
         curStroke = null;
@@ -216,11 +210,13 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
     public void undo(){
-        if (strokes.size() > 0) {
-            for (Anchor a : strokes.get(strokes.size() - 1)){
+        int size = strokes.size();
+        if (size > 0) {
+            for (Anchor a : strokes.get(size - 1)){
                 depthMap.removePoint(a);
             }
-            strokes.remove(strokes.size() - 1);
+            strokes.remove(size - 1);
+
             invalidate();
         }
     }
@@ -271,10 +267,14 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         switch (drawingMode) {
 
             case OVERDRAW:
-                Anchor updatedPoint = depthMap.updateZ(new Anchor (x, y, z, time), curTool.getDiameter());
-                depthMap.addPoint(updatedPoint);
+                Anchor a = new Anchor (x, y, z, time);
+                Anchor updatedPoint = depthMap.updateZ(a, curTool.getDiameter());
+
+                if (curStroke != null){
+                    curStroke.getPoints().remove(a);
+                    curStroke.getPoints().add(updatedPoint);
+                }
                 z = updatedPoint.z;
-                Log.d("DEPTH", "Current Z: " + z);
 
                 break;
 
@@ -363,7 +363,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             Log.d("DIM", "funny unit " + stockUnit);
         }
         // Gets the current Tool being used and gets Diameter of that instead of reading in the string from Settings.
-        cuttingDiameter = curTool.getDiameter() * factor;
+//        cuttingDiameter = curTool.getDiameter() * factor;
     }
 
 

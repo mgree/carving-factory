@@ -1,5 +1,7 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
+import android.util.Log;
+
 import java.util.LinkedList;
 import java.util.List;
 
@@ -40,7 +42,7 @@ public class DepthMap {
         }
     }
 
-    /* Takes an anchor and returns a new anchor with an updated Z value according to the depth map*/
+    /* Takes an anchor and updates the depth map with a new anchor with an updated Z value*/
     public Anchor updateZ (Anchor oldPoint, float currentRadius){
 
         //Find all relevant points
@@ -57,6 +59,7 @@ public class DepthMap {
         }
         newZ += neighboringDepth;
         newZ = Math.max(0.1f, Math.min(newZ, 1.0f));
+
         return new Anchor (oldPoint.x, oldPoint.y, newZ, oldPoint.time);
     }
 

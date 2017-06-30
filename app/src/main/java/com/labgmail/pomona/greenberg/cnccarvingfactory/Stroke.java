@@ -31,7 +31,7 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
     private List<Anchor> points = new LinkedList<>();
 
 
-    public static enum SelectionMode {
+    public enum SelectionMode {
         EVERYN,
         TIME,
         DISTANCE
@@ -68,6 +68,9 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
         points.add(new Anchor(x, y, z, t));
     }
 
+    public List<Anchor> getPoints(){
+        return points;
+    }
     public float getTDiameter() { return tool.getDiameter(); }
 
     public Tools getTool() { return tool; }
