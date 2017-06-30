@@ -30,13 +30,12 @@ import java.util.List;
 /**
  * Full-screen drawing view.
  *
- * Created by edinameshietedoho and soniagrunwaldon 5/25/17.
+ * Created by edinameshietedoho and soniagrunwald on 5/25/17.
  */
 
 public class DrawingView extends View implements SharedPreferences.OnSharedPreferenceChangeListener {
     private static final int SMOOTHING_FACTOR = 3;
     private static final int CURVE_STEPS = 20;
-    private static final float MAX_SINGLE_CUT_DEPTH = .4f;
     private static final float MIN_RADIUS = .25f;
 
     private Stroke curStroke;
@@ -100,7 +99,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         curTool = tools.get(0);
     }
-    
+
 
     @Override
     protected void onDraw(Canvas canvas) {
@@ -135,7 +134,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
             if (debugPoints) {
                 brush.setColor(Color.RED);
-                brush.setStrokeWidth(1);
+                brush.setStrokeWidth(2);
                 for (Anchor a : s) {
                     canvas.drawPoint(a.x, a.y, brush);
                 }
@@ -149,14 +148,15 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
     private void drawStroke(Canvas canvas, Stroke s, Paint brush, float scale) {
-        brush.setStrokeWidth(s.getTDiameter() * scale);
+        float toolDim = scaleTool(s.getTDiameter());
+        brush.setStrokeWidth(toolDim * scale);
 
         if (s.isDegenerate()) {
             brush.setStyle(Paint.Style.FILL);
 
             Anchor a = s.centroid();
             brush.setAlpha(a.getAlpha());
-            canvas.drawCircle(a.x, a.y, s.getTDiameter() * scale / 2, brush);
+            canvas.drawCircle(a.x, a.y, toolDim * scale / 2, brush);
         } else {
             brush.setStyle(Paint.Style.STROKE);
 
@@ -189,11 +189,11 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         return true;
     }
 
-    private void saveStroke() { //issue here bc it won't recognize itself for the depthmap
+    private void saveStroke() {
         if (curStroke != null) {
             Stroke fitted = curStroke.fitToNatCubic(SMOOTHING_FACTOR, CURVE_STEPS);
             strokes.add(fitted);
-            for (Anchor a : fitted){ //moved to here so you're only adding points to the depth map that are in strokes
+            for (Anchor a : fitted){
                 depthMap.addPoint(a);
             }
         }
@@ -210,13 +210,11 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
     public void undo(){
-        int size = strokes.size();
-        if (size > 0) {
-            for (Anchor a : strokes.get(size - 1)){
+        if (strokes.size() > 0) {
+            for (Anchor a : strokes.get(strokes.size() - 1)){
                 depthMap.removePoint(a);
             }
-            strokes.remove(size - 1);
-
+            strokes.remove(strokes.size() - 1);
             invalidate();
         }
     }
@@ -235,7 +233,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
     public void setDepth(float depth) {
         curDepth = depth;
-    } //where this is used change things
+    }
 
     private void addMotionEvent(MotionEvent event) {
         for (int h = 0; h < event.getHistorySize(); h += 1) {
@@ -269,13 +267,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             case OVERDRAW:
                 Anchor a = new Anchor (x, y, z, time);
                 Anchor updatedPoint = depthMap.updateZ(a, curTool.getDiameter());
-
-                if (curStroke != null){
-                    curStroke.getPoints().remove(a);
-                    curStroke.getPoints().add(updatedPoint);
-                }
+                curStroke.addPoint(updatedPoint);
                 z = updatedPoint.z;
-
                 break;
 
             case MANUAL_DEPTH:
@@ -287,6 +280,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
     public void saveState(OutputStream state) throws IOException {
+        Log.d("STATE", "Save state: " + brush.getStrokeWidth() + "should be " + curTool.getDiameter()*scale);
         ObjectOutputStream out = new ObjectOutputStream(state);
 
         out.writeInt(brush.getAlpha());
@@ -297,12 +291,14 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
     public void loadState(InputStream state) throws IOException {
+        Log.d("STATE", "Load state: " + brush.getStrokeWidth() + "should be " + curTool.getDiameter()*scale);
+
         ObjectInputStream in = new ObjectInputStream(state);
 
         brush.setAlpha(in.readInt());
         brush.setStrokeWidth(in.readFloat());
-        setTool(curTool);
 
+        setTool(curTool);
         try {
             if (clearStrokes) {
                 strokes = new LinkedList<>();
@@ -331,16 +327,12 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                 break;
             case DisplaySettingsActivity.KEY_UNIT:
                 stockUnit = sharedPreferences.getString(key, "in");
-                scaleTool();
-                //scaleTool(sharedPreferences.getString(DisplaySettingsActivity.KEY_TOOL, "0"));
-//                clearStrokes = true;
-                strokes.clear();
-                depthMap.clear();
-
+                scaleTool(Float.parseFloat(sharedPreferences.getString(DisplaySettingsActivity.KEY_TOOL, "0")));
+                clearStrokes = true;
+                clear();
                 break;
             case DisplaySettingsActivity.KEY_TOOL:
-                //scaleTool(sharedPreferences.getString(key, "0"));
-                scaleTool();
+                scaleTool(Float.parseFloat(sharedPreferences.getString(key, "0")));
                 break;
             case DisplaySettingsActivity.KEY_SDEPTH:
                 spoilDepth = Float.parseFloat(sharedPreferences.getString(key, "0"));
@@ -352,7 +344,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         postInvalidate();
     }
 
-    private void scaleTool() {
+    private float scaleTool(float toolDim) {
         // NB all tool dimensions MUST be in inches
         float factor = 1.0f;
         if (stockUnit.equals("in")) {
@@ -362,8 +354,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         } else {
             Log.d("DIM", "funny unit " + stockUnit);
         }
-        // Gets the current Tool being used and gets Diameter of that instead of reading in the string from Settings.
-//        cuttingDiameter = curTool.getDiameter() * factor;
+        return toolDim * factor;
     }
 
 
@@ -371,7 +362,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         stockLength = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_LENGTH, "-1"));
         stockWidth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_WIDTH, "-1"));
         stockDepth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_DEPTH, "-1"));
-//        cuttingDiameter = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_TOOL, "-1"));
         spoilDepth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_SDEPTH, "-1"));
 
 

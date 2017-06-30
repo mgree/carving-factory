@@ -67,7 +67,7 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
     public void addPoint(float x, float y, float z, long t) {
         points.add(new Anchor(x, y, z, t));
     }
-
+    public void addPoint(Anchor a){ points.add(a); }
     public List<Anchor> getPoints(){
         return points;
     }
