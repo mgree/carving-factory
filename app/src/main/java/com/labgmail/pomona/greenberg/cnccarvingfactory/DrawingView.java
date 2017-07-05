@@ -155,14 +155,14 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             brush.setStyle(Paint.Style.FILL);
 
             Anchor a = s.centroid();
-            brush.setAlpha(a.getAlpha());
+            brush.setColor(a.getColor());
             canvas.drawCircle(a.x, a.y, toolDim * scale / 2, brush);
         } else {
             brush.setStyle(Paint.Style.STROKE);
 
             Anchor last = null;
             for (Anchor a : s) {
-                brush.setAlpha(a.getAlpha());
+                brush.setColor(a.getColor());
                 if (last != null) {
                     canvas.drawLine(last.x, last.y, a.x, a.y, brush);
                 }
@@ -201,7 +201,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         curStroke = null;
     }
 
-    
     public void clear() {
         curStroke = null;
         strokes.clear();
@@ -214,11 +213,11 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         if (size > 0) {
             for (Anchor a : strokes.get(size - 1)){
-                        depthMap.removePoint(a);
-                    }
+                depthMap.removePoint(a);
+            }
             strokes.remove(size - 1);
             invalidate();
-                }
+        }
     }
 
 
@@ -285,7 +284,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         ObjectOutputStream out = new ObjectOutputStream(state);
 
-        out.writeInt(brush.getAlpha());
+        out.writeInt(brush.getColor());
         out.writeFloat(brush.getStrokeWidth());
         out.writeObject(strokes);
         out.writeObject(tools);
@@ -297,7 +296,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         ObjectInputStream in = new ObjectInputStream(state);
 
-        brush.setAlpha(in.readInt());
+        brush.setColor(in.readInt());
         brush.setStrokeWidth(in.readFloat() * scale);
 
 

@@ -33,8 +33,6 @@ public class GCodeGenerator {
      */
 
 
-
-
     private final StringWriter buf;
     private final PrintWriter out;
 
@@ -56,7 +54,7 @@ public class GCodeGenerator {
      * @param stockUnit
      * @param cutoffRight width of drawing canvas in pixels
      * @param spoilDepth depth of spoil board in stockUnit
-\     * @return a GCodeGenerator with all code appropriately generated
+     * @return a GCodeGenerator with all code appropriately generated
      */
     public static GCodeGenerator singlePass(List<Stroke> strokes,
                                             float stockWidth, float stockLength, float stockDepth, String stockUnit,
@@ -77,7 +75,6 @@ public class GCodeGenerator {
 
         // standard prelude
         gcg.prelude();
-
 
         // write the strokes into the file in GCode format
         int numStrokes = strokes.size();

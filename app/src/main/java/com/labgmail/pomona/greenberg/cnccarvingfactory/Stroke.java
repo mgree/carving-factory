@@ -66,6 +66,7 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
         points.add(new Anchor(x, y, z, t));
     }
     public void addPoint(Anchor a){ points.add(a); }
+
     public List<Anchor> getPoints(){
         return points;
     }
@@ -252,12 +253,9 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
                 selectedTime.add(points.get(points.size() - 1).time);
             }
 
-
-
         } else {
             Log.d("MODE", "Incorrect Mode.");
         }
-
 
         // fit curves
         Cubic[] fittedX = calcNatCubic(selectedX.toArray(new Double[selectedX.size()]));

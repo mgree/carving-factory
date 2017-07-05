@@ -38,8 +38,12 @@ public class Anchor  implements Serializable{
     }
 
     /* Return the alpha value (given the z) */
-    public int getAlpha() {
-        return Math.round(255 * Math.max(Math.min(z, 1.0f), 0.0f));
+    public int getColor() {
+        return Color.rgb(getGrayScale(), getGrayScale(), getGrayScale());
+    }
+
+    public int getGrayScale() {
+        return  Math.round(255 * (1 - Math.max(Math.min(z, 1.0f), 0.0f)));
     }
 
     /* .equals method which determines equality based on the time stamp */
