@@ -1,6 +1,5 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
-import android.graphics.Color;
 import android.graphics.Path;
 import android.util.Log;
 import java.io.IOException;
@@ -27,7 +26,7 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
 
     private static final long TIME_THRESHOLD = 50;
     private static final double DISTANCE_THRESHOLD = 25;
-    private Tools tool;
+    private Tool tool;
     private List<Anchor> points = new LinkedList<>();
 
 
@@ -47,7 +46,7 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
      */
     private boolean degenerate = true;
 
-    public Stroke(Tools tool) {
+    public Stroke(Tool tool) {
         this.tool = tool;
     }
 
@@ -73,7 +72,7 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
     }
     public float getTDiameter() { return tool.getDiameter(); }
 
-    public Tools getTool() { return tool; }
+    public Tool getTool() { return tool; }
 
     @Override
     public Iterator<Anchor> iterator() { return points.iterator(); }
@@ -357,7 +356,7 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
 
     private void readObject(ObjectInputStream in) throws IOException {
         try {
-            tool = (Tools) in.readObject();
+            tool = (Tool) in.readObject();
             points = (LinkedList<Anchor>) in.readObject();
         } catch (ClassNotFoundException e) {
             throw new IOException(e);

@@ -8,6 +8,6 @@
     <string name="pref_stock_depth">".72"</string>
     <string name="pref_stroke_default">".5"</string>
     <string name="pref_tool_default">.5</string>
-    <string name="half_tool">half_tool</string>
-    <string name="quarter_tool">quarter_tool</string>
+    <string name="half_tool">half tool</string>
+    <string name="quarter_tool">quarter tool</string>
 </resources>

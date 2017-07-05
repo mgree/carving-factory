@@ -4,7 +4,6 @@ import android.util.Log;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -42,7 +41,7 @@ public class GCodeGenerator {
     private int line = 1; // current line
     private Map<String,Float> fParams = new TreeMap<>(); // current floating-point params
     private Map<String,Integer> iParams = new TreeMap<>(); // current integer params
-    private static Tools curTool = null;
+    private static Tool curTool = null;
 
     public static final float MAX_SINGLE_CUT_DEPTH = 0.4f;
     public static final float CLEARANCE = .25f;
@@ -230,7 +229,7 @@ public class GCodeGenerator {
         // some samples indicate a % sign after to ensure a newline, but our CNC code checker rejects it
     }
 
-    public void tool(Tools tool) {
+    public void tool(Tool tool) {
         cmd(String.format("T%d M06", tool.getToolNum()));
         cmd("D1");
         cmd("M03 S18000"); // TODO RPMs is per-tool

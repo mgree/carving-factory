@@ -46,8 +46,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     private float stockDepth = -1;
     private float spoilDepth = -1;
 
-    public List<Tools> tools = new LinkedList<>();
-    public Tools curTool;
+    public List<Tool> tools = new LinkedList<>();
+    public Tool curTool;
 
     private float cutoffRight = -1;
     private float cutoffBottom = -1;
@@ -91,8 +91,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
     private void initializeTools() {
-        Tools half_inch = new Tools(1, 0.5f, 0.4f, 80f, 250f);
-        Tools quarter_inch = new Tools(2, 0.25f, 0.4f, 80f, 250f);
+        Tool half_inch = new Tool(1, 0.5f, 0.4f, 80f, 250f);
+        Tool quarter_inch = new Tool(2, 0.25f, 0.4f, 80f, 250f);
 
         tools.add(half_inch);
         tools.add(quarter_inch);
@@ -227,8 +227,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         curTool = tools.get(1);
     }
 
-    public void setTool(Tools tools) {
-        curTool = tools;
+    public void setTool(Tool tool) {
+        curTool = tool;
     }
 
     public void setDepth(float depth) {
@@ -285,8 +285,10 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         out.writeInt(brush.getAlpha());
         out.writeFloat(brush.getStrokeWidth());
+//        out.writeFloat(curTool.getDiameter());
         out.writeObject(strokes);
         out.writeObject(tools);
+        out.writeObject(curTool);
         out.flush();
     }
 
@@ -296,9 +298,9 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         ObjectInputStream in = new ObjectInputStream(state);
 
         brush.setAlpha(in.readInt());
-        brush.setStrokeWidth(in.readFloat());
+        brush.setStrokeWidth(in.readFloat() * scale);
 
-        setTool(curTool);
+
         try {
             if (clearStrokes) {
                 strokes = new LinkedList<>();
@@ -306,7 +308,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             } else {
                 //noinspection unchecked
                 strokes = (LinkedList<Stroke>) in.readObject();
-                tools = (LinkedList<Tools>) in.readObject();
+                tools = (LinkedList<Tool>) in.readObject();
+                curTool = (Tool) in.readObject();
             }
         } catch (ClassNotFoundException e) {
             throw new IOException(e);
@@ -363,8 +366,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         stockWidth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_WIDTH, "-1"));
         stockDepth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_DEPTH, "-1"));
         spoilDepth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_SDEPTH, "-1"));
-
-
     }
 
     public void exportGCode() {
