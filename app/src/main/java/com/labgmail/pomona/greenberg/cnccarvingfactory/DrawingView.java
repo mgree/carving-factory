@@ -193,11 +193,15 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         if (curStroke != null) {
             Stroke fitted = curStroke.fitToNatCubic(SMOOTHING_FACTOR, CURVE_STEPS);
             strokes.add(fitted);
-        }
 
+            for (Anchor a : fitted) {
+                depthMap.addPoint(a);
+            }
+        }
         curStroke = null;
     }
 
+    
     public void clear() {
         curStroke = null;
         strokes.clear();
@@ -278,12 +282,11 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
     public void saveState(OutputStream state) throws IOException {
-        Log.d("STATE", "Save state: " + brush.getStrokeWidth() + "should be " + curTool.getDiameter()*scale);
+
         ObjectOutputStream out = new ObjectOutputStream(state);
 
         out.writeInt(brush.getAlpha());
         out.writeFloat(brush.getStrokeWidth());
-//        out.writeFloat(curTool.getDiameter());
         out.writeObject(strokes);
         out.writeObject(tools);
         out.writeObject(curTool);
@@ -311,7 +314,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         } catch (ClassNotFoundException e) {
             throw new IOException(e);
         }
-        Log.d("STATE", "Load state: " + brush.getStrokeWidth() + "should be " + curTool.getDiameter()*scale);
 
     }
 
