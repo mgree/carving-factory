@@ -29,6 +29,7 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
     private static final double DISTANCE_THRESHOLD = 25;
     private Tools tool;
     private List<Anchor> points = new LinkedList<>();
+    private DepthMap depthMap;
 
 
     public enum SelectionMode {
@@ -47,8 +48,10 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
      */
     private boolean degenerate = true;
 
-    public Stroke(Tools tool) {
+    public Stroke(Tools tool, DepthMap depthMap) {
+
         this.tool = tool;
+        this.depthMap = depthMap;
     }
 
     public Path getPath() {
@@ -65,9 +68,25 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
     }
 
     public void addPoint(float x, float y, float z, long t) {
-        points.add(new Anchor(x, y, z, t));
+        Anchor a = new Anchor(x, y, z, t);
+        points.add(a);
+        depthMap.addPoint(a);
     }
-    public void addPoint(Anchor a){ points.add(a); }
+    public void addPoint(Anchor a){
+        points.add(a);
+        depthMap.addPoint(a);
+    }
+
+    public void removePoint(Anchor a){
+        points.remove(a);
+        depthMap.removePoint(a);
+    }
+
+    public void removeFirstPoint(){
+        points.remove(points.get(0));
+        depthMap.removePoint(points.get(0));
+    }
+
     public List<Anchor> getPoints(){
         return points;
     }
@@ -267,7 +286,7 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
         Cubic[] fittedZ = calcNatCubic(selectedZ.toArray(new Double[selectedZ.size()]));
 
         // construct new stroke from curves
-        Stroke fitted = new Stroke(tool);
+        Stroke fitted = new Stroke(tool, depthMap);
         fitted.addPoint(fittedX[0].eval(0), fittedY[0].eval(0), points.get(0).z, selectedTime.get(0));
         for (int i = 0; i < fittedX.length; i += 1) {
             for (int j = 1; j <= steps; j += 1) {

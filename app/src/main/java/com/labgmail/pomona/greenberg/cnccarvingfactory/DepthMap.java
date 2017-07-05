@@ -69,9 +69,7 @@ public class DepthMap {
     }
 
     /* Removes an anchor from the depth map */
-    public void removePoint(Anchor a){
-        findBucket(a).remove(a);
-    }
+    public void removePoint(Anchor a){ findBucket(a).remove(a); }
 
     /* Clears the depth map */
     public void clear(){
@@ -88,13 +86,13 @@ public class DepthMap {
     }
 
     /* Finds the x index of the bucket this anchor is in in the array*/
-    private int findBucketIndexX (Anchor a){
+    public int findBucketIndexX (Anchor a){
         int ans = (int) (a.x / (minRadius * scale));
         return Math.max(Math.min (ans, numBucketsX - 1), 0);
     }
 
     /* Finds the y index of the bucket this anchor is in in the array*/
-    private int findBucketIndexY (Anchor a){
+    public int findBucketIndexY (Anchor a){
         int ans = (int) (a.y / (minRadius * scale));
         return Math.max(Math.min (ans, numBucketsY - 1), 0);
     }

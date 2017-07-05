@@ -193,14 +193,10 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         if (curStroke != null) {
             Stroke fitted = curStroke.fitToNatCubic(SMOOTHING_FACTOR, CURVE_STEPS);
             strokes.add(fitted);
-            for (Anchor a : fitted){
-                depthMap.addPoint(a);
-            }
         }
 
         curStroke = null;
     }
-
 
     public void clear() {
         curStroke = null;
@@ -211,10 +207,14 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
     public void undo(){
         if (strokes.size() > 0) {
-            for (Anchor a : strokes.get(strokes.size() - 1)){
-                depthMap.removePoint(a);
+            Stroke lastStroke = strokes.get(strokes.size() - 1);
+            int numAnchors = lastStroke.getPoints().size();
+
+            for (int i = 0; i < numAnchors - 1; i++){
+                lastStroke.removeFirstPoint(); //remove each point from the stroke
             }
-            strokes.remove(strokes.size() - 1);
+
+            strokes.remove(lastStroke); // remove the stroke itself from the list
             invalidate();
         }
     }
@@ -257,7 +257,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
 
         if (curStroke == null) {
-            curStroke = new Stroke(curTool);
+            curStroke = new Stroke(curTool, depthMap);
         }
 
         float z = curDepth;
@@ -265,8 +265,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         switch (drawingMode) {
 
             case OVERDRAW:
-                Anchor a = new Anchor (x, y, z, time);
-                Anchor updatedPoint = depthMap.updateZ(a, curTool.getDiameter());
+                Anchor updatedPoint = depthMap.updateZ(new Anchor (x, y, z, time), curTool.getDiameter());
                 curStroke.addPoint(updatedPoint);
                 z = updatedPoint.z;
                 break;
@@ -291,7 +290,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
     public void loadState(InputStream state) throws IOException {
-        Log.d("STATE", "Load state: " + brush.getStrokeWidth() + "should be " + curTool.getDiameter()*scale);
 
         ObjectInputStream in = new ObjectInputStream(state);
 
@@ -311,6 +309,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         } catch (ClassNotFoundException e) {
             throw new IOException(e);
         }
+        Log.d("STATE", "Load state: " + brush.getStrokeWidth() + "should be " + curTool.getDiameter()*scale);
+
     }
 
     @Override
