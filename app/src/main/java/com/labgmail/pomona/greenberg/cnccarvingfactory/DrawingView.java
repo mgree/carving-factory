@@ -206,18 +206,17 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
     public void undo(){
-        if (strokes.size() > 0) {
-            Stroke lastStroke = strokes.get(strokes.size() - 1);
-            int numAnchors = lastStroke.getPoints().size();
+        int size = strokes.size();
 
-            for (int i = 0; i < numAnchors - 1; i++){
-                lastStroke.removeFirstPoint(); //remove each point from the stroke
-            }
-
-            strokes.remove(lastStroke); // remove the stroke itself from the list
+        if (size > 0) {
+            for (Anchor a : strokes.get(size - 1)){
+                        depthMap.removePoint(a);
+                    }
+            strokes.remove(size - 1);
             invalidate();
-        }
+                }
     }
+
 
     public void setToolHalf() {
         curTool = tools.get(0);
@@ -257,7 +256,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
 
         if (curStroke == null) {
-            curStroke = new Stroke(curTool, depthMap);
+            curStroke = new Stroke(curTool);
         }
 
         float z = curDepth;
