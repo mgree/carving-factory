@@ -14,6 +14,8 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
+import android.graphics.Bitmap;
+
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -68,6 +70,9 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         OVERDRAW
     };
 
+    private Canvas drawCanvas;
+    private Bitmap canvasBitmap;
+
     // TODO make the mode changeable
     private Mode drawingMode = Mode.OVERDRAW;
 
@@ -84,10 +89,21 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         initializeTools();
     }
 
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        canvasBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+        drawCanvas = new Canvas(canvasBitmap);
+    }
+
+
+
     private void initializeBrush() {
         brush.setStyle(Paint.Style.STROKE);
         brush.setARGB(255, 0, 0, 0);
         brush.setAntiAlias(true);
+        brush.setStrokeJoin(Paint.Join.ROUND);
+        brush.setStrokeCap(Paint.Cap.ROUND);
     }
 
     private void initializeTools() {
@@ -129,37 +145,44 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         // BOTTOM
         canvas.drawRect(0, cutoffBottom, width, height, brush);
 
-        for (Stroke s : strokes) {
-            drawStroke(canvas, s, brush, scale);
 
-            if (debugPoints) {
-                brush.setColor(Color.RED);
-                brush.setStrokeWidth(2);
-                for (Anchor a : s) {
-                    canvas.drawPoint(a.x, a.y, brush);
-                }
-            }
+        //draw the old strokes
+        canvas.drawBitmap(canvasBitmap, 0, 0, brush);
 
-        }
-
+        //draw the current stroke
         if (curStroke != null) {
-            drawStroke(canvas, curStroke, brush, scale);
+            drawStroke(drawCanvas, curStroke, brush, scale);
         }
+
     }
 
+/* Will redraw all the existing strokes */
+private void redrawAll () {
+            for (Stroke s : strokes) {
+                drawStroke(drawCanvas, s, brush, scale);
+                if (debugPoints) {
+                    brush.setColor(Color.RED);
+                    brush.setStrokeWidth(2);
+                    for (Anchor a : s) {
+                        drawCanvas.drawPoint(a.x, a.y, brush);
+                    }
+                }
+            }
+}
+
+    /* Draws a single stroke */
     private void drawStroke(Canvas canvas, Stroke s, Paint brush, float scale) {
+
         float toolDim = scaleTool(s.getTDiameter());
         brush.setStrokeWidth(toolDim * scale);
 
         if (s.isDegenerate()) {
             brush.setStyle(Paint.Style.FILL);
-
             Anchor a = s.centroid();
             brush.setColor(a.getColor());
             canvas.drawCircle(a.x, a.y, toolDim * scale / 2, brush);
         } else {
             brush.setStyle(Paint.Style.STROKE);
-
             Anchor last = null;
             for (Anchor a : s) {
                 brush.setColor(a.getColor());
@@ -169,6 +192,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                 last = a;
             }
         }
+        canvas.save();
     }
 
     @Override
@@ -187,8 +211,10 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
 
         return true;
+
     }
 
+    /* Saves a fitted stroke to the bitmap and stroke list */
     private void saveStroke() {
         if (curStroke != null) {
             Stroke fitted = curStroke.fitToNatCubic(SMOOTHING_FACTOR, CURVE_STEPS);
@@ -197,17 +223,24 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             for (Anchor a : fitted) {
                 depthMap.addPoint(a);
             }
+
+            drawStroke(drawCanvas, fitted, brush, scale);
         }
         curStroke = null;
     }
 
+    /* Clears the screen, depthmap, and bitmap */
     public void clear() {
         curStroke = null;
         strokes.clear();
         depthMap.clear();
+        canvasBitmap.recycle();
+        canvasBitmap = Bitmap.createBitmap(drawCanvas.getWidth(), drawCanvas.getHeight(), Bitmap.Config.ARGB_8888);
+        drawCanvas = new Canvas(canvasBitmap);
         invalidate();
     }
 
+    /* Undoes the last stroke (redraws/remakes the bitmap) */
     public void undo(){
         int size = strokes.size();
 
@@ -216,6 +249,10 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                 depthMap.removePoint(a);
             }
             strokes.remove(size - 1);
+            canvasBitmap.recycle();
+            canvasBitmap = Bitmap.createBitmap(drawCanvas.getWidth(), drawCanvas.getHeight(), Bitmap.Config.ARGB_8888);
+            drawCanvas = new Canvas(canvasBitmap);
+            redrawAll();
             invalidate();
         }
     }
@@ -251,19 +288,17 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         postInvalidate();
     }
 
+    /* Adds a point to the current stroke */
     private void addPoint(float x, float y, long time) {
 
         if (x > cutoffRight || y > cutoffBottom) {
             saveStroke();
             return;
         }
-
         if (curStroke == null) {
             curStroke = new Stroke(curTool);
         }
-
         float z = curDepth;
-
         switch (drawingMode) {
 
             case OVERDRAW:
@@ -276,7 +311,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                 z = curDepth;
                 break;
         }
-
         curStroke.addPoint(x, y, z, time);
     }
 

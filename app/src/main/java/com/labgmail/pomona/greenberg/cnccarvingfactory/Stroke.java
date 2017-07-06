@@ -97,6 +97,15 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
         if (!degenerate) {
             return false;
         }
+        //quick speed up check
+        Anchor start = points.get(0);
+        Anchor end = points.get(points.size() - 1);
+        double startToEnd = Math.sqrt(Math.pow(start.x - end.x, 2) + Math.pow(start.y - end.y, 2));
+        if (startToEnd >= 2 * tool.getDiameter()){
+            degenerate = false;
+            return false;
+        }
+
 
         Anchor centroid = centroid();
 
@@ -265,8 +274,8 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
         // construct new stroke from curves
         Stroke fitted = new Stroke(tool);
         fitted.addPoint(fittedX[0].eval(0), fittedY[0].eval(0), points.get(0).z, selectedTime.get(0));
-        for (int i = 0; i < fittedX.length; i += 1) {
-            for (int j = 1; j <= steps; j += 1) {
+        for (int i = 0; i < fittedX.length; i ++) {
+            for (int j = 1; j <= steps; j ++) {
                 double u = j / (double) steps;
                 fitted.addPoint(fittedX[i].eval(u), fittedY[i].eval(u), fittedZ[i].eval(u), selectedTime.get(i));
             }

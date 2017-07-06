@@ -52,7 +52,7 @@ public class DepthMap {
         float neighboringDepth = 0.0f;
         float newZ = oldPoint.z;
         for (Anchor a : potentialPoints) {
-            if (oldPoint.distance2D(a.x, a.y) <= currentRadius * scale ) {
+            if (oldPoint.distance2D(a.x, a.y) <= currentRadius * scale) {
                    // && Math.abs(oldPoint.time - a.time) > TIME_THRESHOLD) { //prevents it from counting adjacent points
                                                                               //Unnecessary because depthmap updates on savestroke
                 neighboringDepth = Math.max(neighboringDepth, oldPoint.z) + Math.max(oldPoint.getGrayScale(), .1f);
