@@ -7,7 +7,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.os.Environment;
 import android.preference.PreferenceManager;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -21,12 +24,13 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
+import java.io.OutputStream;
+import java.util.UUID;
 
 /**
  * Central drawing activity for (eventual) output to a CNC machine.
@@ -162,6 +166,7 @@ public class DrawingActivity extends AppCompatActivity {
                 Log.d("IO", "clicked");
                 if (ContextCompat.checkSelfPermission(self, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
                     mContentView.exportGCode();
+                    mContentView.exportImage();
                 } else {
                     pendingSave = true;
                     ActivityCompat.requestPermissions(self,
@@ -179,6 +184,9 @@ public class DrawingActivity extends AppCompatActivity {
             }
         });
     }
+
+
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {

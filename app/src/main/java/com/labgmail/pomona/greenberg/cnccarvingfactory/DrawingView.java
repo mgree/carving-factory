@@ -65,13 +65,14 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     private DepthMap depthMap;
     private boolean initialized = false;
 
+    private float height, width;
+
     public enum Mode {
         MANUAL_DEPTH,
         OVERDRAW
     };
 
-    private Canvas drawCanvas;
-    private Bitmap canvasBitmap;
+    private Bitmap drawing;
 
     // TODO make the mode changeable
     private Mode drawingMode = Mode.OVERDRAW;
@@ -92,11 +93,9 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        canvasBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-        drawCanvas = new Canvas(canvasBitmap);
+
+        initialized = false;
     }
-
-
 
     private void initializeBrush() {
         brush.setStyle(Paint.Style.STROKE);
@@ -116,13 +115,12 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         curTool = tools.get(0);
     }
 
-
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        float height = canvas.getHeight();
-        float width = canvas.getWidth();
+        height = canvas.getHeight();
+        width = canvas.getWidth();
 
         float wPPI = stockWidth > 0 ? width / stockWidth  : 1;
         float lPPI = stockLength > 0 ? height / stockLength : 1;
@@ -132,47 +130,53 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         cutoffBottom = scale * stockLength;
         cutoffRight = scale * stockWidth;
 
-        brush.setColor(Color.BLACK);
-        brush.setStyle(Paint.Style.FILL);
-
         if (!initialized) {
+            drawing = Bitmap.createBitmap(Math.round(cutoffRight), Math.round(cutoffBottom), Bitmap.Config.ARGB_8888);
+            redrawAll();
+
             depthMap = new DepthMap(stockWidth, stockLength, MIN_RADIUS, scale);
             initialized = true;
         }
+
+        brush.setColor(Color.BLACK);
+        brush.setStyle(Paint.Style.FILL);
+        brush.setStrokeWidth(scale * curTool.getDiameter());
 
         // RIGHT
         canvas.drawRect(cutoffRight, 0, width, height, brush);
         // BOTTOM
         canvas.drawRect(0, cutoffBottom, width, height, brush);
 
-
         //draw the old strokes
-        canvas.drawBitmap(canvasBitmap, 0, 0, brush);
+        canvas.drawBitmap(drawing, 0, 0, brush);
 
         //draw the current stroke
         if (curStroke != null) {
-            drawStroke(drawCanvas, curStroke, brush, scale);
+            drawStroke(canvas, curStroke, brush, scale);
         }
-
     }
 
-/* Will redraw all the existing strokes */
-private void redrawAll () {
-            for (Stroke s : strokes) {
-                drawStroke(drawCanvas, s, brush, scale);
-                if (debugPoints) {
-                    brush.setColor(Color.RED);
-                    brush.setStrokeWidth(2);
-                    for (Anchor a : s) {
-                        drawCanvas.drawPoint(a.x, a.y, brush);
-                    }
+    /* Will redraw all the existing strokes */
+    private void redrawAll() {
+        // fresh canvas, clear the bitmap
+        Canvas canvas = new Canvas(drawing);
+        canvas.drawColor(Color.WHITE);
+
+        for (Stroke s : strokes) {
+            drawStroke(canvas, s, brush, scale);
+
+            if (debugPoints) {
+                brush.setColor(Color.RED);
+                brush.setStrokeWidth(2);
+                for (Anchor a : s) {
+                    canvas.drawPoint(a.x, a.y, brush);
                 }
             }
-}
+        }
+    }
 
     /* Draws a single stroke */
     private void drawStroke(Canvas canvas, Stroke s, Paint brush, float scale) {
-
         float toolDim = scaleTool(s.getTDiameter());
         brush.setStrokeWidth(toolDim * scale);
 
@@ -209,7 +213,6 @@ private void redrawAll () {
             default:
                 break;
         }
-
         return true;
 
     }
@@ -223,8 +226,8 @@ private void redrawAll () {
             for (Anchor a : fitted) {
                 depthMap.addPoint(a);
             }
-
-            drawStroke(drawCanvas, fitted, brush, scale);
+            Canvas canvas = new Canvas(drawing);
+            drawStroke(canvas, fitted, brush, scale);
         }
         curStroke = null;
     }
@@ -232,12 +235,19 @@ private void redrawAll () {
     /* Clears the screen, depthmap, and bitmap */
     public void clear() {
         curStroke = null;
-        strokes.clear();
-        depthMap.clear();
-        canvasBitmap.recycle();
-        canvasBitmap = Bitmap.createBitmap(drawCanvas.getWidth(), drawCanvas.getHeight(), Bitmap.Config.ARGB_8888);
-        drawCanvas = new Canvas(canvasBitmap);
-        invalidate();
+
+        if (strokes != null) {
+            strokes.clear();
+        }
+
+        if (depthMap != null) {
+            depthMap.clear();
+        }
+
+        Canvas canvas = new Canvas(drawing);
+        canvas.drawColor(Color.WHITE);
+
+        postInvalidate();
     }
 
     /* Undoes the last stroke (redraws/remakes the bitmap) */
@@ -249,14 +259,10 @@ private void redrawAll () {
                 depthMap.removePoint(a);
             }
             strokes.remove(size - 1);
-            canvasBitmap.recycle();
-            canvasBitmap = Bitmap.createBitmap(drawCanvas.getWidth(), drawCanvas.getHeight(), Bitmap.Config.ARGB_8888);
-            drawCanvas = new Canvas(canvasBitmap);
             redrawAll();
-            invalidate();
+            postInvalidate();
         }
     }
-
 
     public void setToolHalf() {
         curTool = tools.get(0);
@@ -315,9 +321,10 @@ private void redrawAll () {
     }
 
     public void saveState(OutputStream state) throws IOException {
-
         ObjectOutputStream out = new ObjectOutputStream(state);
 
+        out.writeFloat(width);
+        out.writeFloat(height);
         out.writeInt(brush.getColor());
         out.writeFloat(brush.getStrokeWidth());
         out.writeObject(strokes);
@@ -327,22 +334,27 @@ private void redrawAll () {
     }
 
     public void loadState(InputStream state) throws IOException {
-
         ObjectInputStream in = new ObjectInputStream(state);
 
+        width = in.readFloat();
+        height = in.readFloat();
+        
         brush.setColor(in.readInt());
-        brush.setStrokeWidth(in.readFloat() * scale);
-
+        brush.setStrokeWidth(in.readFloat()); //took out a *scale here
 
         try {
             if (clearStrokes) {
-                strokes = new LinkedList<>();
+                strokes = new LinkedList<> ();
+                clear();
                 clearStrokes = false;
             } else {
                 //noinspection unchecked
                 strokes = (LinkedList<Stroke>) in.readObject();
                 tools = (LinkedList<Tool>) in.readObject();
                 curTool = (Tool) in.readObject();
+
+                initialized = false;
+                postInvalidate();
             }
         } catch (ClassNotFoundException e) {
             throw new IOException(e);
@@ -446,5 +458,47 @@ private void redrawAll () {
             Log.d("IO", e.toString());
         }
     }
+
+    public void exportImage(){
+
+            File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+
+            try {
+                dir.mkdirs();
+
+                StringBuilder filename = new StringBuilder();
+                CharSequence timestamp = DateFormat.format("yyyy-MM-ddThh:mm:ss", new Date());
+                filename.append(timestamp);
+                filename.append("_Image.png");
+
+                Integer counter = 0;
+                File file = new File(dir, filename.toString());
+                FileOutputStream fOut = new FileOutputStream(file);
+
+                drawing.compress(Bitmap.CompressFormat.PNG, 100, fOut);
+                fOut.flush();
+                fOut.close();
+
+                //String imgSaved = MediaStore.Images.Media.insertImage(getContentResolver(), file.getAbsolutePath(), file.getName(), file.getName());
+
+                MediaScannerConnection.scanFile(getContext(), new String[] {file.getAbsolutePath()}, null, null);
+//                if(imgSaved!=null) {
+//                    Toast.makeText(getContext(), "Drawing saved to Gallery!", Toast.LENGTH_SHORT).show();
+//                }
+//                else{
+//                    Toast.makeText(getContext(), "Oops! Image could not be saved.", Toast.LENGTH_SHORT).show();
+//                }
+
+            } catch (IOException e) {
+                Toast.makeText(getContext(), "Couldn't save image (" + e.getLocalizedMessage() + ")", Toast.LENGTH_SHORT).show();
+                Log.d("IO", e.toString());
+            }
+
+
+
+
+
+        }
+
 
 }
