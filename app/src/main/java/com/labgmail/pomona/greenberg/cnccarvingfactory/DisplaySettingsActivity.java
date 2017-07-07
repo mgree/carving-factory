@@ -52,6 +52,7 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
             }
         }
 
+
         @Override
         public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
             Preference pref = findPreference(key);
