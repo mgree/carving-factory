@@ -93,7 +93,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-
         initialized = false;
     }
 
@@ -156,7 +155,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
     }
 
-    /* Will redraw all the existing strokes */
+    /* Will clear the canvas and redraw all the existing strokes */
     private void redrawAll() {
         // fresh canvas, clear the bitmap
         Canvas canvas = new Canvas(drawing);
@@ -196,7 +195,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                 last = a;
             }
         }
-        canvas.save();
     }
 
     @Override
@@ -232,7 +230,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         curStroke = null;
     }
 
-    /* Clears the screen, depthmap, and bitmap */
+    /* Clears the stroke list, depthmap, screen, and bitmap */
     public void clear() {
         curStroke = null;
 
@@ -338,7 +336,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         width = in.readFloat();
         height = in.readFloat();
-        
+
         brush.setColor(in.readInt());
         brush.setStrokeWidth(in.readFloat()); //took out a *scale here
 
