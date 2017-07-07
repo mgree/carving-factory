@@ -317,7 +317,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         height = in.readFloat();
 
         brush.setColor(in.readInt());
-        brush.setStrokeWidth(in.readFloat()); //took out a *scale here
+        brush.setStrokeWidth(in.readFloat() * scale);
 
         try {
             if (clearStrokes) {
@@ -328,7 +328,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                 //noinspection unchecked
                 strokes = (LinkedList<Stroke>) in.readObject();
                 curTool = (Tool) in.readObject();
-
                 initialized = false;
                 postInvalidate();
             }
@@ -428,7 +427,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                         }
                     });
 
-            Toast.makeText(getContext(), String.format("Saved to %s (%d lines of G-code)", filename.toString(), gcg.numLines()), Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), String.format("Saved file and image to %s (%d lines of G-code)", filename.toString(), gcg.numLines()), Toast.LENGTH_SHORT).show();
+
         } catch (IOException e) {
             Toast.makeText(getContext(), "Couldn't save file (" + e.getLocalizedMessage() + ")", Toast.LENGTH_SHORT).show();
             Log.d("IO", e.toString());
@@ -455,15 +455,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                 fOut.flush();
                 fOut.close();
 
-                //String imgSaved = MediaStore.Images.Media.insertImage(getContentResolver(), file.getAbsolutePath(), file.getName(), file.getName());
-
                 MediaScannerConnection.scanFile(getContext(), new String[] {file.getAbsolutePath()}, null, null);
-//                if(imgSaved!=null) {
-//                    Toast.makeText(getContext(), "Drawing saved to Gallery!", Toast.LENGTH_SHORT).show();
-//                }
-//                else{
-//                    Toast.makeText(getContext(), "Oops! Image could not be saved.", Toast.LENGTH_SHORT).show();
-//                }
 
             } catch (IOException e) {
                 Toast.makeText(getContext(), "Couldn't save image (" + e.getLocalizedMessage() + ")", Toast.LENGTH_SHORT).show();

@@ -21,11 +21,11 @@ public class Tool implements Serializable {
 
         public Tool(int toolNum, float diameter, float cutDepth, float inSpeed, float latSpeed) {
 
-            this.tDiameter = diameter;
-            this.mDepth = cutDepth;
-            this.iSpeed = inSpeed;
-            this.lSpeed = latSpeed;
-            this.tNum = toolNum;
+            tDiameter = diameter;
+            mDepth = cutDepth;
+            iSpeed = inSpeed;
+            lSpeed = latSpeed;
+            tNum = toolNum;
         }
 
 
@@ -50,9 +50,20 @@ public class Tool implements Serializable {
         }
 
     private void writeObject(ObjectOutputStream out) throws IOException {
+        out.writeFloat(tDiameter);
+        out.writeFloat(mDepth);
+        out.writeFloat(iSpeed);
+        out.writeFloat(lSpeed);
+        out.writeInt(tNum);
     }
 
     private void readObject(ObjectInputStream in) throws IOException {
+        tDiameter = in.readFloat();
+        mDepth = in.readFloat();
+        iSpeed = in.readFloat();
+        lSpeed = in.readFloat();
+        tNum = in.readInt();
+
     }
 
     @SuppressWarnings({"EmptyMethod", "RedundantThrows", "unused"})
