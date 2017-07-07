@@ -70,7 +70,7 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
                     if (newUnit.equals(mCurUnit)) {
                         return;
                     }
-                    convertDimensionsTo(newUnit);
+//                    convertDimensionsTo(newUnit);
                     pref.setSummary(newUnit);
                     break;
                 case KEY_TOOL:
@@ -81,6 +81,7 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
             }
         }
 
+        // No longer needed? Won't be converting between any units will only focus on inches.
         private void convertDimensionsTo(String newUnit) {
             // either: in -> cm or cm -> in
 
@@ -90,10 +91,6 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
                 case "in":
                     factor = 1f / 2.54f;
                     descIndex = 0;
-                    break;
-                case "cm":
-                    factor = 2.54f;
-                    descIndex = 1;
                     break;
                 default:
                     Log.d("PREF", String.format("unfamiliar unit %s (currently in %s, staying there)", newUnit, mCurUnit));
