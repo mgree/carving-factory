@@ -11,7 +11,6 @@ import java.util.List;
 
 public class DepthMap {
 
-    private static final long TIME_THRESHOLD = 400;
     float stockWidth;
     float stockHeight;
     float minRadius;
@@ -19,6 +18,7 @@ public class DepthMap {
     LinkedList<Anchor>[][] depthMap;
     int numBucketsX;
     int numBucketsY;
+
 
 
 
@@ -44,18 +44,20 @@ public class DepthMap {
 
     /* Takes an anchor and updates the depth map with a new anchor with an updated Z value*/
     public Anchor updateZ (Anchor oldPoint, float currentRadius){
+        boolean changed = false;
 
         //Find all relevant points
         LinkedList<Anchor> potentialPoints = (LinkedList<Anchor>) findNeighborPoints(findBuckets(oldPoint, currentRadius));
 
         // count neighbors in neighboring buckets after some time threshold
         float neighboringDepth = 0.0f;
-        float newZ = oldPoint.z;
+        float newZ = Math.max(neighboringDepth, oldPoint.z);
         for (Anchor a : potentialPoints) {
-            if (oldPoint.distance2D(a.x, a.y) <= currentRadius * scale) {
+            if (oldPoint.distance2D(a.x, a.y) <= currentRadius * scale && !changed) {
                    // && Math.abs(oldPoint.time - a.time) > TIME_THRESHOLD) { //prevents it from counting adjacent points
                                                                               //Unnecessary because depthmap updates on savestroke
-                neighboringDepth = Math.max(neighboringDepth, oldPoint.z) + Math.max(oldPoint.getGrayScale(), .1f);
+                    neighboringDepth = Math.max(oldPoint.getGrayScale(), .01f);
+                    changed = true;
             }
         }
         newZ += neighboringDepth;
