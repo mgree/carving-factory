@@ -49,23 +49,15 @@ public class Tool implements Serializable {
             return tNum;
         }
 
-//    private void writeObject(ObjectOutputStream out) throws IOException {
-//        out.writeObject(tool);
-//        out.writeObject(points);
-//    }
-//
-//    private void readObject(ObjectInputStream in) throws IOException {
-//        try {
-//            tool = (Tool) in.readObject();
-//            points = (LinkedList<Anchor>) in.readObject();
-//        } catch (ClassNotFoundException e) {
-//            throw new IOException(e);
-//        }
-//    }
-//
-//    @SuppressWarnings({"EmptyMethod", "RedundantThrows", "unused"})
-//    private void readObjectNoData() throws ObjectStreamException { }
-//
-//    public static final long serialVersionUID = 42L;
+    private void writeObject(ObjectOutputStream out) throws IOException {
+    }
+
+    private void readObject(ObjectInputStream in) throws IOException {
+    }
+
+    @SuppressWarnings({"EmptyMethod", "RedundantThrows", "unused"})
+    private void readObjectNoData() throws ObjectStreamException { }
+
+    public static final long serialVersionUID = 42L;
 
 }

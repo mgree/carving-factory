@@ -48,7 +48,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     private float stockDepth = -1;
     private float spoilDepth = -1;
 
-    public List<Tool> tools = new LinkedList<>();
     public Tool curTool;
 
     private float cutoffRight = -1;
@@ -87,7 +86,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         cutoffBottom = getHeight();
 
         initializeBrush();
-        initializeTools();
     }
 
     @Override
@@ -103,16 +101,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         brush.setAntiAlias(true);
         brush.setStrokeJoin(Paint.Join.ROUND);
         brush.setStrokeCap(Paint.Cap.ROUND);
-    }
-
-    private void initializeTools() {
-        Tool half_inch = new Tool(1, 0.5f, 0.4f, 80f, 250f);
-        Tool quarter_inch = new Tool(2, 0.25f, 0.4f, 80f, 250f);
-
-        tools.add(half_inch);
-        tools.add(quarter_inch);
-
-        curTool = tools.get(0);
     }
 
     @Override
@@ -264,14 +252,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
     }
 
-    public void setToolHalf() {
-        curTool = tools.get(0);
-    }
-
-    public void setToolQuarter() {
-        curTool = tools.get(1);
-    }
-
     public void setTool(Tool tool) {
         curTool = tool;
     }
@@ -328,7 +308,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         out.writeInt(brush.getColor());
         out.writeFloat(brush.getStrokeWidth());
         out.writeObject(strokes);
-        out.writeObject(tools);
         out.writeObject(curTool);
         out.flush();
     }
@@ -350,7 +329,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             } else {
                 //noinspection unchecked
                 strokes = (LinkedList<Stroke>) in.readObject();
-                tools = (LinkedList<Tool>) in.readObject();
                 curTool = (Tool) in.readObject();
 
                 initialized = false;

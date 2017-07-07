@@ -30,8 +30,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.UUID;
 
+// Method that passes over Tool list from DrawingActivity to DrawingView
+//What if each time they press the button a list is sent over, updated, and theres a curTool that keeps track.
 /**
  * Central drawing activity for (eventual) output to a CNC machine.
  */
@@ -58,7 +62,7 @@ public class DrawingActivity extends AppCompatActivity {
     private DrawingView mContentView;
     private ImageView swatch;
     private boolean pendingSave = false;
-
+    public List<Tool> tools = new LinkedList<>();
 
     private final Runnable mHidePart2Runnable = new Runnable() {
         @SuppressLint("InlinedApi")
@@ -113,6 +117,7 @@ public class DrawingActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        initializeTools();
 
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 
@@ -126,8 +131,6 @@ public class DrawingActivity extends AppCompatActivity {
         prefs.registerOnSharedPreferenceChangeListener(mContentView);
         mContentView.initializeStockDimensions(prefs);
 
-
-
         // TOOLBAR SETUP
         DepthSwatch swatch = (DepthSwatch) findViewById(R.id.depth_swatch);
         swatch.setOnClickListener(new View.OnClickListener() {
@@ -139,25 +142,32 @@ public class DrawingActivity extends AppCompatActivity {
         });
         swatch.setDepth(1.0f);
 
-        // FULLSCREEN SETUP
-        // Upon interacting with UI controls, delay any scheduled hide()
-        // operations to prevent the jarring behavior of controls going away
-        // while interacting with the UI.
-        findViewById(R.id.dummy_button).setOnTouchListener(mDelayHideTouchListener);
         findViewById(R.id.undo_button).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { mContentView.undo(); }
         });
         findViewById(R.id.clear_button).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { mContentView.clear(); }
         });
+
+        // tools proper
+        // TODO programmatically generate tools from our library
         findViewById(R.id.half_inch_button).setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {mContentView.setToolHalf();
+            public void onClick(View v) { mContentView.setTool(tools.get(0)); // TODO don't use a constant
                 Toast.makeText(v.getContext(),"Selected Tool: Half Inch (.5)", Toast.LENGTH_SHORT).show();}
         });
         findViewById(R.id.quarter_inch_button).setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {mContentView.setToolQuarter();
+            public void onClick(View v) { mContentView.setTool(tools.get(1));
                 Toast.makeText(v.getContext(),"Selected Tool: Quarter Inch (.25)", Toast.LENGTH_SHORT).show();}
         });
+
+        mContentView.setTool(tools.get(0));
+
+
+        // FULLSCREEN SETUP
+        // Upon interacting with UI controls, delay any scheduled hide()
+        // operations to prevent the jarring behavior of controls going away
+        // while interacting with the UI.
+        findViewById(R.id.dummy_button).setOnTouchListener(mDelayHideTouchListener);
 
         // SETUP SAVE BUTTON
         final Activity self = this;
@@ -269,5 +279,13 @@ public class DrawingActivity extends AppCompatActivity {
     private void delayedHide(int delayMillis) {
         mHideHandler.removeCallbacks(mHideRunnable);
         mHideHandler.postDelayed(mHideRunnable, delayMillis);
+    }
+
+    public void initializeTools() {
+        Tool half_inch = new Tool(1, 0.5f, 0.4f, 80f, 250f);
+        Tool quarter_inch = new Tool(2, 0.25f, 0.4f, 80f, 250f);
+
+        tools.add(half_inch);
+        tools.add(quarter_inch);
     }
 }
