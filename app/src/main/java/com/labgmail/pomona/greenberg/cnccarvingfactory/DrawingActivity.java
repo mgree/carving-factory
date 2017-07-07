@@ -130,6 +130,7 @@ public class DrawingActivity extends AppCompatActivity {
         Log.d("PREF", prefs.getAll().toString());
         prefs.registerOnSharedPreferenceChangeListener(mContentView);
         mContentView.initializeStockDimensions(prefs);
+        mContentView.setTool(tools.get(0));
 
         // TOOLBAR SETUP
         DepthSwatch swatch = (DepthSwatch) findViewById(R.id.depth_swatch);
@@ -160,7 +161,6 @@ public class DrawingActivity extends AppCompatActivity {
                 Toast.makeText(v.getContext(),"Selected Tool: Quarter Inch (.25)", Toast.LENGTH_SHORT).show();}
         });
 
-        mContentView.setTool(tools.get(0));
 
 
         // FULLSCREEN SETUP

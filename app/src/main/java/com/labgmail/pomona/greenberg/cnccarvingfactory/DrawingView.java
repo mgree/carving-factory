@@ -86,6 +86,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         cutoffBottom = getHeight();
 
         initializeBrush();
+        Log.d("STOOL", " " + curTool);
     }
 
     @Override
@@ -128,6 +129,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         brush.setColor(Color.BLACK);
         brush.setStyle(Paint.Style.FILL);
         brush.setStrokeWidth(scale * curTool.getDiameter());
+        // At start curTool doesn't have a value
 
         // RIGHT
         canvas.drawRect(cutoffRight, 0, width, height, brush);
@@ -373,8 +375,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         float factor = 1.0f;
         if (stockUnit.equals("in")) {
             factor = 1.0f;
-        } else if (stockUnit.equals("cm")){
-            factor = 2.54f;
         } else {
             Log.d("DIM", "funny unit " + stockUnit);
         }

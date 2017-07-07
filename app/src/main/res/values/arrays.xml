@@ -3,11 +3,9 @@
 <resources>
     <string-array name="units">
         <item>inches (in)</item>
-        <item>centimeters (cm)</item>
     </string-array>
     <string-array name="unit_values">
         <item>in</item>
-        <item>cm</item>
     </string-array>
     <string-array name="tool_selection">
         <item>half-inch (.5)</item>
