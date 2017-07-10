@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
@@ -21,7 +22,10 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import java.io.File;
@@ -30,6 +34,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
@@ -63,6 +68,9 @@ public class DrawingActivity extends AppCompatActivity {
     private ImageView swatch;
     private boolean pendingSave = false;
     public List<Tool> tools = new LinkedList<>();
+    public Button[] toolLib;
+    LinkedList<HashMap<String,Object>> button;
+
 
     private final Runnable mHidePart2Runnable = new Runnable() {
         @SuppressLint("InlinedApi")
@@ -132,6 +140,17 @@ public class DrawingActivity extends AppCompatActivity {
         mContentView.initializeStockDimensions(prefs);
         mContentView.setTool(tools.get(0));
 
+        LinearLayout ll = (LinearLayout) findViewById(R.id.fullscreen_controls);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+
+        for (int i=0; i<tools.size(); i++) {
+
+            Button toolButton = new Button(this);
+//            myButton.setText(tools.get(i).getToolNum());
+            toolButton.setId(i);
+            ll.addView(toolButton, lp);
+        }
+
         // TOOLBAR SETUP
         DepthSwatch swatch = (DepthSwatch) findViewById(R.id.depth_swatch);
         swatch.setOnClickListener(new View.OnClickListener() {
@@ -149,6 +168,7 @@ public class DrawingActivity extends AppCompatActivity {
         findViewById(R.id.clear_button).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { mContentView.clear(); }
         });
+
 
         // tools proper
         // TODO programmatically generate tools from our library
@@ -282,10 +302,12 @@ public class DrawingActivity extends AppCompatActivity {
     }
 
     public void initializeTools() {
+
         Tool half_inch = new Tool(1, 0.5f, 0.4f, 80f, 250f);
         Tool quarter_inch = new Tool(2, 0.25f, 0.4f, 80f, 250f);
 
         tools.add(half_inch);
         tools.add(quarter_inch);
+
     }
 }
