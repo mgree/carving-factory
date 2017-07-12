@@ -16,53 +16,58 @@ public class Tool implements Serializable {
 
     //Includes Tool Diameter, Tool Number, Max Cut Depth, Insertion Speed, and Lateral Speed.
 
-    private float tDiameter, mDepth, iSpeed, lSpeed;
-    private int tNum;
+    private float diameter, cutDepth, inSpeed, latSpeed, toolLength;
+    private int toolNum;
 
-        public Tool(int toolNum, float diameter, float cutDepth, float inSpeed, float latSpeed) {
+        public Tool(int toolNum, float diameter, float cutDepth, float inSpeed, float latSpeed, float toolLength) {
 
-            tDiameter = diameter;
-            mDepth = cutDepth;
-            iSpeed = inSpeed;
-            lSpeed = latSpeed;
-            tNum = toolNum;
+            this.toolNum = toolNum;
+            this.diameter = diameter;
+            this.cutDepth = cutDepth;
+            this.inSpeed = inSpeed;
+            this.latSpeed = latSpeed;
+            this.toolLength = toolLength;
         }
 
 
         public float getDiameter () {
-            return tDiameter;
+            return diameter;
         }
 
         public float getMaxCutDepth () {
-            return mDepth;
+            return cutDepth;
         }
 
         public float getInSpeed() {
-            return iSpeed;
+            return inSpeed;
         }
 
         public float getLatSpeed() {
-            return lSpeed;
+            return latSpeed;
         }
 
         public int getToolNum() {
-            return tNum;
+            return toolNum;
         }
 
+        public float getToolLength() { return  toolLength; }
+
     private void writeObject(ObjectOutputStream out) throws IOException {
-        out.writeFloat(tDiameter);
-        out.writeFloat(mDepth);
-        out.writeFloat(iSpeed);
-        out.writeFloat(lSpeed);
-        out.writeInt(tNum);
+        out.writeInt(toolNum);
+        out.writeFloat(diameter);
+        out.writeFloat(cutDepth);
+        out.writeFloat(inSpeed);
+        out.writeFloat(latSpeed);
+        out.writeFloat(toolLength);
     }
 
     private void readObject(ObjectInputStream in) throws IOException {
-        tDiameter = in.readFloat();
-        mDepth = in.readFloat();
-        iSpeed = in.readFloat();
-        lSpeed = in.readFloat();
-        tNum = in.readInt();
+        toolNum = in.readInt();
+        diameter = in.readFloat();
+        cutDepth = in.readFloat();
+        inSpeed = in.readFloat();
+        latSpeed = in.readFloat();
+        toolLength = in.readInt();
 
     }
 

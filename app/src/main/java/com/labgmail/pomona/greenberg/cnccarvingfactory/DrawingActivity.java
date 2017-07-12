@@ -21,8 +21,12 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -117,11 +121,15 @@ public class DrawingActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+
         initializeTools();
 
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 
         setContentView(R.layout.activity_drawing);
+
+
 
         mControlsView = findViewById(R.id.fullscreen_content_controls);
         mContentView = (DrawingView) findViewById(R.id.fullscreen_content);
@@ -138,7 +146,7 @@ public class DrawingActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 mContentView.setDepth(((DepthSwatch) v).getDepthSelected());
-                Toast.makeText(v.getContext(),"Cutting Depth: " + ((DepthSwatch) v).getDepthSelected()*MAX_CUT_DEPTH, Toast.LENGTH_SHORT).show();
+                Toast.makeText(v.getContext(),"Cutting Depth: " + ((DepthSwatch) v).getDepthSelected()*mContentView.getTool().getMaxCutDepth(), Toast.LENGTH_SHORT).show();
             }
         });
         swatch.setDepth(1.0f);
@@ -193,6 +201,19 @@ public class DrawingActivity extends AppCompatActivity {
                 startActivity(new Intent(self, DisplaySettingsActivity.class));
             }
         });
+
+
+        //DRAWING MODE BUTTON
+//        ToggleButton drawingMode = (ToggleButton) findViewById(R.id.drawingModeButton);
+//        drawingMode.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+//            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+//                if (isChecked) {
+//                    // The toggle is enabled
+//                } else {
+//                    // The toggle is disabled
+//                }
+//            }
+//        });
     }
 
 
@@ -283,7 +304,7 @@ public class DrawingActivity extends AppCompatActivity {
 
     public void initializeTools() {
         Tool half_inch = new Tool(1, 0.5f, 0.4f, 80f, 250f);
-        Tool quarter_inch = new Tool(2, 0.25f, 0.4f, 80f, 250f);
+        Tool quarter_inch = new Tool(2, 0.25f, 0.3f, 80f, 250f);
 
         tools.add(half_inch);
         tools.add(quarter_inch);

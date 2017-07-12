@@ -69,7 +69,6 @@ public class GCodeGenerator {
 
         float boardHeight = spoilDepth + stockDepth;
         final float clearancePlane = boardHeight + CLEARANCE;
-        final float maxCutDepth = spoilDepth + stockDepth - MAX_SINGLE_CUT_DEPTH; //TODO Tool specific Max cut depth
 
         float ipp = stockWidth / cutoffRight; // scaling factor
 
@@ -100,6 +99,9 @@ public class GCodeGenerator {
                     gcg.tool(s.getTool());
                     curTool = s.getTool();
                 }
+
+                float maxCutDepth = spoilDepth + stockDepth - curTool.getMaxCutDepth();
+
 
                 if (!cutting) {
                     // emit G00 moves, move in w/slow feed rate (first iteration)
