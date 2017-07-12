@@ -109,16 +109,17 @@ public class GCodeGenerator {
                     gcg.cmd(new G(0).Z(clearancePlane));
 
                     // bound the z insertion depth!
-                    float z = boardHeight - (point.z * MAX_SINGLE_CUT_DEPTH); //TODO Change these to tool specific max cut depths???
+                    float z = boardHeight - (point.z * curTool.getMaxCutDepth()); //TODO Change for multi pass here?
                     z = Math.max(z, maxCutDepth);
                     z = Math.min(z, clearancePlane);
+                    z += curTool.getToolOffset(); //TODO CHECK THIS IS OK AND NOT GOING TO RUIN EVERYTHING
                     gcg.cmd(new G(1).Z(z).F(curTool.getInSpeed()));
 
                     cutting = true;
                 } else {
                     // first G01 move, set high feedrate (second iteration)
                     // bound the z insertion depth!
-                    float z = boardHeight - (point.z * MAX_SINGLE_CUT_DEPTH); //TODO Change these to tool specific max cut depths???
+                    float z = boardHeight - (point.z * curTool.getMaxCutDepth());  //TODO Change for multi pass here?
                     z = Math.max(z, maxCutDepth);
                     z = Math.min(z, clearancePlane);
 
@@ -218,8 +219,8 @@ public class GCodeGenerator {
 
     public void outlude() {
         comment("closing arguments");
-        cmd("D0");
-        cmd("G00 Z0");
+        cmd("D0"); //D is tool radius compensation number
+        cmd("G00 Z0"); //go to z0
         cmd("G53");
         cmd("G00 Y0.0000");
         cmd("G00 X0.0000 M05");
@@ -229,6 +230,8 @@ public class GCodeGenerator {
     }
 
     public void tool(Tool tool) {
+        ///////cmd(new G(0).Z(clearancePlane));
+
         cmd(String.format("T%d M06", tool.getToolNum()));
         cmd("D1");
         cmd("M03 S18000"); // TODO RPMs is per-tool

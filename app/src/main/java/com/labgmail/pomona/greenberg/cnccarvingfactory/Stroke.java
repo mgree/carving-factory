@@ -21,7 +21,7 @@ import java.util.List;
  */
 
 @SuppressWarnings("WeakerAccess")
-public class Stroke extends Path implements Serializable, Iterable<Anchor>{
+public class Stroke extends Path implements Serializable, Iterable<Anchor> {
 
     private static final long TIME_THRESHOLD = 50;
     private static final double DISTANCE_THRESHOLD = 25;
@@ -112,7 +112,6 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor>{
         for (Anchor a : points) {
             double distance = Math.sqrt(Math.pow(a.x - centroid.x, 2) + Math.pow(a.y - centroid.y, 2));
             if (distance >= 2 * tool.getDiameter()) {
-                Log.d("FIT", "non-degenerate distance " + distance + " " + tool.getDiameter());
                 degenerate = false;
                 return false;
             }

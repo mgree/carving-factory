@@ -16,12 +16,15 @@ public class Tool implements Serializable {
 
     //Includes Tool Number, Tool Diameter, Max Cut Depth, Insertion Speed, Lateral Speed, tool Length, and tool name
 
+    //The tool length that the machin considers to be "zero" in inches
+    private static final float ARBITRARY_ZERO_LENGTH = 5f;  //TODO UPDATE THIS SO IT'S ACCURATE
+
+
     private float diameter, cutDepth, inSpeed, latSpeed, toolLength;
     private int toolNum;
     private String toolName;
 
         public Tool(int toolNum, float diameter, float cutDepth, float inSpeed, float latSpeed, float toolLength, String toolName) {
-
             this.toolNum = toolNum;
             this.diameter = diameter;
             this.cutDepth = cutDepth;
@@ -32,30 +35,26 @@ public class Tool implements Serializable {
         }
 
 
-        public float getDiameter () {
-            return diameter;
-        }
+        public float getDiameter () { return diameter; }
 
-        public float getMaxCutDepth () {
-            return cutDepth;
-        }
+        public float getMaxCutDepth () { return cutDepth; }
 
-        public float getInSpeed() {
-            return inSpeed;
-        }
+        public float getInSpeed() { return inSpeed; }
 
-        public float getLatSpeed() {
-            return latSpeed;
-        }
+        public float getLatSpeed() { return latSpeed; }
 
-        public int getToolNum() {
-            return toolNum;
-        }
+        public int getToolNum() { return toolNum; }
 
         public String getToolName () { return toolName; }
 
         public float getToolLength() { return  toolLength; }
 
+        //Calculate the tool offset given its length
+        //If toolOffset is positive, the tool is too long (z is added to so the machine stays higher)
+        //If toolOffset is negative, the tool is too short (z is subtracted from so the machine carves lower)
+        public float getToolOffset() {
+            return toolLength - ARBITRARY_ZERO_LENGTH;
+        }
 
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.writeInt(toolNum);
