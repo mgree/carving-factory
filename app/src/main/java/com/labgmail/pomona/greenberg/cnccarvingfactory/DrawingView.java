@@ -84,7 +84,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
 
-
     private Bitmap drawing;
 
     // TODO make the mode changeable
@@ -231,11 +230,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
     }
 
-
-
-
-
-
 //NEW CODE HERE
     @Override
     public boolean onGenericMotionEvent(MotionEvent event) {
@@ -288,7 +282,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         return 0;
     }
 
-
     private void processJoystickInput(MotionEvent event,
                                       int historyPos) {
 
@@ -339,10 +332,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         Canvas canvas = new Canvas(drawing);
         canvas.drawCircle(cursorX, cursorY, 2, brush);
 
-
-
     }
-
 
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if ((event.getSource() & InputDevice.SOURCE_GAMEPAD)
@@ -357,21 +347,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
     //NEW CODE ENDS HERE
-
-
-
 
     /* Saves a fitted stroke to the bitmap and stroke list */
     private void saveStroke() {
@@ -447,12 +423,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         postInvalidate();
     }
-
-
-
-
-
-
 
     /* Adds a point to the current stroke */
     private void addPoint(float x, float y, long time) {
@@ -635,8 +605,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             Log.d("IO", e.toString());
         }
 
-
     }
-
 
 }

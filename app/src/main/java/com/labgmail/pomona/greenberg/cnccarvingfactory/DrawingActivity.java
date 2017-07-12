@@ -47,9 +47,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
-
-// Method that passes over Tool list from DrawingActivity to DrawingView
-//What if each time they press the button a list is sent over, updated, and theres a curTool that keeps track.
 /**
  * Central drawing activity for (eventual) output to a CNC machine.
  */
@@ -173,7 +170,6 @@ public class DrawingActivity extends AppCompatActivity {
                     }
                 }
             });
-
             // ??? How to do less manually ???
             ll.addView(toolButton,160,200);
         }
