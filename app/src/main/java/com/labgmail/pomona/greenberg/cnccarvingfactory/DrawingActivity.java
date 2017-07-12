@@ -140,6 +140,7 @@ public class DrawingActivity extends AppCompatActivity {
             toolButton.setId(i);
             toolButton.setText(tools.get(i).getToolName());
 //            toolButton.setMinimumHeight();
+            toolButton.setHeight(ActionBar.LayoutParams.MATCH_PARENT);
             toolButton.setMinimumWidth(ActionBar.LayoutParams.MATCH_PARENT);
 
             ll.addView(toolButton, lp);
