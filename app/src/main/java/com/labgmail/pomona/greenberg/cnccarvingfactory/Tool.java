@@ -14,12 +14,13 @@ import java.util.List;
 
 public class Tool implements Serializable {
 
-    //Includes Tool Diameter, Tool Number, Max Cut Depth, Insertion Speed, and Lateral Speed.
+    //Includes Tool Number, Tool Diameter, Max Cut Depth, Insertion Speed, Lateral Speed, tool Length, and tool name
 
     private float diameter, cutDepth, inSpeed, latSpeed, toolLength;
     private int toolNum;
+    private String toolName;
 
-        public Tool(int toolNum, float diameter, float cutDepth, float inSpeed, float latSpeed, float toolLength) {
+        public Tool(int toolNum, float diameter, float cutDepth, float inSpeed, float latSpeed, float toolLength, String toolName) {
 
             this.toolNum = toolNum;
             this.diameter = diameter;
@@ -27,6 +28,7 @@ public class Tool implements Serializable {
             this.inSpeed = inSpeed;
             this.latSpeed = latSpeed;
             this.toolLength = toolLength;
+            this.toolName = toolName;
         }
 
 
@@ -50,7 +52,10 @@ public class Tool implements Serializable {
             return toolNum;
         }
 
+        public String getToolName () { return toolName; }
+
         public float getToolLength() { return  toolLength; }
+
 
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.writeInt(toolNum);
@@ -59,6 +64,7 @@ public class Tool implements Serializable {
         out.writeFloat(inSpeed);
         out.writeFloat(latSpeed);
         out.writeFloat(toolLength);
+        out.writeChars(toolName);
     }
 
     private void readObject(ObjectInputStream in) throws IOException {
@@ -68,6 +74,7 @@ public class Tool implements Serializable {
         inSpeed = in.readFloat();
         latSpeed = in.readFloat();
         toolLength = in.readInt();
+        toolName = String.valueOf(in.readChar());
 
     }
 
