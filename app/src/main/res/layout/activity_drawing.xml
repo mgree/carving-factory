@@ -31,6 +31,11 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.0">
 
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
         <com.labgmail.pomona.greenberg.cnccarvingfactory.DepthSwatch
             android:id="@+id/depth_swatch"
             android:layout_width="match_parent"
@@ -75,21 +80,21 @@
             android:layout_height="wrap_content"
             android:layout_weight="1" />
 
-        <Button
-            android:id="@+id/half_inch_button"
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_weight="1"
-            android:contentDescription="Half Tool"
-            android:text=".5 inches" />
+        <!--<Button-->
+            <!--android:id="@+id/half_inch_button"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="1dp"-->
+            <!--android:layout_weight="1"-->
+            <!--android:contentDescription="Half Tool"-->
+            <!--android:text=".5 inches" />-->
 
-        <Button
-            android:id="@+id/quarter_inch_button"
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_weight="1"
-            android:contentDescription="Quarter Tool"
-            android:text=".25 inches" />
+        <!--<Button-->
+            <!--android:id="@+id/quarter_inch_button"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="1dp"-->
+            <!--android:layout_weight="1"-->
+            <!--android:contentDescription="Quarter Tool"-->
+            <!--android:text=".25 inches" />-->
 
     </LinearLayout>
 

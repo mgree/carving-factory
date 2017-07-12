@@ -23,6 +23,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
+import android.view.ViewGroup;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -151,18 +152,31 @@ public class DrawingActivity extends AppCompatActivity {
         mContentView.setTool(tools.get(0));
 
         LinearLayout ll = (LinearLayout) findViewById(R.id.fullscreen_controls);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 
         for (int i=0; i<tools.size(); i++) {
             Button toolButton = new Button(this);
-            toolButton.setId(i);
+            toolButton.setId(tools.get(i).getToolNum());
             toolButton.setText(tools.get(i).getToolName());
-//            toolButton.setMinimumHeight();
-            toolButton.setHeight(ActionBar.LayoutParams.MATCH_PARENT);
-            toolButton.setMinimumWidth(ActionBar.LayoutParams.MATCH_PARENT);
+            toolButton.setMinHeight(ll.getHeight());
+            final int index = i;
+            toolButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (index == 0) {
+                        mContentView.setTool(tools.get(0));
+                        Toast.makeText(v.getContext(),"Selected Tool: Half Inch (.5)", Toast.LENGTH_SHORT).show();
+                    }
+                    else {
+                        mContentView.setTool(tools.get(1));
+                        Toast.makeText(v.getContext(),"Selected Tool: Quarter Inch (.25)", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
 
-            ll.addView(toolButton, lp);
+            // ??? How to do less manually ???
+            ll.addView(toolButton,160,200);
         }
+
 
         // TOOLBAR SETUP
         DepthSwatch swatch = (DepthSwatch) findViewById(R.id.depth_swatch);
@@ -185,14 +199,14 @@ public class DrawingActivity extends AppCompatActivity {
 
         // tools proper
         // TODO programmatically generate tools from our library
-        findViewById(R.id.half_inch_button).setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) { mContentView.setTool(tools.get(0)); // TODO don't use a constant
-                Toast.makeText(v.getContext(),"Selected Tool: Half Inch (.5)", Toast.LENGTH_SHORT).show();}
-        });
-        findViewById(R.id.quarter_inch_button).setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) { mContentView.setTool(tools.get(1));
-                Toast.makeText(v.getContext(),"Selected Tool: Quarter Inch (.25)", Toast.LENGTH_SHORT).show();}
-        });
+//        findViewById(R.id.half_inch_button).setOnClickListener(new View.OnClickListener() {
+//            public void onClick(View v) { mContentView.setTool(tools.get(0)); // TODO don't use a constant
+//                Toast.makeText(v.getContext(),"Selected Tool: Half Inch (.5)", Toast.LENGTH_SHORT).show();}
+//        });
+//        findViewById(R.id.quarter_inch_button).setOnClickListener(new View.OnClickListener() {
+//            public void onClick(View v) { mContentView.setTool(tools.get(1));
+//                Toast.makeText(v.getContext(),"Selected Tool: Quarter Inch (.25)", Toast.LENGTH_SHORT).show();}
+//        });
 
 
 
