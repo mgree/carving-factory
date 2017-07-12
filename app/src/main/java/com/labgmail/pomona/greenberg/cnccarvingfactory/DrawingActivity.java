@@ -68,8 +68,6 @@ public class DrawingActivity extends AppCompatActivity {
     private ImageView swatch;
     private boolean pendingSave = false;
     public List<Tool> tools = new LinkedList<>();
-    public Button[] toolLib;
-    LinkedList<HashMap<String,Object>> button;
 
 
     private final Runnable mHidePart2Runnable = new Runnable() {
@@ -144,10 +142,12 @@ public class DrawingActivity extends AppCompatActivity {
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 
         for (int i=0; i<tools.size(); i++) {
-
             Button toolButton = new Button(this);
-//            myButton.setText(tools.get(i).getToolNum());
             toolButton.setId(i);
+            toolButton.setText(tools.get(i).getToolName());
+//            toolButton.setMinimumHeight();
+            toolButton.setMinimumWidth(ActionBar.LayoutParams.MATCH_PARENT);
+
             ll.addView(toolButton, lp);
         }
 
@@ -303,8 +303,8 @@ public class DrawingActivity extends AppCompatActivity {
 
     public void initializeTools() {
 
-        Tool half_inch = new Tool(1, 0.5f, 0.4f, 80f, 250f);
-        Tool quarter_inch = new Tool(2, 0.25f, 0.4f, 80f, 250f);
+        Tool half_inch = new Tool(1, 0.5f, 0.4f, 80f, 250f, "half inch");
+        Tool quarter_inch = new Tool(2, 0.25f, 0.4f, 80f, 250f, "quarter inch");
 
         tools.add(half_inch);
         tools.add(quarter_inch);

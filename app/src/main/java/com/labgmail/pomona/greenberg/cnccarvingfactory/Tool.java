@@ -18,14 +18,16 @@ public class Tool implements Serializable {
 
     private float tDiameter, mDepth, iSpeed, lSpeed;
     private int tNum;
+    private String tName;
 
-        public Tool(int toolNum, float diameter, float cutDepth, float inSpeed, float latSpeed) {
+        public Tool(int toolNum, float diameter, float cutDepth, float inSpeed, float latSpeed, String toolName) {
 
             tDiameter = diameter;
             mDepth = cutDepth;
             iSpeed = inSpeed;
             lSpeed = latSpeed;
             tNum = toolNum;
+            tName = toolName;
         }
 
 
@@ -49,12 +51,17 @@ public class Tool implements Serializable {
             return tNum;
         }
 
+        public String getToolName() {
+            return tName;
+        }
+
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.writeFloat(tDiameter);
         out.writeFloat(mDepth);
         out.writeFloat(iSpeed);
         out.writeFloat(lSpeed);
         out.writeInt(tNum);
+        out.writeChars(tName);
     }
 
     private void readObject(ObjectInputStream in) throws IOException {
@@ -63,6 +70,7 @@ public class Tool implements Serializable {
         iSpeed = in.readFloat();
         lSpeed = in.readFloat();
         tNum = in.readInt();
+        tName = String.valueOf(in.readChar());
 
     }
 
