@@ -151,6 +151,7 @@ public class DrawingActivity extends AppCompatActivity {
         mContentView.initializeStockDimensions(prefs);
         mContentView.setTool(tools.get(0));
 
+        // tools proper
         LinearLayout ll = (LinearLayout) findViewById(R.id.fullscreen_controls);
 
         for (int i=0; i<tools.size(); i++) {
@@ -177,7 +178,6 @@ public class DrawingActivity extends AppCompatActivity {
             ll.addView(toolButton,160,200);
         }
 
-
         // TOOLBAR SETUP
         DepthSwatch swatch = (DepthSwatch) findViewById(R.id.depth_swatch);
         swatch.setOnClickListener(new View.OnClickListener() {
@@ -195,19 +195,6 @@ public class DrawingActivity extends AppCompatActivity {
         findViewById(R.id.clear_button).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { mContentView.clear(); }
         });
-
-
-        // tools proper
-        // TODO programmatically generate tools from our library
-//        findViewById(R.id.half_inch_button).setOnClickListener(new View.OnClickListener() {
-//            public void onClick(View v) { mContentView.setTool(tools.get(0)); // TODO don't use a constant
-//                Toast.makeText(v.getContext(),"Selected Tool: Half Inch (.5)", Toast.LENGTH_SHORT).show();}
-//        });
-//        findViewById(R.id.quarter_inch_button).setOnClickListener(new View.OnClickListener() {
-//            public void onClick(View v) { mContentView.setTool(tools.get(1));
-//                Toast.makeText(v.getContext(),"Selected Tool: Quarter Inch (.25)", Toast.LENGTH_SHORT).show();}
-//        });
-
 
 
         // FULLSCREEN SETUP
