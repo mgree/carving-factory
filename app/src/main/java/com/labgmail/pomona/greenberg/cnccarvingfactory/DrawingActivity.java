@@ -310,8 +310,8 @@ public class DrawingActivity extends AppCompatActivity {
     }
 
     public void initializeTools() {
-        Tool half_inch = new Tool(1, 0.5f, 0.4f, 80f, 250f, 0f, "half inch");
-        Tool quarter_inch = new Tool(2, 0.25f, 0.3f, 80f, 250f, 0f, "quarter inch");
+        Tool half_inch = new Tool(1, 0.5f, 0.4f, 80f, 250f, 5f, "half inch");
+        Tool quarter_inch = new Tool(2, 0.25f, 0.3f, 80f, 250f, 5f, "quarter inch");
 
         tools.add(half_inch);
         tools.add(quarter_inch);

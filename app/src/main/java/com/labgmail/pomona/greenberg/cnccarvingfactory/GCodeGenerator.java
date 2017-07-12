@@ -40,9 +40,12 @@ public class GCodeGenerator {
     private Map<String,Float> fParams = new TreeMap<>(); // current floating-point params
     private Map<String,Integer> iParams = new TreeMap<>(); // current integer params
     private static Tool curTool = null;
+    private static float clearancePlane;
+
 
     public static final float MAX_SINGLE_CUT_DEPTH = 0.4f;
     public static final float CLEARANCE = .25f;
+
 
     /**
      * Single-pass stroke milling.
@@ -68,7 +71,7 @@ public class GCodeGenerator {
                 stockWidth, stockLength, stockDepth, stockUnit));
 
         float boardHeight = spoilDepth + stockDepth;
-        final float clearancePlane = boardHeight + CLEARANCE;
+        clearancePlane = boardHeight + CLEARANCE;
 
         float ipp = stockWidth / cutoffRight; // scaling factor
 
@@ -212,28 +215,28 @@ public class GCodeGenerator {
 
     public void prelude() {
         comment("prelude");
-        cmd("G00 G17 G40 G90");
-        cmd("G70");
-        cmd("G54");
+        cmd("G00 G17 G40 G90"); // go to 0, XY plane select, cancel cutter radius compensation, abs. distance mode
+        cmd("G70"); //set to inches
+        cmd("G54"); //fixture offset 1
     }
 
     public void outlude() {
         comment("closing arguments");
         cmd("D0"); //D is tool radius compensation number
-        cmd("G00 Z0"); //go to z0
-        cmd("G53");
-        cmd("G00 Y0.0000");
-        cmd("G00 X0.0000 M05");
-        cmd("G54");
-        cmd("M30");
+        cmd("G00 Z0"); //go to Z0
+        cmd("G53"); //Move in absolute machine coordinate system
+        cmd("G00 X0.0000 Y0.0000"); //go to X0 Y0
+        cmd("M05"); //SPINDLE STOP
+        cmd("G54"); //fixture offset 1
+        cmd("M30"); //Program end and rewind
         // some samples indicate a % sign after to ensure a newline, but our CNC code checker rejects it
     }
 
     public void tool(Tool tool) {
-        ///////cmd(new G(0).Z(clearancePlane));
-
-        cmd(String.format("T%d M06", tool.getToolNum()));
-        cmd("D1");
+        cmd(new G(0).Z(clearancePlane)); //pull up to the clearance plane
+        cmd("M05");                      //stop the spindle
+        cmd(String.format("T%d M06", tool.getToolNum())); //change tools
+        cmd("D1"); //Tool radius compensation number TODO CHECK IF THIS IS RIGHT
         cmd("M03 S18000"); // TODO RPMs is per-tool
     }
 
