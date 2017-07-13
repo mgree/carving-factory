@@ -32,9 +32,10 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-
 //import static com.realvnc.vncsdk.Library.*;
 //import com.realvnc.vncsdk.*;
+
+import java.util.UUID;
 
 /**
  * Central drawing activity for (eventual) output to a CNC machine.
@@ -170,7 +171,6 @@ public class DrawingActivity extends AppCompatActivity {
                     }
                 }
             });
-
             // ??? How to do less manually ???
             ll.addView(toolButton,160,200);
         }

@@ -248,7 +248,11 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
 
+
     //Deal with joystick input
+
+//NEW CODE HERE
+
     @Override
     public boolean onGenericMotionEvent(MotionEvent event) {
 
@@ -294,7 +298,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
         return 0;
     }
-
 
     private void processJoystickInput(MotionEvent event,
                                       int historyPos) {
@@ -353,6 +356,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         } catch (Exception e) {
             errorLog.append(e.toString());
         }
+
     }
 
 
@@ -421,6 +425,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
     }
 
+    //NEW CODE ENDS HERE
 
     /* Saves a fitted stroke to the bitmap and stroke list */
     private void saveStroke() {
@@ -683,8 +688,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             Log.d("IO", e.toString());
         }
 
-
     }
-
 
 }
