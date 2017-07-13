@@ -19,7 +19,6 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Button;
 import android.widget.Toast;
@@ -35,7 +34,6 @@ import java.util.List;
 //import static com.realvnc.vncsdk.Library.*;
 //import com.realvnc.vncsdk.*;
 
-import java.util.UUID;
 
 /**
  * Central drawing activity for (eventual) output to a CNC machine.
@@ -188,7 +186,6 @@ public class DrawingActivity extends AppCompatActivity {
 
         mContentView.setDepthSwatch(swatch);
 
-
         findViewById(R.id.undo_button).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { mContentView.undo(); }
         });
@@ -196,6 +193,10 @@ public class DrawingActivity extends AppCompatActivity {
             public void onClick(View v) { mContentView.clear(); }
         });
 
+        findViewById(R.id.live_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) { mContentView.startLive(); }
+        });
 
         // FULLSCREEN SETUP
         // Upon interacting with UI controls, delay any scheduled hide()

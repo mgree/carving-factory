@@ -85,15 +85,12 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
     private float height, width;
 
-
     private float currX, currY;
-
 
     public enum Mode {
         MANUAL_DEPTH,
         OVERDRAW
     }
-
 
     private Bitmap drawing;
 
@@ -116,7 +113,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
     }
 
-
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
@@ -135,6 +131,11 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+
+        if (isInEditMode()) {
+            canvas.drawColor(Color.WHITE);
+            return;
+        }
 
 //        findViewById(R.id.)
         height = canvas.getHeight();
@@ -691,7 +692,39 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             Toast.makeText(getContext(), "Couldn't save image (" + e.getLocalizedMessage() + ")", Toast.LENGTH_SHORT).show();
             Log.d("IO", e.toString());
         }
-
     }
 
+
+    private static final String CNC_IP = "192.168.0.100";
+    private static final int CNC_PORT = 5900;
+    private static final String CNC_USER = "";
+    private static final String CNC_PASSWORD = "c"; // really?!
+    private boolean live = false;
+    private VNCConnection vnc;
+
+    public void startLive() {
+        Log.d("LIVE","entering startLive()");
+
+        if (live || vnc != null) {
+            Log.d("LIVE", "aborting startLive---already live");
+            return;
+        }
+
+        // make connection
+        vnc = new VNCConnection(this, CNC_IP, CNC_PORT, CNC_USER, CNC_PASSWORD);
+
+        Log.d("LIVE","set to live");
+        live = true;
+    }
+
+    public void stopLive() {
+        Log.d("LIVE", "entering stopLive()");
+
+        live = false;
+
+        if (vnc != null) {
+            vnc.disconnect();
+            vnc = null;
+        }
+    }
 }
