@@ -7,11 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.Color;
-import android.os.Environment;
 import android.preference.PreferenceManager;
-import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -23,33 +19,23 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
-import android.view.ViewGroup;
-import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.TextView;
-
 import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
-
 import android.widget.Toast;
-import android.widget.ToggleButton;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.util.HashMap;
+
 import java.util.LinkedList;
 import java.util.List;
-import java.util.UUID;
 
-// Method that passes over Tool list from DrawingActivity to DrawingView
-//What if each time they press the button a list is sent over, updated, and theres a curTool that keeps track.
+
+//import static com.realvnc.vncsdk.Library.*;
+//import com.realvnc.vncsdk.*;
+
 /**
  * Central drawing activity for (eventual) output to a CNC machine.
  */
@@ -71,10 +57,8 @@ public class DrawingActivity extends AppCompatActivity {
      * and a change of the status and navigation bar.
      */
     private static final int UI_ANIMATION_DELAY = 300;
-    private static final float MAX_CUT_DEPTH = .4f;
     private final Handler mHideHandler = new Handler();
     private DrawingView mContentView;
-    private ImageView swatch;
     private boolean pendingSave = false;
     public List<Tool> tools = new LinkedList<>();
 
@@ -131,8 +115,22 @@ public class DrawingActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
 
+//        try {
+//            init();
+//            Viewer viewer = new Viewer();
+//            /*
+//                Note that a vnc_Viewer object is designed to last for one connection only, so destroy and
+//                recreate it each time your Viewer app user connects, or attempts to connect.
+//             */
+//
+//        } catch (VncException e) {
+//            Log.d("VNCEXCEPTION", "VNC Exception: " + e);
+//        }
+
+
+
+        super.onCreate(savedInstanceState);
 
         initializeTools();
 
@@ -146,7 +144,6 @@ public class DrawingActivity extends AppCompatActivity {
         mContentView = (DrawingView) findViewById(R.id.fullscreen_content);
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        Log.d("PREF", prefs.getAll().toString());
         prefs.registerOnSharedPreferenceChangeListener(mContentView);
         mContentView.initializeStockDimensions(prefs);
         mContentView.setTool(tools.get(0));
@@ -189,6 +186,9 @@ public class DrawingActivity extends AppCompatActivity {
         });
         swatch.setDepth(1.0f);
 
+        mContentView.setDepthSwatch(swatch);
+
+
         findViewById(R.id.undo_button).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { mContentView.undo(); }
         });
@@ -207,7 +207,6 @@ public class DrawingActivity extends AppCompatActivity {
         final Activity self = this;
         findViewById(R.id.save_button).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                Log.d("IO", "clicked");
                 if (ContextCompat.checkSelfPermission(self, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
                     mContentView.exportGCode();
                     mContentView.exportImage();
@@ -329,8 +328,8 @@ public class DrawingActivity extends AppCompatActivity {
     }
 
     public void initializeTools() {
-        Tool half_inch = new Tool(1, 0.5f, 0.4f, 80f, 250f, 0f, "half inch");
-        Tool quarter_inch = new Tool(2, 0.25f, 0.3f, 80f, 250f, 0f, "quarter inch");
+        Tool half_inch = new Tool(1, 0.5f, 0.4f, 80f, 250f, 5.0f, "half inch");
+        Tool quarter_inch = new Tool(2, 0.25f, 0.3f, 80f, 250f, 5.0f, "quarter inch");
 
         tools.add(half_inch);
         tools.add(quarter_inch);

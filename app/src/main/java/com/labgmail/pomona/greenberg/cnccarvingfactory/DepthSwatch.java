@@ -21,7 +21,7 @@ public class DepthSwatch extends android.support.v7.widget.AppCompatImageButton 
     private float depth = 1.0f;
     private final Paint paint = new Paint();
 
-    public float clickX, clickY, eventX;
+    public float clickY;
 
     public DepthSwatch(Context ctx) { this(ctx, null, 0); }
 
@@ -72,8 +72,8 @@ public class DepthSwatch extends android.support.v7.widget.AppCompatImageButton 
         return depth;
     }
 
-    public void setDepth(float depth) {
-        this.depth = depth;
+    public void setDepth(float theDepth) {
+        depth = theDepth;
         postInvalidate();
     }
 }

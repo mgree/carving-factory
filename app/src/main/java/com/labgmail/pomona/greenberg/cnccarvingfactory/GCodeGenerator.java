@@ -116,6 +116,7 @@ public class GCodeGenerator {
                     z = Math.max(z, maxCutDepth);
                     z = Math.min(z, clearancePlane);
                     z += curTool.getToolOffset(); //TODO CHECK THIS IS OK AND NOT GOING TO RUIN EVERYTHING
+                    Log.d("TOOLERROR", "Tool Offset" + curTool.getToolOffset());
                     gcg.cmd(new G(1).Z(z).F(curTool.getInSpeed()));
 
                     cutting = true;

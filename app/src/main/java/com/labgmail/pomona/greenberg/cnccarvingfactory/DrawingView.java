@@ -1,6 +1,7 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -8,6 +9,7 @@ import android.graphics.Paint;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Environment;
+import android.os.Vibrator;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -19,17 +21,23 @@ import android.widget.Toast;
 import android.graphics.Bitmap;
 
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.security.Key;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+
+import static android.support.v4.content.ContextCompat.startActivity;
 
 /**
  * Full-screen drawing view.
@@ -39,9 +47,13 @@ import java.util.List;
 
 public class DrawingView extends View implements SharedPreferences.OnSharedPreferenceChangeListener {
 
-    private boolean usingController = false;
+    private boolean usingController = true;
     private static final int DRAWSPEED = 5;
     private boolean nowDrawing = false;
+    private DepthSwatch depthSwatch;
+    private float rTrigValue = 0.0f;
+    private float lTrigValue = 0.0f;
+    private StringBuilder errorLog = new StringBuilder();
 
 
     private static final int SMOOTHING_FACTOR = 3;
@@ -75,14 +87,13 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     private float height, width;
 
 
-    private float currX, currY, cursorX, cursorY;
+    private float currX, currY;
 
 
     public enum Mode {
         MANUAL_DEPTH,
         OVERDRAW
     }
-
 
 
     private Bitmap drawing;
@@ -103,6 +114,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         cutoffBottom = getHeight();
 
         initializeBrush();
+
     }
 
     @Override
@@ -137,10 +149,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         //if in normal tablet drawing mode
         if (!initialized) {
-            currX = cutoffRight / 2 ;
-            currY = cutoffBottom / 2 ;
-            cursorX = currX;
-            cursorY = currY;
+            currX = cutoffRight / 2;
+            currY = cutoffBottom / 2;
 
             drawing = Bitmap.createBitmap(Math.round(cutoffRight), Math.round(cutoffBottom), Bitmap.Config.ARGB_8888);
             redrawAll();
@@ -152,6 +162,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             initialized = true;
 
         }
+
 
         brush.setColor(Color.BLACK);
         brush.setStyle(Paint.Style.FILL);
@@ -168,6 +179,11 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         if (curStroke != null) {
             drawStroke(canvas, curStroke, brush, scale);
         }
+
+
+        brush.setStyle(Paint.Style.FILL);
+        brush.setColor(Color.RED);
+        canvas.drawCircle(currX, currY, 20, brush);
 
     }
 
@@ -232,11 +248,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
 
-
-
-
-
-//NEW CODE HERE
+    //Deal with joystick input
     @Override
     public boolean onGenericMotionEvent(MotionEvent event) {
 
@@ -247,11 +259,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
             // Process all historical movement samples in the batch
             final int historySize = event.getHistorySize();
-
-            // Process the movements starting from the
-            // earliest historical position in the batch
             for (int i = 0; i < historySize; i++) {
-                // Process the event at historical position i
                 processJoystickInput(event, i);
             }
 
@@ -259,7 +267,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             processJoystickInput(event, -1);
 
             postInvalidate();
-
             return true;
         }
         return super.onGenericMotionEvent(event);
@@ -276,7 +283,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         if (range != null) {
             final float flat = range.getFlat();
             final float value =
-                    historyPos < 0 ? event.getAxisValue(axis):
+                    historyPos < 0 ? event.getAxisValue(axis) :
                             event.getHistoricalAxisValue(axis, historyPos);
 
             // Ignore axis values that are within the 'flat' region of the
@@ -294,9 +301,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         InputDevice mInputDevice = event.getDevice();
 
-        // Calculate the horizontal distance to move by
-        // using the input value from one of these physical controls:
-        // the left control stick, hat axis, or the right control stick.
+        // Find X from the left control stick, hat axis, or the right control stick.
         float x = getCenteredAxis(event, mInputDevice,
                 MotionEvent.AXIS_X, historyPos);
         if (x == 0) {
@@ -308,9 +313,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                     MotionEvent.AXIS_Z, historyPos);
         }
 
-        // Calculate the vertical distance to move by
-        // using the input value from one of these physical controls:
-        // the left control stick, hat switch, or the right control stick.
+        // Find Y from the left control stick, hat switch, or the right control stick.
         float y = getCenteredAxis(event, mInputDevice,
                 MotionEvent.AXIS_Y, historyPos);
         if (y == 0) {
@@ -322,59 +325,108 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                     MotionEvent.AXIS_RZ, historyPos);
         }
 
-        // Update the ship object based on the new x and y values
+
+        // Update the current point based on the new x and y values and bound them
         currX += (x * DRAWSPEED);
         currY += (y * DRAWSPEED);
-        cursorX += (x * DRAWSPEED);
-        cursorY += (y * DRAWSPEED);
+        currX = Math.max(0, Math.min(currX, cutoffRight));
+        currY = Math.max(0, Math.min(currY, cutoffBottom));
 
-        if (nowDrawing) {
-            addPoint(currX,
-                    currY,
-                    event.getEventTime());
+        try {
+            //get the trigger values
+            rTrigValue = event.getAxisValue(MotionEvent.AXIS_RTRIGGER);
+            lTrigValue = event.getAxisValue(MotionEvent.AXIS_LTRIGGER);
+
+            curDepth += rTrigValue / 20f; //divide by 10 to lessen sensitivity
+            curDepth -= lTrigValue / 20f;
+            curDepth = Math.min(1f, Math.max(0f, curDepth)); //bound at black and white
+
+            //update the red line on the depth swatch
+            depthSwatch.setDepth(curDepth);
+
+            //Add that point to the stroke
+            if (nowDrawing) {
+                addPoint(currX,
+                        currY,
+                        event.getEventTime());
+            }
+        } catch (Exception e) {
+            errorLog.append(e.toString());
         }
-
-        brush.setStyle(Paint.Style.FILL);
-        brush.setColor(Color.RED);
-        Canvas canvas = new Canvas(drawing);
-        canvas.drawCircle(cursorX, cursorY, 2, brush);
-
-
-
     }
 
 
+    public void setDepthSwatch (DepthSwatch ds){
+        depthSwatch = ds;
+    }
+
+    //Process buttons
+        // A toggles drawing mode
+        // B exits app entirely (Do we want this???)
+        //X calls undo
+        //Y calls clear
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if ((event.getSource() & InputDevice.SOURCE_GAMEPAD)
                 == InputDevice.SOURCE_GAMEPAD) {
             if (keyCode == KeyEvent.KEYCODE_BUTTON_A) {
-                if (nowDrawing) { saveStroke(); }
+                if (nowDrawing) {
+                    saveStroke();
+                }
                 nowDrawing = !nowDrawing;
             }
-
+            if (keyCode == KeyEvent.KEYCODE_BUTTON_X){
+                undo();
+            }
+            if (keyCode == KeyEvent.KEYCODE_BUTTON_Y){
+                clear();
+            }
+            if (keyCode == KeyEvent.KEYCODE_BUTTON_START){
+                appendLog(errorLog.toString());
+            }
         }
         return super.onKeyDown(keyCode, event);
     }
 
 
+    //End of controller code
 
 
+    public void appendLog(String text) {
+        File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
 
+        try {
+            dir.mkdirs();
 
+            // compute the filename
+            File prg = new File(dir, "Error.txt");
+            prg.createNewFile();
 
+            PrintWriter out = new PrintWriter(new FileOutputStream(prg, false));
+            out.write(text);
+            out.flush();
+            out.close();
 
+            MediaScannerConnection.scanFile(getContext(),
+                    new String[]{prg.toString()}, null,
+                    new MediaScannerConnection.OnScanCompletedListener() {
+                        public void onScanCompleted(String path, Uri uri) {
+                            Log.i("IO", "Scanned " + path + ":");
+                            Log.i("IO", "-> uri=" + uri);
+                        }
+                    });
 
-
-
-
-
-    //NEW CODE ENDS HERE
-
-
+            Toast.makeText(getContext(), "Error Logged", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Log.d("EXCEPTION", "Exception: " + e);
+        }
+    }
 
 
     /* Saves a fitted stroke to the bitmap and stroke list */
     private void saveStroke() {
+        errorLog.append(String.valueOf(curDepth));
+        errorLog.append("\n");
+
         if (curStroke != null) {
             Stroke fitted = curStroke.fitToNatCubic(SMOOTHING_FACTOR, CURVE_STEPS);
             strokes.add(fitted);
@@ -428,7 +480,10 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     public void setTool(Tool tool) {
         curTool = tool;
     }
-    public Tool getTool() { return curTool; }
+
+    public Tool getTool() {
+        return curTool;
+    }
 
     public void setDepth(float depth) {
         curDepth = depth;
@@ -449,14 +504,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
 
-
-
-
-
-
     /* Adds a point to the current stroke */
     private void addPoint(float x, float y, long time) {
-
         if (x > cutoffRight || y > cutoffBottom) {
             saveStroke();
             return;
@@ -620,7 +669,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             filename.append(timestamp);
             filename.append("_Image.png");
 
-            Integer counter = 0;
             File file = new File(dir, filename.toString());
             FileOutputStream fOut = new FileOutputStream(file);
 
