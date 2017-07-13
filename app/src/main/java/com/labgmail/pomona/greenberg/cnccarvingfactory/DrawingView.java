@@ -180,10 +180,12 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             drawStroke(canvas, curStroke, brush, scale);
         }
 
-
-        brush.setStyle(Paint.Style.FILL);
-        brush.setColor(Color.RED);
-        canvas.drawCircle(currX, currY, 20, brush);
+        //draw cursor if using controller
+        if (!usingController) {
+            brush.setStyle(Paint.Style.FILL);
+            brush.setColor(Color.RED);
+            canvas.drawCircle(currX, currY, 20, brush);
+        }
 
     }
 
