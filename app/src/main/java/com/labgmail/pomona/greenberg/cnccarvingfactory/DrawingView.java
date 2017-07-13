@@ -9,7 +9,6 @@ import android.graphics.Paint;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Environment;
-import android.os.Vibrator;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -47,7 +46,7 @@ import static android.support.v4.content.ContextCompat.startActivity;
 
 public class DrawingView extends View implements SharedPreferences.OnSharedPreferenceChangeListener {
 
-    private boolean usingController = true;
+    private boolean usingController = false;
     private static final int DRAWSPEED = 5;
     private boolean nowDrawing = false;
     private DepthSwatch depthSwatch;
@@ -181,7 +180,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
 
         //draw cursor if using controller
-        if (!usingController) {
+        if (usingController) {
             brush.setStyle(Paint.Style.FILL);
             brush.setColor(Color.RED);
             canvas.drawCircle(currX, currY, 20, brush);
