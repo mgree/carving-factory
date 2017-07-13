@@ -117,6 +117,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
     }
 
+
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
@@ -136,7 +137,9 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
+//        findViewById(R.id.)
         height = canvas.getHeight();
+        Log.d("HEIGHT", String.valueOf(height));
         width = canvas.getWidth();
 
         float wPPI = stockWidth > 0 ? width / stockWidth : 1;
