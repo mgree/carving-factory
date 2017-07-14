@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.hardware.input.InputManager;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Environment;
@@ -32,6 +33,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.security.Key;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -47,6 +49,7 @@ import static android.support.v4.content.ContextCompat.startActivity;
 public class DrawingView extends View implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     private boolean usingController = false;
+    private boolean wasController = false;
     private static final int DRAWSPEED = 5;
     private boolean nowDrawing = false;
     private DepthSwatch depthSwatch;
@@ -86,6 +89,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     private float height, width;
 
     private float currX, currY;
+
 
     public enum Mode {
         MANUAL_DEPTH,
@@ -128,6 +132,36 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         brush.setStrokeCap(Paint.Cap.ROUND);
     }
 
+    public boolean controllerExists() {
+        int[] deviceIds = InputDevice.getDeviceIds();
+        for (int deviceId : deviceIds) {
+            InputDevice dev = InputDevice.getDevice(deviceId);
+            int sources = dev.getSources();
+
+            // Verify that the device has gamepad buttons, control sticks, or both.
+            if (((sources & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD)
+                    || ((sources & InputDevice.SOURCE_JOYSTICK)
+                    == InputDevice.SOURCE_JOYSTICK)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    protected void controllerAdded() {
+        usingController = true;
+        Toast.makeText(getContext(), "Controller detected", Toast.LENGTH_SHORT).show();
+        postInvalidate();
+    }
+
+    protected void controllerRemoved() {
+        usingController = false;
+        Toast.makeText(getContext(), "No controller detected", Toast.LENGTH_SHORT).show();
+        postInvalidate();
+    }
+
+
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
@@ -137,9 +171,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             return;
         }
 
-//        findViewById(R.id.)
         height = canvas.getHeight();
-        Log.d("HEIGHT", String.valueOf(height));
         width = canvas.getWidth();
 
         float wPPI = stockWidth > 0 ? width / stockWidth : 1;
@@ -152,6 +184,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         //if in normal tablet drawing mode
         if (!initialized) {
+
             currX = cutoffRight / 2;
             currY = cutoffBottom / 2;
 
@@ -251,7 +284,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         return true;
 
     }
-
 
 
     //Deal with joystick input
@@ -365,15 +397,15 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
 
-    public void setDepthSwatch (DepthSwatch ds){
+    public void setDepthSwatch(DepthSwatch ds) {
         depthSwatch = ds;
     }
 
     //Process buttons
-        // A toggles drawing mode
-        // B exits app entirely (Do we want this???)
-        //X calls undo
-        //Y calls clear
+    // A toggles drawing mode
+    // B exits app entirely (Do we want this???)
+    //X calls undo
+    //Y calls clear
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if ((event.getSource() & InputDevice.SOURCE_GAMEPAD)
                 == InputDevice.SOURCE_GAMEPAD) {
@@ -383,13 +415,13 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                 }
                 nowDrawing = !nowDrawing;
             }
-            if (keyCode == KeyEvent.KEYCODE_BUTTON_X){
+            if (keyCode == KeyEvent.KEYCODE_BUTTON_X) {
                 undo();
             }
-            if (keyCode == KeyEvent.KEYCODE_BUTTON_Y){
+            if (keyCode == KeyEvent.KEYCODE_BUTTON_Y) {
                 clear();
             }
-            if (keyCode == KeyEvent.KEYCODE_BUTTON_START){
+            if (keyCode == KeyEvent.KEYCODE_BUTTON_START) {
                 appendLog(errorLog.toString());
             }
         }
@@ -434,8 +466,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
     /* Saves a fitted stroke to the bitmap and stroke list */
     private void saveStroke() {
-        errorLog.append(String.valueOf(curDepth));
-        errorLog.append("\n");
+//        errorLog.append(String.valueOf(curDepth));
+//        errorLog.append("\n");
 
         if (curStroke != null) {
             Stroke fitted = curStroke.fitToNatCubic(SMOOTHING_FACTOR, CURVE_STEPS);
@@ -703,7 +735,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     private VNCConnection vnc;
 
     public void startLive() {
-        Log.d("LIVE","entering startLive()");
+        Log.d("LIVE", "entering startLive()");
 
         if (live || vnc != null) {
             Log.d("LIVE", "aborting startLive---already live");
@@ -713,7 +745,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         // make connection
         vnc = new VNCConnection(this, CNC_IP, CNC_PORT, CNC_USER, CNC_PASSWORD);
 
-        Log.d("LIVE","set to live");
+        Log.d("LIVE", "set to live");
         live = true;
     }
 

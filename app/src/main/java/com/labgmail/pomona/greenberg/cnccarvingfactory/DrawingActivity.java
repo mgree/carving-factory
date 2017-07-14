@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.hardware.input.InputManager;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -38,7 +39,7 @@ import java.util.List;
 /**
  * Central drawing activity for (eventual) output to a CNC machine.
  */
-public class DrawingActivity extends AppCompatActivity {
+public class DrawingActivity extends AppCompatActivity implements InputManager.InputDeviceListener {
     /**
      * Whether or not the system UI should be auto-hidden after
      * {@link #AUTO_HIDE_DELAY_MILLIS} milliseconds.
@@ -60,6 +61,8 @@ public class DrawingActivity extends AppCompatActivity {
     private DrawingView mContentView;
     private boolean pendingSave = false;
     public List<Tool> tools = new LinkedList<>();
+    private InputManager mInputManager;
+
 
 
     private final Runnable mHidePart2Runnable = new Runnable() {
@@ -115,21 +118,10 @@ public class DrawingActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
-//        try {
-//            init();
-//            Viewer viewer = new Viewer();
-//            /*
-//                Note that a vnc_Viewer object is designed to last for one connection only, so destroy and
-//                recreate it each time your Viewer app user connects, or attempts to connect.
-//             */
-//
-//        } catch (VncException e) {
-//            Log.d("VNCEXCEPTION", "VNC Exception: " + e);
-//        }
-
-
 
         super.onCreate(savedInstanceState);
+        mInputManager = (InputManager) getSystemService(Context.INPUT_SERVICE);
+
 
         initializeTools();
 
@@ -198,6 +190,7 @@ public class DrawingActivity extends AppCompatActivity {
             public void onClick(View v) { mContentView.startLive(); }
         });
 
+
         // FULLSCREEN SETUP
         // Upon interacting with UI controls, delay any scheduled hide()
         // operations to prevent the jarring behavior of controls going away
@@ -263,6 +256,7 @@ public class DrawingActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        mInputManager.registerInputDeviceListener(this, null);
 
         try {
             FileOutputStream state = openFileOutput("carving_state", MODE_PRIVATE);
@@ -280,6 +274,8 @@ public class DrawingActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        mInputManager.registerInputDeviceListener(this, null);
+
 
         try {
             FileInputStream state = openFileInput("carving_state");
@@ -336,4 +332,17 @@ public class DrawingActivity extends AppCompatActivity {
         tools.add(quarter_inch);
 
     }
+
+    @Override
+    public void onInputDeviceAdded(int deviceId) {
+        mContentView.controllerAdded();
+    }
+
+    @Override
+    public void onInputDeviceRemoved(int deviceId) {
+        mContentView.controllerRemoved();
+    }
+
+    @Override
+    public void onInputDeviceChanged(int deviceId) {  }
 }
