@@ -1,5 +1,7 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
+import android.util.Log;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -72,7 +74,7 @@ public class Tool implements Serializable {
         cutDepth = in.readFloat();
         inSpeed = in.readFloat();
         latSpeed = in.readFloat();
-        toolLength = in.readInt();
+        toolLength = in.readFloat();
         toolName = String.valueOf(in.readChar());
 
     }
