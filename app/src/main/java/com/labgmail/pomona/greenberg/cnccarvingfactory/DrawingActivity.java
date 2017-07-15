@@ -32,6 +32,8 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
+import static android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+
 //import static com.realvnc.vncsdk.Library.*;
 //import com.realvnc.vncsdk.*;
 
@@ -60,6 +62,7 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
     private final Handler mHideHandler = new Handler();
     private DrawingView mContentView;
     private boolean pendingSave = false;
+    private boolean isDrawing = false;
     public List<Tool> tools = new LinkedList<>();
     private InputManager mInputManager;
 
@@ -74,12 +77,10 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
             // Note that some of these constants are new as of API 16 (Jelly Bean)
             // and API 19 (KitKat). It is safe to use them, as they are inlined
             // at compile-time and do nothing on earlier devices.
-            mContentView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE
-                    | View.SYSTEM_UI_FLAG_FULLSCREEN
-                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            mContentView.setSystemUiVisibility( View.SYSTEM_UI_FLAG_FULLSCREEN
                     | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                     | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+                    | SYSTEM_UI_FLAG_HIDE_NAVIGATION);
         }
     };
     private View mControlsView;
@@ -88,10 +89,14 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
         public void run() {
             // Delayed display of UI elements
             ActionBar actionBar = getSupportActionBar();
-            if (actionBar != null) {
+            if (!mContentView.getDrawingState()) {
                 actionBar.show();
             }
+            else if (mContentView.getDrawingState()) {
+                mContentView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN | SYSTEM_UI_FLAG_HIDE_NAVIGATION );
+            }
             mControlsView.setVisibility(View.VISIBLE);
+
         }
     };
     private final Runnable mHideRunnable = new Runnable() {
@@ -110,6 +115,9 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
         public boolean onTouch(View view, MotionEvent motionEvent) {
             if (AUTO_HIDE) {
                 delayedHide(AUTO_HIDE_DELAY_MILLIS);
+            }
+            else if (mContentView.getDrawingState()) {
+                mContentView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN | SYSTEM_UI_FLAG_HIDE_NAVIGATION );
             }
             return false;
         }
@@ -161,7 +169,6 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
                     }
                 }
             });
-            // ??? How to do less manually ???
             ll.addView(toolButton,160,200);
         }
 
@@ -190,12 +197,10 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
             public void onClick(View v) { mContentView.startLive(); }
         });
 
-
         // FULLSCREEN SETUP
         // Upon interacting with UI controls, delay any scheduled hide()
         // operations to prevent the jarring behavior of controls going away
         // while interacting with the UI.
-//        findViewById(R.id.dummy_button).setOnTouchListener(mDelayHideTouchListener);
 
         // SETUP SAVE BUTTON
         final Activity self = this;
@@ -235,9 +240,6 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
 //        });
     }
 
-
-
-
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode != 0) {
@@ -256,6 +258,7 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
     @Override
     protected void onPause() {
         super.onPause();
+        hide();
         mInputManager.registerInputDeviceListener(this, null);
 
         try {
