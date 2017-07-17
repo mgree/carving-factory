@@ -80,9 +80,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
     private float height, width;
 
-
     private float currX, currY;
-
 
     public enum Mode {
         MANUAL_DEPTH,
@@ -108,7 +106,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         cutoffBottom = getHeight();
 
         initializeBrush();
-
     }
 
 
@@ -117,8 +114,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         super.onSizeChanged(w, h, oldw, oldh);
         initialized = false;
         setFocusable(true);
-
-
     }
 
     private void initializeBrush() {
@@ -127,20 +122,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         brush.setAntiAlias(true);
         brush.setStrokeJoin(Paint.Join.ROUND);
         brush.setStrokeCap(Paint.Cap.ROUND);
-
-    }
-
-
-    protected void controllerAdded() {
-        usingController = true;
-        Toast.makeText(getContext(), "Controller detected", Toast.LENGTH_SHORT).show();
-        postInvalidate();
-    }
-
-    protected void controllerRemoved() {
-        usingController = false;
-        Toast.makeText(getContext(), "No controller detected", Toast.LENGTH_SHORT).show();
-        postInvalidate();
     }
 
 
@@ -149,7 +130,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         super.onDraw(canvas);
         isDrawing = true;
         Log.d("DRAWING", String.valueOf(isDrawing));
-
 
         if (isInEditMode()) {
             canvas.drawColor(Color.WHITE);
@@ -184,7 +164,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         }
 
-
         brush.setColor(Color.BLACK);
         brush.setStyle(Paint.Style.FILL);
         brush.setStrokeWidth(scale * curTool.getDiameter());
@@ -211,7 +190,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
 
-
     /* Will clear the canvas and redraw all the existing strokes */
     private void redrawAll() {
         // fresh canvas, clear the bitmap
@@ -231,7 +209,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
     }
 
-    /* Draws a single stroke */
+
+    /* Draws a single stroke, if needed draw a dot */
     private void drawStroke(Canvas canvas, Stroke s, Paint brush, float scale) {
         float toolDim = s.getTDiameter();
         brush.setStrokeWidth(toolDim * scale);
@@ -254,6 +233,55 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
     }
 
+
+    /* Adds a point to the current stroke */
+    private void addPoint(float x, float y, long time) {
+        if (x > cutoffRight || y > cutoffBottom) {
+            saveStroke();
+            return;
+        }
+        if (curStroke == null) {
+            curStroke = new Stroke(curTool);
+        }
+        float z = curDepth;
+        switch (drawingMode) {
+
+            case OVERDRAW:
+                if (!usingController) {
+                    Anchor updatedPoint = depthMap.updateZ(new Anchor(x, y, z, time), curTool.getDiameter());
+                    curStroke.addPoint(updatedPoint);
+                    z = updatedPoint.z;
+                } else {
+                    z = curDepth;
+                }
+                break;
+
+            case MANUAL_DEPTH:
+                z = curDepth;
+                break;
+        }
+        curStroke.addPoint(x, y, z, time);
+    }
+
+    /* Saves a fitted stroke to the bitmap and stroke list */
+    private void saveStroke() {
+        if (curStroke != null) {
+            Stroke fitted = curStroke.fitToNatCubic(SMOOTHING_FACTOR, CURVE_STEPS);
+            strokes.add(fitted);
+
+            if (!usingController) {
+                for (Anchor a : fitted) {
+                    depthMap.addPoint(a);
+                }
+            }
+
+            Canvas canvas = new Canvas(drawing);
+            drawStroke(canvas, fitted, brush, scale);
+        }
+        curStroke = null;
+    }
+
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction()) {
@@ -272,11 +300,23 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
     }
 
+    private void addMotionEvent(MotionEvent event) {
+        for (int h = 0; h < event.getHistorySize(); h += 1) {
+            addPoint(event.getHistoricalX(h),
+                    event.getHistoricalY(h),
+                    event.getHistoricalEventTime(h));
+        }
 
-    //Deal with joystick input
+        addPoint(event.getX(),
+                event.getY(),
+                event.getEventTime());
 
-//NEW CODE HERE
+        postInvalidate();
+    }
 
+
+
+    //JOYSTICK INPUT HANDLING CODE
     @Override
     public boolean onGenericMotionEvent(MotionEvent event) {
 
@@ -300,14 +340,10 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         return super.onGenericMotionEvent(event);
     }
 
-    private static float getCenteredAxis(MotionEvent event,
-                                         InputDevice device, int axis, int historyPos) {
+    private static float getCenteredAxis(MotionEvent event, InputDevice device, int axis, int historyPos) {
         final InputDevice.MotionRange range =
                 device.getMotionRange(axis, event.getSource());
 
-        // A joystick at rest does not always report an absolute position of
-        // (0,0). Use the getFlat() method to determine the range of values
-        // bounding the joystick axis center.
         if (range != null) {
             final float flat = range.getFlat();
             final float value =
@@ -323,9 +359,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         return 0;
     }
 
-    private void processJoystickInput(MotionEvent event,
-                                      int historyPos) {
-
+    private void processJoystickInput(MotionEvent event,  int historyPos) {
         InputDevice mInputDevice = event.getDevice();
 
         // Find X from the left control stick, hat axis, or the right control stick.
@@ -351,7 +385,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             y = getCenteredAxis(event, mInputDevice,
                     MotionEvent.AXIS_RZ, historyPos);
         }
-
 
         // Update the current point based on the new x and y values and bound them
         currX += (x * DRAWSPEED);
@@ -383,16 +416,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
     }
 
-
-    public void setDepthSwatch(DepthSwatch ds) {
-        depthSwatch = ds;
-    }
-
     //Process buttons
-    // A toggles drawing mode
-    // B exits app entirely (Do we want this???)
-    //X calls undo
-    //Y calls clear
+        // A toggles drawing mode, B exits app entirely, X calls undo, Y calls clear
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if ((event.getSource() & InputDevice.SOURCE_GAMEPAD)
                 == InputDevice.SOURCE_GAMEPAD) {
@@ -414,60 +439,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
         return super.onKeyDown(keyCode, event);
     }
-
-
     //End of controller code
 
-
-    public void appendLog(String text) {
-        File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
-
-        try {
-            dir.mkdirs();
-
-            // compute the filename
-            File prg = new File(dir, "Error.txt");
-            prg.createNewFile();
-
-            PrintWriter out = new PrintWriter(new FileOutputStream(prg, false));
-            out.write(text);
-            out.flush();
-            out.close();
-
-            MediaScannerConnection.scanFile(getContext(),
-                    new String[]{prg.toString()}, null,
-                    new MediaScannerConnection.OnScanCompletedListener() {
-                        public void onScanCompleted(String path, Uri uri) {
-                            Log.i("IO", "Scanned " + path + ":");
-                            Log.i("IO", "-> uri=" + uri);
-                        }
-                    });
-
-            Toast.makeText(getContext(), "Error Logged", Toast.LENGTH_SHORT).show();
-        } catch (Exception e) {
-            Log.d("EXCEPTION", "Exception: " + e);
-        }
-    }
-
-    //NEW CODE ENDS HERE
-
-    /* Saves a fitted stroke to the bitmap and stroke list */
-    private void saveStroke() {
-        if (curStroke != null) {
-            Stroke fitted = curStroke.fitToNatCubic(SMOOTHING_FACTOR, CURVE_STEPS);
-            strokes.add(fitted);
-
-            if (!usingController) {
-                for (Anchor a : fitted) {
-                    depthMap.addPoint(a);
-                }
-            }
-
-            Canvas canvas = new Canvas(drawing);
-            drawStroke(canvas, fitted, brush, scale);
-        }
-        curStroke = null;
-    }
 
     /* Clears the stroke list, depthmap, screen, and bitmap */
     public void clear() {
@@ -503,6 +476,22 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
     }
 
+    protected void controllerAdded() {
+        usingController = true;
+        Toast.makeText(getContext(), "Controller detected", Toast.LENGTH_SHORT).show();
+        postInvalidate();
+    }
+
+    protected void controllerRemoved() {
+        usingController = false;
+        Toast.makeText(getContext(), "No controller detected", Toast.LENGTH_SHORT).show();
+        postInvalidate();
+    }
+
+    public void setDepthSwatch(DepthSwatch ds) {
+        depthSwatch = ds;
+    }
+
     public void setTool(Tool tool) {
         curTool = tool;
     }
@@ -519,49 +508,37 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         return isDrawing;
     }
 
-    private void addMotionEvent(MotionEvent event) {
-        for (int h = 0; h < event.getHistorySize(); h += 1) {
-            addPoint(event.getHistoricalX(h),
-                    event.getHistoricalY(h),
-                    event.getHistoricalEventTime(h));
+
+    public void appendLog(String text) {
+        File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
+
+        try {
+            dir.mkdirs();
+
+            // compute the filename
+            File prg = new File(dir, "Error.txt");
+            prg.createNewFile();
+
+            PrintWriter out = new PrintWriter(new FileOutputStream(prg, false));
+            out.write(text);
+            out.flush();
+            out.close();
+
+            MediaScannerConnection.scanFile(getContext(),
+                    new String[]{prg.toString()}, null,
+                    new MediaScannerConnection.OnScanCompletedListener() {
+                        public void onScanCompleted(String path, Uri uri) {
+                            Log.i("IO", "Scanned " + path + ":");
+                            Log.i("IO", "-> uri=" + uri);
+                        }
+                    });
+
+            Toast.makeText(getContext(), "Error Logged", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Log.d("EXCEPTION", "Exception: " + e);
         }
-
-        addPoint(event.getX(),
-                event.getY(),
-                event.getEventTime());
-
-        postInvalidate();
     }
 
-
-    /* Adds a point to the current stroke */
-    private void addPoint(float x, float y, long time) {
-        if (x > cutoffRight || y > cutoffBottom) {
-            saveStroke();
-            return;
-        }
-        if (curStroke == null) {
-            curStroke = new Stroke(curTool);
-        }
-        float z = curDepth;
-        switch (drawingMode) {
-
-            case OVERDRAW:
-                if (!usingController) {
-                    Anchor updatedPoint = depthMap.updateZ(new Anchor(x, y, z, time), curTool.getDiameter());
-                    curStroke.addPoint(updatedPoint);
-                    z = updatedPoint.z;
-                } else {
-                    z = curDepth;
-                }
-                break;
-
-            case MANUAL_DEPTH:
-                z = curDepth;
-                break;
-        }
-        curStroke.addPoint(x, y, z, time);
-    }
 
     public void saveState(OutputStream state) throws IOException {
         ObjectOutputStream out = new ObjectOutputStream(state);
@@ -600,45 +577,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             throw new IOException(e);
         }
 
-    }
-
-    @Override
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        switch (key) {
-            case DisplaySettingsActivity.KEY_LENGTH:
-                stockLength = Float.parseFloat(sharedPreferences.getString(key, "0"));
-                break;
-            case DisplaySettingsActivity.KEY_WIDTH:
-                stockWidth = Float.parseFloat(sharedPreferences.getString(key, "0"));
-                break;
-            case DisplaySettingsActivity.KEY_DEPTH:
-                stockDepth = Float.parseFloat(sharedPreferences.getString(key, "0"));
-                break;
-            case DisplaySettingsActivity.KEY_UNIT:
-                stockUnit = sharedPreferences.getString(key, "in");
-                Float.parseFloat(sharedPreferences.getString(DisplaySettingsActivity.KEY_TOOL, "0"));
-                clearStrokes = true;
-                clear();
-                break;
-            case DisplaySettingsActivity.KEY_TOOL:
-                Float.parseFloat(sharedPreferences.getString(key, "0"));
-                break;
-            case DisplaySettingsActivity.KEY_SDEPTH:
-                spoilDepth = Float.parseFloat(sharedPreferences.getString(key, "0"));
-                break;
-            default:
-                Log.d("PREF", "unknown preference " + key);
-        }
-
-        postInvalidate();
-    }
-
-
-    public void initializeStockDimensions(SharedPreferences prefs) {
-        stockLength = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_LENGTH, "-1"));
-        stockWidth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_WIDTH, "-1"));
-        stockDepth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_DEPTH, "-1"));
-        spoilDepth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_SDEPTH, "-1"));
     }
 
     public void exportGCode() {
@@ -712,8 +650,53 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             Toast.makeText(getContext(), "Couldn't save image (" + e.getLocalizedMessage() + ")", Toast.LENGTH_SHORT).show();
             Log.d("IO", e.toString());
         }
-
     }
+
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        switch (key) {
+            case DisplaySettingsActivity.KEY_LENGTH:
+                stockLength = Float.parseFloat(sharedPreferences.getString(key, "0"));
+                break;
+            case DisplaySettingsActivity.KEY_WIDTH:
+                stockWidth = Float.parseFloat(sharedPreferences.getString(key, "0"));
+                break;
+            case DisplaySettingsActivity.KEY_DEPTH:
+                stockDepth = Float.parseFloat(sharedPreferences.getString(key, "0"));
+                break;
+            case DisplaySettingsActivity.KEY_UNIT:
+                stockUnit = sharedPreferences.getString(key, "in");
+                Float.parseFloat(sharedPreferences.getString(DisplaySettingsActivity.KEY_TOOL, "0"));
+                clearStrokes = true;
+                clear();
+                break;
+            case DisplaySettingsActivity.KEY_TOOL:
+                Float.parseFloat(sharedPreferences.getString(key, "0"));
+                break;
+            case DisplaySettingsActivity.KEY_SDEPTH:
+                spoilDepth = Float.parseFloat(sharedPreferences.getString(key, "0"));
+                break;
+            default:
+                Log.d("PREF", "unknown preference " + key);
+        }
+
+        postInvalidate();
+    }
+
+
+    public void initializeStockDimensions(SharedPreferences prefs) {
+        stockLength = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_LENGTH, "-1"));
+        stockWidth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_WIDTH, "-1"));
+        stockDepth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_DEPTH, "-1"));
+        spoilDepth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_SDEPTH, "-1"));
+    }
+
+
+
+
+
+    //LIVE MODE CODE
 
     private static final String CNC_IP = "192.168.0.100";
     private static final int CNC_PORT = 5900;

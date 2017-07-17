@@ -143,8 +143,6 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
         mContentView.initializeStockDimensions(prefs);
 
         initializeTools();
-        Log.d("TOOLINFO", "Tool 1 length (oncreate): " + tools.get(0).getToolLength());
-
 
         // tools proper
         LinearLayout ll = (LinearLayout) findViewById(R.id.fullscreen_controls);
@@ -158,14 +156,10 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
             toolButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if (index == 0) {
-                        mContentView.setTool(tools.get(0));
-                        Toast.makeText(v.getContext(),"Selected Tool: Half Inch (.5)", Toast.LENGTH_SHORT).show();
-                    }
-                    else {
-                        mContentView.setTool(tools.get(1));
-                        Toast.makeText(v.getContext(),"Selected Tool: Quarter Inch (.25)", Toast.LENGTH_SHORT).show();
-                    }
+                    Tool theTool = tools.get(index);
+                    mContentView.setTool(theTool);
+                    Toast.makeText(v.getContext(),"Selected Tool: " + theTool.getToolName() + " (" +
+                            theTool.getDiameter() + ") ", Toast.LENGTH_SHORT).show();
                 }
             });
             ll.addView(toolButton,160,200);
@@ -327,18 +321,12 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
     }
 
     public void initializeTools() { //TODO ADDRPMS
-        Tool half_inch = new Tool(1, 0.5f, 0.4f, 80f, 250f, 2.875f, "half inch");
-        Tool quarter_inch = new Tool(2, 0.25f, 0.3f, 80f, 250f, 1.625f, "quarter inch");
+        Tool half_inch = new Tool(1, 0.5f, 0.4f, 80f, 250f, "Half Inch");
+        Tool quarter_inch = new Tool(2, 0.25f, 0.3f, 80f, 250f, "Quarter Inch");
 
         tools.add(half_inch);
         tools.add(quarter_inch);
         mContentView.setTool(tools.get(0));
-
-        /**
-         * Future tool dims
-         *
-         */
-
     }
 
     @Override
