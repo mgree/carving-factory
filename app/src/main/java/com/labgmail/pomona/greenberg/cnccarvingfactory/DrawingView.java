@@ -29,8 +29,11 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import static android.support.v4.content.ContextCompat.startActivity;
 
@@ -454,11 +457,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                         curStroke = null;
 
                         if (strokes != null) { strokes.clear(); }
-                        if (!usingController) {
-                            if (depthMap != null) {
-                                depthMap.clear();
-                            }
-                        }
+                        if (!usingController && depthMap != null) { depthMap.clear(); }
                         Canvas canvas = new Canvas(drawing);
                         canvas.drawColor(Color.WHITE);
 
@@ -474,12 +473,9 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setTitle("Clear Drawing");
-        builder.setMessage("Are you sure you want to clear? You will not be able to undo this action");
+        builder.setMessage("Are you sure you want to clear? You cannot undo this action");
         builder.setPositiveButton("Yes", dialogClickListener)
                 .setNegativeButton("Cancel", dialogClickListener).show();
-
-
-
     }
 
     /* Undoes the last stroke (redraws/remakes the bitmap) */
@@ -497,6 +493,35 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             postInvalidate();
         }
     }
+
+
+    //Sort the stroke list by tool.
+    private LinkedList<Stroke> sortStrokes(LinkedList<Stroke> existingStrokes){
+        HashMap<Tool, LinkedList<Stroke>> map = new HashMap<>();
+
+        //for each stroke, check its tool, and place the stroke in the correct bin in the map
+        //if the bin doesn't exist, make a new bin for that tool
+        for (Stroke s : existingStrokes){
+            if (map.containsKey(s.getTool())){
+                map.get(s.getTool()).add(s);
+            } else {
+                map.put(s.getTool(), new LinkedList<Stroke>());
+                map.get(s.getTool()).add(s);
+            }
+
+        }
+
+        //output a final list that is the concatentation of each of the bins
+        LinkedList<Stroke> finalAns = new LinkedList<>();
+        Iterator<Tool> mapIterator = map.keySet().iterator();
+        while (mapIterator.hasNext()) {
+            Tool key = mapIterator.next();
+            finalAns.addAll(map.get(key));
+        }
+        return finalAns;
+    }
+
+
 
     protected void controllerAdded() {
         usingController = true;
@@ -624,7 +649,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
             PrintWriter out = new PrintWriter(new FileOutputStream(prg, false));
             GCodeGenerator gcg =
-                    GCodeGenerator.singlePass(strokes,
+                    GCodeGenerator.singlePass(sortStrokes((LinkedList<Stroke>) strokes), //THIS NOW SORTS STROKES BY TOOL
                             stockWidth, stockLength, stockDepth, stockUnit, cutoffRight,
                             spoilDepth);
             out.write(gcg.toString());
