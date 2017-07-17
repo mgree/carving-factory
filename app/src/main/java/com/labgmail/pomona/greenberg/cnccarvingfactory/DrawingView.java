@@ -1,6 +1,7 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -8,6 +9,7 @@ import android.graphics.Paint;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Environment;
+import android.support.v7.app.AlertDialog;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -444,20 +446,40 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
     /* Clears the stroke list, depthmap, screen, and bitmap */
     public void clear() {
-        curStroke = null;
+        DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                switch (which){
+                    case DialogInterface.BUTTON_POSITIVE:
+                        curStroke = null;
 
-        if (strokes != null) {
-            strokes.clear();
-        }
-        if (!usingController) {
-            if (depthMap != null) {
-                depthMap.clear();
+                        if (strokes != null) { strokes.clear(); }
+                        if (!usingController) {
+                            if (depthMap != null) {
+                                depthMap.clear();
+                            }
+                        }
+                        Canvas canvas = new Canvas(drawing);
+                        canvas.drawColor(Color.WHITE);
+
+                        postInvalidate();
+                        break;
+
+                    case DialogInterface.BUTTON_NEGATIVE:
+                        dialog.cancel();
+                        break;
+                }
             }
-        }
-        Canvas canvas = new Canvas(drawing);
-        canvas.drawColor(Color.WHITE);
+        };
 
-        postInvalidate();
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle("Clear Drawing");
+        builder.setMessage("Are you sure you want to clear? You will not be able to undo this action");
+        builder.setPositiveButton("Yes", dialogClickListener)
+                .setNegativeButton("Cancel", dialogClickListener).show();
+
+
+
     }
 
     /* Undoes the last stroke (redraws/remakes the bitmap) */
@@ -697,7 +719,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
 
     //LIVE MODE CODE
-
     private static final String CNC_IP = "192.168.0.100";
     private static final int CNC_PORT = 5900;
     private static final String CNC_USER = "";
@@ -730,5 +751,4 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             vnc = null;
         }
     }
-
 }

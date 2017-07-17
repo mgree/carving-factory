@@ -4,6 +4,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -13,6 +14,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
@@ -33,9 +35,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
-
-//import static com.realvnc.vncsdk.Library.*;
-//import com.realvnc.vncsdk.*;
 
 
 /**
@@ -62,7 +61,6 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
     private final Handler mHideHandler = new Handler();
     private DrawingView mContentView;
     private boolean pendingSave = false;
-    private boolean isDrawing = false;
     public List<Tool> tools = new LinkedList<>();
     private InputManager mInputManager;
 
@@ -126,14 +124,11 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
-
         super.onCreate(savedInstanceState);
         mInputManager = (InputManager) getSystemService(Context.INPUT_SERVICE);
 
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
-
         setContentView(R.layout.activity_drawing);
-
 
         mControlsView = findViewById(R.id.fullscreen_content_controls);
         mContentView = (DrawingView) findViewById(R.id.fullscreen_content);
@@ -147,7 +142,8 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
         // tools proper
         LinearLayout ll = (LinearLayout) findViewById(R.id.fullscreen_controls);
 
-        for (int i=0; i<tools.size(); i++) {
+        //Add a button for each tool
+        for (int i = 0; i < tools.size(); i++) {
             Button toolButton = new Button(this);
             toolButton.setId(tools.get(i).getToolNum());
             toolButton.setText(tools.get(i).getToolName());
@@ -182,7 +178,9 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
             public void onClick(View v) { mContentView.undo(); }
         });
         findViewById(R.id.clear_button).setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) { mContentView.clear(); }
+            public void onClick(View v) {
+                mContentView.clear();
+            }
         });
 
         findViewById(R.id.live_button).setOnClickListener(new View.OnClickListener() {
