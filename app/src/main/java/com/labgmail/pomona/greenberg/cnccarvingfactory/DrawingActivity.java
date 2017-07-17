@@ -122,13 +122,9 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
         super.onCreate(savedInstanceState);
         mInputManager = (InputManager) getSystemService(Context.INPUT_SERVICE);
 
-
-        initializeTools();
-
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 
         setContentView(R.layout.activity_drawing);
-
 
 
         mControlsView = findViewById(R.id.fullscreen_content_controls);
@@ -137,7 +133,10 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         prefs.registerOnSharedPreferenceChangeListener(mContentView);
         mContentView.initializeStockDimensions(prefs);
-        mContentView.setTool(tools.get(0));
+
+        initializeTools();
+        Log.d("TOOLINFO", "Tool 1 length (oncreate): " + tools.get(0).getToolLength());
+
 
         // tools proper
         LinearLayout ll = (LinearLayout) findViewById(R.id.fullscreen_controls);
@@ -324,12 +323,18 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
         mHideHandler.postDelayed(mHideRunnable, delayMillis);
     }
 
-    public void initializeTools() {
-        Tool half_inch = new Tool(1, 0.5f, 0.4f, 80f, 250f, 5.0f, "half inch");
-        Tool quarter_inch = new Tool(2, 0.25f, 0.3f, 80f, 250f, 5.0f, "quarter inch");
+    public void initializeTools() { //TODO ADDRPMS
+        Tool half_inch = new Tool(1, 0.5f, 0.4f, 80f, 250f, 2.875f, "half inch");
+        Tool quarter_inch = new Tool(2, 0.25f, 0.3f, 80f, 250f, 1.625f, "quarter inch");
 
         tools.add(half_inch);
         tools.add(quarter_inch);
+        mContentView.setTool(tools.get(0));
+
+        /**
+         * Future tool dims
+         *
+         */
 
     }
 

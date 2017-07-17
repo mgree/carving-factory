@@ -15,6 +15,17 @@ import java.util.TreeMap;
  */
 public class GCodeGenerator {
 
+    /**
+     * test tool parking
+     *
+     * Length, max cut depth, lateral/insertion speed, if RPM get that too
+     * Also generate something with more than one tool to check??
+     */
+
+
+
+
+
 
     /**
      * If we want max cut by tools
@@ -39,11 +50,8 @@ public class GCodeGenerator {
     private int line = 1; // current line
     private Map<String,Float> fParams = new TreeMap<>(); // current floating-point params
     private Map<String,Integer> iParams = new TreeMap<>(); // current integer params
-    private static Tool curTool = null;
-    private static float clearancePlane;
+    private Tool curTool = null;
 
-
-    public static final float MAX_SINGLE_CUT_DEPTH = 0.4f;
     public static final float CLEARANCE = .25f;
 
 
@@ -71,7 +79,7 @@ public class GCodeGenerator {
                 stockWidth, stockLength, stockDepth, stockUnit));
 
         float boardHeight = spoilDepth + stockDepth;
-        clearancePlane = boardHeight + CLEARANCE;
+        float clearancePlane = boardHeight + CLEARANCE;
 
         float ipp = stockWidth / cutoffRight; // scaling factor
 
@@ -98,12 +106,10 @@ public class GCodeGenerator {
                 }
 
                 //if the tool has changed, add that to the gcode file and update
-                if (s.getTool() != curTool){
-                    gcg.tool(s.getTool());
-                    curTool = s.getTool();
-                }
+                Tool t = s.getTool();
+                gcg.tool(t);
 
-                float maxCutDepth = spoilDepth + stockDepth - curTool.getMaxCutDepth();
+                float maxCutDepth = spoilDepth + stockDepth - t.getMaxCutDepth();
 
 
                 if (!cutting) {
@@ -112,26 +118,28 @@ public class GCodeGenerator {
                     gcg.cmd(new G(0).Z(clearancePlane));
 
                     // bound the z insertion depth!
-                    float z = boardHeight - (point.z * curTool.getMaxCutDepth()); //TODO Change for multi pass here?
+                    float z = boardHeight - (point.z * t.getMaxCutDepth()); //TODO Change for multi pass here?
                     z = Math.max(z, maxCutDepth);
                     z = Math.min(z, clearancePlane);
-                    z += curTool.getToolOffset(); //TODO CHECK THIS IS OK AND NOT GOING TO RUIN EVERYTHING
-                    Log.d("TOOLERROR", "Tool Offset" + curTool.getToolOffset());
-                    gcg.cmd(new G(1).Z(z).F(curTool.getInSpeed()));
+                    z += t.getToolOffset(); // TODO perhaps better to just do bounding accounting for tool offset?
+
+                    gcg.cmd(new G(1).Z(z).F(t.getInSpeed()));
 
                     cutting = true;
                 } else {
                     // first G01 move, set high feedrate (second iteration)
                     // bound the z insertion depth!
-                    float z = boardHeight - (point.z * curTool.getMaxCutDepth());  //TODO Change for multi pass here?
+                    float z = boardHeight - (point.z * t.getMaxCutDepth());  //TODO Change for multi pass here?
                     z = Math.max(z, maxCutDepth);
                     z = Math.min(z, clearancePlane);
+                    z += t.getToolOffset(); // TODO perhaps better to just do bounding accounting for tool offset?
 
-                    gcg.cmd(new G(1).X(point.x * ipp).Y(stockLength - point.y * ipp).Z(z).F(curTool.getLatSpeed()));
-
+                    gcg.cmd(new G(1).X(point.x * ipp).Y(stockLength - point.y * ipp).Z(z).F(t.getLatSpeed()));
                 }
+
                 last = point;
             }
+
             // emit pull out
             if (last != null) {
                 gcg.cmd(new G(0).X(last.x * ipp).Y(stockLength - last.y * ipp), true);
@@ -234,11 +242,33 @@ public class GCodeGenerator {
     }
 
     public void tool(Tool tool) {
-        cmd(new G(0).Z(clearancePlane)); //pull up to the clearance plane
-        cmd("M05");                      //stop the spindle
-        cmd(String.format("T%d M06", tool.getToolNum())); //change tools
-        cmd("D1"); //Tool radius compensation number TODO CHECK IF THIS IS RIGHT
+        if (curTool != null) {
+            if (tool.getToolNum() == curTool.getToolNum()) {
+                return;
+            } else {
+                parkTool();
+            }
+        }
+
+        cmd(String.format("T%d M06", tool.getToolNum())); // change tools
+        cmd("D" + tool.getToolNum());
         cmd("M03 S18000"); // TODO RPMs is per-tool
+        curTool = tool;
+    }
+
+
+    public void parkTool() {
+        if (curTool == null) {
+            Log.d("GCODE","asked to park tool when no tool in hand");
+            return;
+        }
+
+        //d0 g00 m05
+        cmd("D0");
+        cmd(new G(0).Z(0));
+        cmd("M05");
+
+        curTool = null;
     }
 
     public static class G {

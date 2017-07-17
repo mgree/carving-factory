@@ -1,12 +1,10 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.hardware.input.InputManager;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Environment;
@@ -20,20 +18,14 @@ import android.view.View;
 import android.widget.Toast;
 import android.graphics.Bitmap;
 
-
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.security.Key;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -49,7 +41,6 @@ import static android.support.v4.content.ContextCompat.startActivity;
 public class DrawingView extends View implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     private boolean usingController = false;
-    private boolean wasController = false;
     private static final int DRAWSPEED = 5;
     private boolean nowDrawing = false;
     private DepthSwatch depthSwatch;
@@ -70,7 +61,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     private float stockDepth = -1;
     private float spoilDepth = -1;
 
-    private Tool curTool;
+    private Tool curTool = null;
 
     private float cutoffRight = -1;
     private float cutoffBottom = -1;
@@ -122,6 +113,9 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         super.onSizeChanged(w, h, oldw, oldh);
         initialized = false;
         setFocusable(true);
+        Log.d("TOOLINFO", "Tool 1 length (in onsizechange): " + curTool.getToolLength());
+
+
     }
 
     private void initializeBrush() {
@@ -130,22 +124,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         brush.setAntiAlias(true);
         brush.setStrokeJoin(Paint.Join.ROUND);
         brush.setStrokeCap(Paint.Cap.ROUND);
-    }
 
-    public boolean controllerExists() {
-        int[] deviceIds = InputDevice.getDeviceIds();
-        for (int deviceId : deviceIds) {
-            InputDevice dev = InputDevice.getDevice(deviceId);
-            int sources = dev.getSources();
-
-            // Verify that the device has gamepad buttons, control sticks, or both.
-            if (((sources & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD)
-                    || ((sources & InputDevice.SOURCE_JOYSTICK)
-                    == InputDevice.SOURCE_JOYSTICK)) {
-                return true;
-            }
-        }
-        return false;
     }
 
 
@@ -162,9 +141,15 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
 
+    protected  float getCurToolLength() {
+        return curTool.getToolLength();
+    }
+
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+
+        Log.d("TOOLINFO", "Tool 1 length (on draw in view): " + curTool.getToolLength());
 
         if (isInEditMode()) {
             canvas.drawColor(Color.WHITE);
@@ -224,6 +209,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
 
     }
+
+
 
     /* Will clear the canvas and redraw all the existing strokes */
     private void redrawAll() {
@@ -466,9 +453,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
     /* Saves a fitted stroke to the bitmap and stroke list */
     private void saveStroke() {
-//        errorLog.append(String.valueOf(curDepth));
-//        errorLog.append("\n");
-
         if (curStroke != null) {
             Stroke fitted = curStroke.fitToNatCubic(SMOOTHING_FACTOR, CURVE_STEPS);
             strokes.add(fitted);

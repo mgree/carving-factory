@@ -16,11 +16,12 @@ import java.util.List;
 
 public class Tool implements Serializable {
 
+    //TODO ADD RPMS
+
     //Includes Tool Number, Tool Diameter, Max Cut Depth, Insertion Speed, Lateral Speed, tool Length, and tool name
 
     //The tool length that the machin considers to be "zero" in inches
-    private static final float ARBITRARY_ZERO_LENGTH = 5.0f;  //TODO UPDATE THIS SO IT'S ACCURATE
-
+    private static final float ARBITRARY_ZERO_LENGTH = 2.875f;
 
     private float diameter, cutDepth, inSpeed, latSpeed, toolLength;
     private int toolNum;
