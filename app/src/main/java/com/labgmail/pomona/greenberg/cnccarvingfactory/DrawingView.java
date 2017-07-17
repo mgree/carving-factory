@@ -117,7 +117,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         super.onSizeChanged(w, h, oldw, oldh);
         initialized = false;
         setFocusable(true);
-        Log.d("TOOLINFO", "Tool 1 length (in onsizechange): " + curTool.getToolLength());
 
 
     }
@@ -144,10 +143,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         postInvalidate();
     }
 
-
-    protected  float getCurToolLength() {
-        return curTool.getToolLength();
-    }
 
     @Override
     protected void onDraw(Canvas canvas) {

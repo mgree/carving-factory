@@ -121,7 +121,6 @@ public class GCodeGenerator {
                     float z = boardHeight - (point.z * t.getMaxCutDepth()); //TODO Change for multi pass here?
                     z = Math.max(z, maxCutDepth);
                     z = Math.min(z, clearancePlane);
-                    z += t.getToolOffset(); // TODO perhaps better to just do bounding accounting for tool offset?
 
                     gcg.cmd(new G(1).Z(z).F(t.getInSpeed()));
 
@@ -132,7 +131,6 @@ public class GCodeGenerator {
                     float z = boardHeight - (point.z * t.getMaxCutDepth());  //TODO Change for multi pass here?
                     z = Math.max(z, maxCutDepth);
                     z = Math.min(z, clearancePlane);
-                    z += t.getToolOffset(); // TODO perhaps better to just do bounding accounting for tool offset?
 
                     gcg.cmd(new G(1).X(point.x * ipp).Y(stockLength - point.y * ipp).Z(z).F(t.getLatSpeed()));
                 }
