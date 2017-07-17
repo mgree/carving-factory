@@ -56,12 +56,7 @@ import static android.support.v4.content.ContextCompat.startActivity;
 
 public class DrawingView extends View implements SharedPreferences.OnSharedPreferenceChangeListener {
 
-    private boolean usingController = false;
-    private static final int DRAWSPEED = 5;
-    private boolean nowDrawing = false;
     private DepthSwatch depthSwatch;
-    private float rTrigValue = 0.0f;
-    private float lTrigValue = 0.0f;
     private StringBuilder errorLog = new StringBuilder();
 
     private static final int SMOOTHING_FACTOR = 3;
@@ -95,13 +90,24 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
     private float height, width;
 
-    private float currX, currY;
+    // JOYSTICK data
+    private static final int[] X_AXES = { MotionEvent.AXIS_X, MotionEvent.AXIS_HAT_X, MotionEvent.AXIS_Z };
+    private static final int[] Y_AXES = { MotionEvent.AXIS_Y, MotionEvent.AXIS_HAT_Y, MotionEvent.AXIS_RZ };
+    private static final float DEPTHSPEED = 1f/40f;
+    private static final float DRAWSPEED = 2.5f;
+    private boolean usingController = false;
+    private boolean nowDrawing = false;
+
+    private float currX, currY; // cursor position
+    private float dX, dY, dDepth; // last inputs received, applied as a delta at each tick
+
+    private Ticker ticker;
+
 
     public enum Mode {
         MANUAL_DEPTH,
         OVERDRAW
     }
-
 
     private Bitmap drawing;
 
@@ -143,7 +149,9 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+
         isDrawing = true;
+
         Log.d("DRAWING", String.valueOf(isDrawing));
 
         if (isInEditMode()) {
@@ -255,27 +263,20 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             saveStroke();
             return;
         }
+
         if (curStroke == null) {
             curStroke = new Stroke(curTool);
         }
+
+        // calculate Z based on drawing mode
         float z = curDepth;
-        switch (drawingMode) {
 
-            case OVERDRAW:
-                if (!usingController) {
-                    Anchor updatedPoint = depthMap.updateZ(new Anchor(x, y, z, time), curTool.getDiameter());
-                    curStroke.addPoint(updatedPoint);
-                    z = updatedPoint.z;
-                } else {
-                    z = curDepth;
-                }
-                break;
-
-            case MANUAL_DEPTH:
-                z = curDepth;
-                break;
+        if (drawingMode == Mode.OVERDRAW && !usingController) {
+            z = depthMap.updateZ(new Anchor(x, y, z, time), curTool.getDiameter());
         }
+
         curStroke.addPoint(x, y, z, time);
+        Log.d("TICK","added");
     }
 
     /* Saves a fitted stroke to the bitmap and stroke list */
@@ -320,13 +321,13 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     private void addMotionEvent(MotionEvent event) {
         for (int h = 0; h < event.getHistorySize(); h += 1) {
             addPoint(event.getHistoricalX(h),
-                    event.getHistoricalY(h),
-                    event.getHistoricalEventTime(h));
+                     event.getHistoricalY(h),
+                     event.getHistoricalEventTime(h));
         }
 
         addPoint(event.getX(),
-                event.getY(),
-                event.getEventTime());
+                 event.getY(),
+                 event.getEventTime());
 
         postInvalidate();
     }
@@ -343,94 +344,50 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                 event.getAction() == MotionEvent.ACTION_MOVE) {
 
             // Process all historical movement samples in the batch
-            final int historySize = event.getHistorySize();
+            /*final int historySize = event.getHistorySize();
             for (int i = 0; i < historySize; i++) {
                 processJoystickInput(event, i);
-            }
+            } */
 
             // Process the current movement sample in the batch (position -1)
             processJoystickInput(event, -1);
 
-            postInvalidate();
             return true;
         }
+
         return super.onGenericMotionEvent(event);
     }
 
-    private static float getCenteredAxis(MotionEvent event, InputDevice device, int axis, int historyPos) {
-        final InputDevice.MotionRange range =
-                device.getMotionRange(axis, event.getSource());
+    private float selectAxis(MotionEvent event, InputDevice device, int[] axes, int historyPos) {
 
-        if (range != null) {
-            final float flat = range.getFlat();
-            final float value =
-                    historyPos < 0 ? event.getAxisValue(axis) :
-                            event.getHistoricalAxisValue(axis, historyPos);
+        float result = 0;
+        for (int i = 0; i < axes.length; i++) {
+            if (result == 0) {
+                final InputDevice.MotionRange range = device.getMotionRange(axes[i], event.getSource());
 
-            // Ignore axis values that are within the 'flat' region of the
-            // joystick axis center.
-            if (Math.abs(value) > flat) {
-                return value;
+                if (range != null) {
+                    final float value =
+                            historyPos < 0 ? event.getAxisValue(axes[i]) : event.getHistoricalAxisValue(axes[i], historyPos);
+
+                    if (Math.abs(value) > range.getFlat()) {
+                        result = value;
+                    }
+                }
             }
         }
-        return 0;
+
+        return result;
     }
 
     private void processJoystickInput(MotionEvent event,  int historyPos) {
         InputDevice mInputDevice = event.getDevice();
 
-        // Find X from the left control stick, hat axis, or the right control stick.
-        float x = getCenteredAxis(event, mInputDevice,
-                MotionEvent.AXIS_X, historyPos);
-        if (x == 0) {
-            x = getCenteredAxis(event, mInputDevice,
-                    MotionEvent.AXIS_HAT_X, historyPos);
-        }
-        if (x == 0) {
-            x = getCenteredAxis(event, mInputDevice,
-                    MotionEvent.AXIS_Z, historyPos);
-        }
+        // Save x/y deltas
+        dX = selectAxis(event, mInputDevice, X_AXES, historyPos);
+        dY = selectAxis(event, mInputDevice, Y_AXES, historyPos);
 
-        // Find Y from the left control stick, hat switch, or the right control stick.
-        float y = getCenteredAxis(event, mInputDevice,
-                MotionEvent.AXIS_Y, historyPos);
-        if (y == 0) {
-            y = getCenteredAxis(event, mInputDevice,
-                    MotionEvent.AXIS_HAT_Y, historyPos);
-        }
-        if (y == 0) {
-            y = getCenteredAxis(event, mInputDevice,
-                    MotionEvent.AXIS_RZ, historyPos);
-        }
-
-        // Update the current point based on the new x and y values and bound them
-        currX += (x * DRAWSPEED);
-        currY += (y * DRAWSPEED);
-        currX = Math.max(0, Math.min(currX, cutoffRight));
-        currY = Math.max(0, Math.min(currY, cutoffBottom));
-
-        try {
-            //get the trigger values
-            rTrigValue = event.getAxisValue(MotionEvent.AXIS_RTRIGGER);
-            lTrigValue = event.getAxisValue(MotionEvent.AXIS_LTRIGGER);
-
-            curDepth += rTrigValue / 20f; //divide by 10 to lessen sensitivity
-            curDepth -= lTrigValue / 20f;
-            curDepth = Math.min(1f, Math.max(0f, curDepth)); //bound at black and white
-
-            //update the red line on the depth swatch
-            depthSwatch.setDepth(curDepth);
-
-            //Add that point to the stroke
-            if (nowDrawing) {
-                addPoint(currX,
-                        currY,
-                        event.getEventTime());
-            }
-        } catch (Exception e) {
-            errorLog.append(e.toString());
-        }
-
+        // Save trigger values
+        dDepth = (event.getAxisValue(MotionEvent.AXIS_RTRIGGER) - event.getAxisValue(MotionEvent.AXIS_LTRIGGER));
     }
 
     //Process buttons
@@ -438,25 +395,87 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if ((event.getSource() & InputDevice.SOURCE_GAMEPAD)
                 == InputDevice.SOURCE_GAMEPAD) {
-            if (keyCode == KeyEvent.KEYCODE_BUTTON_A) {
-                if (nowDrawing) {
-                    saveStroke();
-                }
-                nowDrawing = !nowDrawing;
-            }
-            if (keyCode == KeyEvent.KEYCODE_BUTTON_X) {
-                undo();
-            }
-            if (keyCode == KeyEvent.KEYCODE_BUTTON_Y) {
-                clear();
-            }
-            if (keyCode == KeyEvent.KEYCODE_BUTTON_START) {
-                appendLog(errorLog.toString());
-                //save the gcode here instead?
+            switch (keyCode) {
+                case KeyEvent.KEYCODE_BUTTON_A:
+                    if (nowDrawing) {
+                        saveStroke();
+                    }
+                    nowDrawing = !nowDrawing;
+                    break;
 
+                case KeyEvent.KEYCODE_BUTTON_X:
+                    undo();
+                    break;
+
+                case KeyEvent.KEYCODE_BUTTON_Y:
+                    clear();
+                    break;
+
+                case KeyEvent.KEYCODE_BUTTON_START:
+                    appendLog(errorLog.toString());
+                    break;
             }
         }
+
         return super.onKeyDown(keyCode, event);
+    }
+
+    private int drawCount = 0;
+    public void tick(long deltaTime) {
+        if (!usingController) {
+            Log.d("CTRL","ticked without controller");
+            return;
+        }
+
+        float scale = ((float) Ticker.WAIT_TIME) / ((float) deltaTime);
+        //Log.d("TICK", String.format("%d (scale %f) dX %f dY %f dDepth %f", deltaTime, scale, dX, dY, dDepth));
+
+        // Update the current point based on the new x and y values and bound them
+        currX += (dX * DRAWSPEED * scale);
+        currY += (dY * DRAWSPEED * scale);
+        currX = Math.max(0, Math.min(currX, cutoffRight));
+        currY = Math.max(0, Math.min(currY, cutoffBottom));
+
+        curDepth += dDepth * DEPTHSPEED * scale;
+        curDepth = Math.min(1f, Math.max(0f, curDepth)); //bound at black and white
+        //Log.d("TICK", String.format("currX %f currY %f curDepth %f", currX, currY, curDepth));
+
+        //update the red line on the depth swatch
+        depthSwatch.setDepth(curDepth);
+
+        //Add that point to the stroke
+        if (nowDrawing) {
+            drawCount++;
+            addPoint(currX, currY, System.currentTimeMillis());
+            Log.d("TICK","drawCount " + drawCount);
+        }
+
+        postInvalidate();
+        //Log.d("TICK","done @ " + System.currentTimeMillis());
+    }
+
+    protected void controllerAdded() {
+        if (usingController || ticker != null) {
+            Log.d("CTRL", "too many controllers?!");
+        }
+
+        usingController = true;
+        ticker = new Ticker(this);
+        new Thread(ticker).start();
+
+        postInvalidate();
+        Toast.makeText(getContext(), "Controller detected. Touch screen disabled", Toast.LENGTH_SHORT).show();
+    }
+
+    protected void controllerRemoved() {
+        usingController = false;
+        if (ticker != null) {
+            ticker.stop();
+            Log.d("TICK", "missing controller thread");
+        }
+
+        postInvalidate();
+        Toast.makeText(getContext(), "No controller detected. Touch screen enabled", Toast.LENGTH_SHORT).show();
     }
     //End of controller code
 
@@ -509,7 +528,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
     }
 
-
     //Sort the stroke list by tool.
     private LinkedList<Stroke> sortStrokes(LinkedList<Stroke> existingStrokes){
         HashMap<Tool, LinkedList<Stroke>> map = new HashMap<>();
@@ -535,27 +553,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         return finalAns;
     }
 
-
-
-    protected void controllerAdded() {
-        usingController = true;
-        Toast.makeText(getContext(), "Controller detected. Touch screen disabled", Toast.LENGTH_SHORT).show();
-        postInvalidate();
-    }
-
-    protected void controllerRemoved() {
-        try {
-            usingController = false;
-            Toast.makeText(getContext(), "No controller detected. Touch screen enabled", Toast.LENGTH_SHORT).show();
-            postInvalidate();
-        } catch (Exception e) {
-            errorLog.append(e);
-        }
-    }
-
-    public void setDepthSwatch(DepthSwatch ds) {
-        depthSwatch = ds;
-    }
+    public void setDepthSwatch(DepthSwatch ds) { depthSwatch = ds; }
 
     public void setTool(Tool tool) {
         curTool = tool;

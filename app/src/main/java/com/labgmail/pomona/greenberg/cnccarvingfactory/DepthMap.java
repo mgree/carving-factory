@@ -19,10 +19,6 @@ public class DepthMap {
     int numBucketsX;
     int numBucketsY;
 
-
-
-
-
     public DepthMap(float stockWidth, float stockHeight, float minRadius, float scale) {
         this.stockWidth = stockWidth;
         this.stockHeight = stockHeight;
@@ -43,7 +39,7 @@ public class DepthMap {
     }
 
     /* Takes an anchor and updates the depth map with a new anchor with an updated Z value*/
-    public Anchor updateZ (Anchor oldPoint, float currentRadius){
+    public float updateZ (Anchor oldPoint, float currentRadius){
         boolean changed = false;
 
         //Find all relevant points
@@ -63,7 +59,7 @@ public class DepthMap {
         newZ += neighboringDepth;
         newZ = Math.max(0.1f, Math.min(newZ, 1.0f));
 
-        return new Anchor (oldPoint.x, oldPoint.y, newZ, oldPoint.time);
+        return newZ;
     }
 
     /* Adds an anchor to the existing depth map */

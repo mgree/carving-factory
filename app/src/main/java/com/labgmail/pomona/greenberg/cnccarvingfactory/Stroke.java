@@ -97,6 +97,7 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor> {
         if (!degenerate) {
             return false;
         }
+
         //quick speed up check
         Anchor start = points.get(0);
         Anchor end = points.get(points.size() - 1);
@@ -105,7 +106,6 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor> {
             degenerate = false;
             return false;
         }
-
 
         Anchor centroid = centroid();
 
@@ -153,7 +153,6 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor> {
                 selectedZ.add((double) points.get(0).z);
                 selectedTime.add(points.get(0).time);
             }
-
 
             ArrayList<Anchor> newList = new ArrayList<>();
             int next = 0;

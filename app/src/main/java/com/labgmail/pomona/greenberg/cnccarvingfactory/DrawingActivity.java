@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.hardware.input.InputManager;
+import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -27,11 +28,14 @@ import android.widget.LinearLayout;
 import android.widget.Button;
 import android.widget.Toast;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 
+import java.io.PrintWriter;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -217,19 +221,7 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
                 startActivity(new Intent(self, DisplaySettingsActivity.class));
             }
         });
-
-
-        //DRAWING MODE BUTTON
-//        ToggleButton drawingMode = (ToggleButton) findViewById(R.id.drawingModeButton);
-//        drawingMode.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-//            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-//                if (isChecked) {
-//                    // The toggle is enabled
-//                } else {
-//                    // The toggle is disabled
-//                }
-//            }
-//        });
+        
     }
 
     @Override
