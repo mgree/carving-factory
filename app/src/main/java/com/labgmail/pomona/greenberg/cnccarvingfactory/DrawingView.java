@@ -72,12 +72,14 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
     private boolean debugPoints = false;
     private boolean clearStrokes = false;
+    private boolean isDrawing = false;
     private float scale;
 
     private DepthMap depthMap;
     private boolean initialized = false;
 
     private float height, width;
+
 
     private float currX, currY;
 
@@ -86,6 +88,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         MANUAL_DEPTH,
         OVERDRAW
     }
+
 
     private Bitmap drawing;
 
@@ -107,6 +110,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         initializeBrush();
 
     }
+
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
@@ -148,8 +152,9 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        isDrawing = true;
+        Log.d("DRAWING", String.valueOf(isDrawing));
 
-        Log.d("TOOLINFO", "Tool 1 length (on draw in view): " + curTool.getToolLength());
 
         if (isInEditMode()) {
             canvas.drawColor(Color.WHITE);
@@ -515,6 +520,10 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         curDepth = depth;
     }
 
+    public boolean getDrawingState() {
+        return isDrawing;
+    }
+
     private void addMotionEvent(MotionEvent event) {
         for (int h = 0; h < event.getHistorySize(); h += 1) {
             addPoint(event.getHistoricalX(h),
@@ -708,8 +717,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             Toast.makeText(getContext(), "Couldn't save image (" + e.getLocalizedMessage() + ")", Toast.LENGTH_SHORT).show();
             Log.d("IO", e.toString());
         }
-    }
 
+    }
 
     private static final String CNC_IP = "192.168.0.100";
     private static final int CNC_PORT = 5900;
@@ -743,4 +752,5 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             vnc = null;
         }
     }
+
 }
