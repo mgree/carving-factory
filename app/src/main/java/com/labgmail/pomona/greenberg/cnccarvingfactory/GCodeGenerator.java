@@ -4,6 +4,9 @@ import android.util.Log;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -51,6 +54,7 @@ public class GCodeGenerator {
     private Map<String,Float> fParams = new TreeMap<>(); // current floating-point params
     private Map<String,Integer> iParams = new TreeMap<>(); // current integer params
     private Tool curTool = null;
+    private static LinkedList<Stroke> strokes;
 
     public static final float CLEARANCE = .25f;
 
@@ -58,7 +62,7 @@ public class GCodeGenerator {
     /**
      * Single-pass stroke milling.
      *
-     * @param strokes
+     * @param theStrokes
      * @param stockWidth width of stock in stockUnit
      * @param stockLength
      * @param stockDepth
@@ -67,7 +71,7 @@ public class GCodeGenerator {
      * @param spoilDepth depth of spoil board in stockUnit
      * @return a GCodeGenerator with all code appropriately generated
      */
-    public static GCodeGenerator singlePass(List<Stroke> strokes,
+    public static GCodeGenerator singlePass(List<Stroke> theStrokes,
                                             float stockWidth, float stockLength, float stockDepth, String stockUnit,
                                             float cutoffRight,
                                             float spoilDepth) {
@@ -78,6 +82,7 @@ public class GCodeGenerator {
         gcg.comment(String.format("expected stock dimensions: %1.4fx%1.4fx%1.4f %s",
                 stockWidth, stockLength, stockDepth, stockUnit));
 
+        strokes = sortStrokes((LinkedList<Stroke>) theStrokes);
         float boardHeight = spoilDepth + stockDepth;
         float clearancePlane = boardHeight + CLEARANCE;
 
@@ -92,11 +97,8 @@ public class GCodeGenerator {
 
         int curStroke = 0;
         for (Stroke s : strokes) {
-            // TODO: transformations on strokes (convert to stock coordinate system, Y inversion)
-
             boolean cutting = false;
-
-            curStroke += 1;
+            curStroke ++;
             gcg.comment(String.format("Stroke %d/%d", curStroke, numStrokes));
 
             Anchor last = null;
@@ -269,6 +271,30 @@ public class GCodeGenerator {
         curTool = null;
     }
 
+    //Sort the stroke list by tool.
+    private static LinkedList<Stroke> sortStrokes(LinkedList<Stroke> existingStrokes){
+        HashMap<Tool, LinkedList<Stroke>> map = new HashMap<>();
+
+        //for each stroke, check its tool, and place the stroke in the correct bin in the map
+        //if the bin doesn't exist, make a new bin for that tool
+        for (Stroke s : existingStrokes){
+            if (map.containsKey(s.getTool())){
+                map.get(s.getTool()).add(s);
+            } else {
+                map.put(s.getTool(), new LinkedList<Stroke>());
+                map.get(s.getTool()).add(s);
+            }
+        }
+        //output a final list that is the concatentation of each of the bins
+        LinkedList<Stroke> finalAns = new LinkedList<>();
+        Iterator<Tool> mapIterator = map.keySet().iterator();
+        while (mapIterator.hasNext()) {
+            Tool key = mapIterator.next();
+            finalAns.addAll(map.get(key));
+        }
+        return finalAns;
+    }
+
     public static class G {
         private final int code;
         private Map<String,Float> fParams = new TreeMap<>();
@@ -351,6 +377,10 @@ public class GCodeGenerator {
 
             return true;
         }
+
+
+
+
 
         public String toString() {
             return emit(null, null);

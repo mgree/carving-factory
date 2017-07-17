@@ -528,31 +528,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
     }
 
-    //Sort the stroke list by tool.
-    private LinkedList<Stroke> sortStrokes(LinkedList<Stroke> existingStrokes){
-        HashMap<Tool, LinkedList<Stroke>> map = new HashMap<>();
-
-        //for each stroke, check its tool, and place the stroke in the correct bin in the map
-        //if the bin doesn't exist, make a new bin for that tool
-        for (Stroke s : existingStrokes){
-            if (map.containsKey(s.getTool())){
-                map.get(s.getTool()).add(s);
-            } else {
-                map.put(s.getTool(), new LinkedList<Stroke>());
-                map.get(s.getTool()).add(s);
-            }
-        }
-
-        //output a final list that is the concatentation of each of the bins
-        LinkedList<Stroke> finalAns = new LinkedList<>();
-        Iterator<Tool> mapIterator = map.keySet().iterator();
-        while (mapIterator.hasNext()) {
-            Tool key = mapIterator.next();
-            finalAns.addAll(map.get(key));
-        }
-        return finalAns;
-    }
-
     public void setDepthSwatch(DepthSwatch ds) { depthSwatch = ds; }
 
     public void setTool(Tool tool) {
@@ -665,9 +640,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
             PrintWriter out = new PrintWriter(new FileOutputStream(prg, false));
             GCodeGenerator gcg =
-                    GCodeGenerator.singlePass(sortStrokes((LinkedList<Stroke>) strokes), //THIS NOW SORTS STROKES BY TOOL
-                            stockWidth, stockLength, stockDepth, stockUnit, cutoffRight,
-                            spoilDepth);
+                    GCodeGenerator.singlePass(strokes,stockWidth, stockLength,
+                            stockDepth, stockUnit, cutoffRight, spoilDepth);
             out.write(gcg.toString());
             out.close();
 
