@@ -176,7 +176,9 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
         mContentView.setDepthSwatch(swatch);
 
         findViewById(R.id.undo_button).setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) { mContentView.undo(); }
+            public void onClick(View v) {
+                mContentView.undo();
+                hide(); }
         });
         findViewById(R.id.clear_button).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -267,6 +269,7 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
     @Override
     protected void onResume() {
         super.onResume();
+        hide();
         mInputManager.registerInputDeviceListener(this, null);
 
 
@@ -300,6 +303,12 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.hide();
+        }
+        else {
+            mContentView.setSystemUiVisibility( View.SYSTEM_UI_FLAG_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    | SYSTEM_UI_FLAG_HIDE_NAVIGATION);
         }
         mControlsView.setVisibility(View.GONE);
 

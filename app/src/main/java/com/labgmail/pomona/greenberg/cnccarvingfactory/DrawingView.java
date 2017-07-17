@@ -64,7 +64,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     private float lTrigValue = 0.0f;
     private StringBuilder errorLog = new StringBuilder();
 
-
     private static final int SMOOTHING_FACTOR = 3;
     private static final int CURVE_STEPS = 20;
     private static final float MIN_RADIUS = .25f;
