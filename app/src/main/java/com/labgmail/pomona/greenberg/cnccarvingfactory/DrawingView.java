@@ -1,22 +1,32 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
+import android.Manifest;
+import android.app.Activity;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
+import android.os.Bundle;
 import android.os.Environment;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
+import android.text.InputType;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.InputDevice;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.Toast;
 import android.graphics.Bitmap;
 
@@ -35,6 +45,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static android.app.PendingIntent.getActivity;
 import static android.support.v4.content.ContextCompat.startActivity;
 
 /**
@@ -289,17 +300,19 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        switch (event.getAction()) {
-            case MotionEvent.ACTION_DOWN:
-            case MotionEvent.ACTION_MOVE:
-                addMotionEvent(event);
-                break;
-            case MotionEvent.ACTION_UP:
-                addMotionEvent(event);
-                saveStroke();
-                break;
-            default:
-                break;
+        if (!usingController) {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                case MotionEvent.ACTION_MOVE:
+                    addMotionEvent(event);
+                    break;
+                case MotionEvent.ACTION_UP:
+                    addMotionEvent(event);
+                    saveStroke();
+                    break;
+                default:
+                    break;
+            }
         }
         return true;
 
@@ -440,6 +453,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             }
             if (keyCode == KeyEvent.KEYCODE_BUTTON_START) {
                 appendLog(errorLog.toString());
+                //save the gcode here instead?
+
             }
         }
         return super.onKeyDown(keyCode, event);
@@ -447,7 +462,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     //End of controller code
 
 
-    /* Clears the stroke list, depthmap, screen, and bitmap */
+    /* Clears the stroke list, depthmap, screen, and bitmap. Opens dialog to confirm first. */
     public void clear() {
         DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
             @Override
@@ -477,6 +492,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         builder.setPositiveButton("Yes", dialogClickListener)
                 .setNegativeButton("Cancel", dialogClickListener).show();
     }
+
 
     /* Undoes the last stroke (redraws/remakes the bitmap) */
     public void undo() {
@@ -508,7 +524,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                 map.put(s.getTool(), new LinkedList<Stroke>());
                 map.get(s.getTool()).add(s);
             }
-
         }
 
         //output a final list that is the concatentation of each of the bins
@@ -525,14 +540,18 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
     protected void controllerAdded() {
         usingController = true;
-        Toast.makeText(getContext(), "Controller detected", Toast.LENGTH_SHORT).show();
+        Toast.makeText(getContext(), "Controller detected. Touch screen disabled", Toast.LENGTH_SHORT).show();
         postInvalidate();
     }
 
     protected void controllerRemoved() {
-        usingController = false;
-        Toast.makeText(getContext(), "No controller detected", Toast.LENGTH_SHORT).show();
-        postInvalidate();
+        try {
+            usingController = false;
+            Toast.makeText(getContext(), "No controller detected. Touch screen enabled", Toast.LENGTH_SHORT).show();
+            postInvalidate();
+        } catch (Exception e) {
+            errorLog.append(e);
+        }
     }
 
     public void setDepthSwatch(DepthSwatch ds) {
@@ -740,9 +759,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
 
-
-
-
     //LIVE MODE CODE
     private static final String CNC_IP = "192.168.0.100";
     private static final int CNC_PORT = 5900;
@@ -752,18 +768,46 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     private VNCConnection vnc;
 
     public void startLive() {
-        Log.d("LIVE", "entering startLive()");
 
-        if (live || vnc != null) {
-            Log.d("LIVE", "aborting startLive---already live");
-            return;
-        }
+        final DrawingView dv = this;
 
-        // make connection
-        vnc = new VNCConnection(this, CNC_IP, CNC_PORT, CNC_USER, CNC_PASSWORD);
+        //CREATE A DIALOG TO CHECK THEY WANT TO START LIVE
+        //In the future the inputs will likely be put into this dialog box
+        DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                switch (which){
+                    case DialogInterface.BUTTON_POSITIVE:
+                        Log.d("LIVE", "entering startLive()");
 
-        Log.d("LIVE", "set to live");
-        live = true;
+                        if (live || vnc != null) {
+                            Log.d("LIVE", "aborting startLive---already live");
+                            return;
+                        }
+
+                        // make connection
+                        vnc = new VNCConnection(dv, CNC_IP, CNC_PORT, CNC_USER, CNC_PASSWORD);
+
+                        Log.d("LIVE", "set to live");
+                        live = true;
+                        break;
+
+                    case DialogInterface.BUTTON_NEGATIVE:
+                        dialog.cancel();
+                        break;
+                }
+            }
+        };
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle("Start Live Mode");
+        builder.setMessage("Before starting live mode, check you are on the manual gcode input page on your CNC machine.");
+
+
+        builder.setPositiveButton("Continue", dialogClickListener)
+                .setNegativeButton("Cancel", dialogClickListener).show();
+
+
     }
 
     public void stopLive() {

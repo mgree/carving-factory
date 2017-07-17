@@ -33,7 +33,6 @@ public class Tool implements Serializable {
             this.toolName = toolName;
         }
 
-
         public float getDiameter () { return diameter; }
 
         public float getMaxCutDepth () { return cutDepth; }

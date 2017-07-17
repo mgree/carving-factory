@@ -19,6 +19,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.view.InputDevice;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -202,11 +203,9 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
                     mContentView.exportImage();
                 } else {
                     pendingSave = true;
-                    ActivityCompat.requestPermissions(self,
-                            new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                            0);
+                    ActivityCompat.requestPermissions(self, new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
                 }
-           }
+            }
         });
 
         // SETTINGS BUTTON
@@ -329,7 +328,9 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
 
     @Override
     public void onInputDeviceAdded(int deviceId) {
-        mContentView.controllerAdded();
+        if (isController(deviceId)) {
+            mContentView.controllerAdded();
+        }
     }
 
     @Override
@@ -339,4 +340,14 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
 
     @Override
     public void onInputDeviceChanged(int deviceId) {  }
+
+    private boolean isController(int deviceId) {
+            InputDevice dev = InputDevice.getDevice(deviceId);
+            int sources = dev.getSources();
+            if (((sources & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD)
+                    || ((sources & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK)) {
+                return true;
+            }
+        return false;
+    }
 }
