@@ -70,7 +70,6 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
                     if (newUnit.equals(mCurUnit)) {
                         return;
                     }
-//                    convertDimensionsTo(newUnit);
                     pref.setSummary(newUnit);
                     break;
                 case KEY_TOOL:

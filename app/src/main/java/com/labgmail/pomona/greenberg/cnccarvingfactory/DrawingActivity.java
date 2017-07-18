@@ -126,6 +126,8 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
         }
     };
 
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -194,6 +196,59 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
             @Override
             public void onClick(View v) { mContentView.startLive(); }
         });
+
+        findViewById(R.id.dButton).setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(DrawingActivity.this);
+                builder.setView(R.layout.live_dialog);
+
+                builder.setCancelable(true);
+                builder.setMessage("Entering Live Mode, enter the following:");
+                builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+
+                    }
+                });
+                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+                builder.show();
+            }
+
+        });
+
+        findViewById(R.id.ftp_button).setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(DrawingActivity.this);
+                builder.setView(R.layout.ftp_dialog);
+
+                builder.setCancelable(true);
+                builder.setMessage("Entering Live Mode, enter the following:");
+                builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+
+                    }
+                });
+                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+                builder.show();
+            }
+
+        });
+
 
         // FULLSCREEN SETUP
         // Upon interacting with UI controls, delay any scheduled hide()
