@@ -329,7 +329,7 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
 
     @Override
     public void onInputDeviceAdded(int deviceId) {
-        if (isController(deviceId)) {
+        if (mContentView.isController(deviceId)) {
             mContentView.controllerAdded();
         }
     }
@@ -342,13 +342,4 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
     @Override
     public void onInputDeviceChanged(int deviceId) {  }
 
-    private boolean isController(int deviceId) {
-            InputDevice dev = InputDevice.getDevice(deviceId);
-            int sources = dev.getSources();
-            if (((sources & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD)
-                    || ((sources & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK)) {
-                return true;
-            }
-        return false;
-    }
 }

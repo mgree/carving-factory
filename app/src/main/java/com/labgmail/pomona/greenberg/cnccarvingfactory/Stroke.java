@@ -49,27 +49,10 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor> {
         this.tool = tool;
     }
 
-    public Path getPath() {
-        Path path = new Path();
-
-        for (Anchor p : points) {
-            if (path.isEmpty()) {
-                path.moveTo(p.x, p.y);
-            } else {
-                path.lineTo(p.x, p.y);
-            }
-        }
-        return path;
-    }
-
     public void addPoint(float x, float y, float z, long t) {
         points.add(new Anchor(x, y, z, t));
     }
-    public void addPoint(Anchor a){ points.add(a); }
 
-    public List<Anchor> getPoints(){
-        return points;
-    }
     public float getTDiameter() { return tool.getDiameter(); }
 
     public Tool getTool() { return tool; }
@@ -94,7 +77,7 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor> {
     }
 
     public boolean isDegenerate() {
-        if (!degenerate) {
+        if (!degenerate || points.isEmpty()) {
             return false;
         }
 
@@ -121,6 +104,9 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor> {
     }
 
     public Stroke fitToNatCubic(int everyN, int steps) {
+        if (points.size() == 0) {
+            return new Stroke(tool);
+            }
         // select every everyN points from the user's input, split into X and Y components
         List<Double> selectedX = new LinkedList<>();
         List<Double> selectedY = new LinkedList<>();

@@ -10,6 +10,8 @@ import android.content.pm.PackageManager;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Bundle;
@@ -94,7 +96,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     private static final int[] X_AXES = { MotionEvent.AXIS_X, MotionEvent.AXIS_HAT_X, MotionEvent.AXIS_Z };
     private static final int[] Y_AXES = { MotionEvent.AXIS_Y, MotionEvent.AXIS_HAT_Y, MotionEvent.AXIS_RZ };
     private static final float DEPTHSPEED = 1f/40f;
-    private static final float DRAWSPEED = 2.5f;
+    private static final float DRAWSPEED = 5f;
     private boolean usingController = false;
     private boolean nowDrawing = false;
 
@@ -126,6 +128,12 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         cutoffRight = getWidth();
         cutoffBottom = getHeight();
 
+        //Account for i,,f the app is turned on with a controller plugged in
+        int[] deviceIds = InputDevice.getDeviceIds();
+        for (int deviceId : deviceIds) {
+            if (isController(deviceId)){ controllerAdded(); }
+        }
+
         initializeBrush();
     }
 
@@ -152,8 +160,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         isDrawing = true;
 
-        Log.d("DRAWING", String.valueOf(isDrawing));
-
         if (isInEditMode()) {
             canvas.drawColor(Color.WHITE);
             return;
@@ -170,8 +176,14 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         cutoffBottom = scale * stockLength;
         cutoffRight = scale * stockWidth;
 
+        brush.setColor(Color.BLACK);
+        brush.setStyle(Paint.Style.FILL);
+        brush.setStrokeWidth(scale * curTool.getDiameter());
+
+
         //if in normal tablet drawing mode
         if (!initialized) {
+            brush.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DARKEN));
 
             currX = cutoffRight / 2;
             currY = cutoffBottom / 2;
@@ -187,10 +199,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         }
 
-        brush.setColor(Color.BLACK);
-        brush.setStyle(Paint.Style.FILL);
-        brush.setStrokeWidth(scale * curTool.getDiameter());
-
         // Draw the cut off rectangles
         canvas.drawRect(cutoffRight, 0, width, height, brush);
         canvas.drawRect(0, cutoffBottom, width, height, brush);
@@ -200,7 +208,9 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         //draw the current stroke
         if (curStroke != null) {
-            drawStroke(canvas, curStroke, brush, scale);
+            synchronized (curStroke) {
+                drawStroke(canvas, curStroke, brush, scale);
+            }
         }
 
         //draw cursor if using controller
@@ -276,7 +286,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
 
         curStroke.addPoint(x, y, z, time);
-        Log.d("TICK","added");
+        //Log.d("TICK","added");
     }
 
     /* Saves a fitted stroke to the bitmap and stroke list */
@@ -420,15 +430,13 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         return super.onKeyDown(keyCode, event);
     }
 
-    private int drawCount = 0;
     public void tick(long deltaTime) {
         if (!usingController) {
-            Log.d("CTRL","ticked without controller");
+            Log.d("TICK","ticked without controller");
             return;
         }
 
         float scale = ((float) Ticker.WAIT_TIME) / ((float) deltaTime);
-        //Log.d("TICK", String.format("%d (scale %f) dX %f dY %f dDepth %f", deltaTime, scale, dX, dY, dDepth));
 
         // Update the current point based on the new x and y values and bound them
         currX += (dX * DRAWSPEED * scale);
@@ -438,20 +446,25 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         curDepth += dDepth * DEPTHSPEED * scale;
         curDepth = Math.min(1f, Math.max(0f, curDepth)); //bound at black and white
-        //Log.d("TICK", String.format("currX %f currY %f curDepth %f", currX, currY, curDepth));
 
         //update the red line on the depth swatch
-        depthSwatch.setDepth(curDepth);
+        if (depthSwatch != null) {
+            depthSwatch.setDepth(curDepth);
+        }
 
         //Add that point to the stroke
         if (nowDrawing) {
-            drawCount++;
-            addPoint(currX, currY, System.currentTimeMillis());
-            Log.d("TICK","drawCount " + drawCount);
+            if (curStroke == null) {
+                curStroke = new Stroke(curTool);
+            }
+
+            // prevent a race with onDraw's drawing of the current stroke
+            synchronized (curStroke) {
+                addPoint(currX, currY, System.currentTimeMillis());
+            }
         }
 
         postInvalidate();
-        //Log.d("TICK","done @ " + System.currentTimeMillis());
     }
 
     protected void controllerAdded() {
@@ -459,6 +472,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             Log.d("CTRL", "too many controllers?!");
         }
 
+        setFocusable(true);
         usingController = true;
         ticker = new Ticker(this);
         new Thread(ticker).start();
@@ -477,6 +491,17 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         postInvalidate();
         Toast.makeText(getContext(), "No controller detected. Touch screen enabled", Toast.LENGTH_SHORT).show();
     }
+
+    public boolean isController(int deviceId) {
+        InputDevice dev = InputDevice.getDevice(deviceId);
+        int sources = dev.getSources();
+        if (((sources & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD)
+                || ((sources & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK)) {
+            return true;
+        }
+        return false;
+    }
+
     //End of controller code
 
 
@@ -532,6 +557,10 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
     public void setTool(Tool tool) {
         curTool = tool;
+        if (nowDrawing) {
+            saveStroke();
+            curStroke = new Stroke(curTool);
+        }
     }
 
     public Tool getTool() {
@@ -618,6 +647,11 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
     public void exportGCode() {
+        //If you hit this in the middle of a controller stroke, save that stroke before you export
+        if (nowDrawing) {
+            saveStroke();
+        }
+
         File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
 
         try {
@@ -663,6 +697,10 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
     public void exportImage() {
+        //If you hit this in the middle of a controller stroke, save that stroke before you export
+        if (nowDrawing) {
+            saveStroke();
+        }
 
         File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
 
