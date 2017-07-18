@@ -19,18 +19,6 @@ import java.util.TreeMap;
 public class GCodeGenerator {
 
     /**
-     * test tool parking
-     *
-     * Length, max cut depth, lateral/insertion speed, if RPM get that too
-     * Also generate something with more than one tool to check??
-     */
-
-
-
-
-
-
-    /**
      * If we want max cut by tools
      * 1) Pick deepest val you're willing to go and scale z according to that
      * 2) store a current max single cut depth
