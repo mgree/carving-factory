@@ -1,5 +1,7 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
+import android.app.Dialog;
+import android.app.DialogFragment;
 import android.Manifest;
 import android.app.Activity;
 import android.app.Dialog;
@@ -534,6 +536,38 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         builder.setMessage("Are you sure you want to clear? You cannot undo this action");
         builder.setPositiveButton("Yes", dialogClickListener)
                 .setNegativeButton("Cancel", dialogClickListener).show();
+    }
+
+
+
+    public void setLive() {
+        DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+//                builder.setView(R.layout.picker_layout);
+                builder.setTitle("View Mode");
+                builder.setMessage("Entering Live Mode, enter the following:");
+                builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+
+                    }
+                });
+
+                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+
+                    }
+                });
+                AlertDialog a1 = builder.create();
+                a1.show();
+                builder.show();
+            }
+        };
+
+
     }
 
 
