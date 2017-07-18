@@ -273,7 +273,7 @@ public class GCodeGenerator {
 
     //Sort the stroke list by tool.
     private static LinkedList<Stroke> sortStrokes(LinkedList<Stroke> existingStrokes){
-        HashMap<Tool, LinkedList<Stroke>> map = new HashMap<>();
+        TreeMap<Tool, LinkedList<Stroke>> map = new TreeMap<>();
 
         //for each stroke, check its tool, and place the stroke in the correct bin in the map
         //if the bin doesn't exist, make a new bin for that tool
@@ -308,14 +308,6 @@ public class GCodeGenerator {
         public G Y(float v) { fParams.put("Y", v); return this; }
         public G Z(float v) { fParams.put("Z", v); return this; }
         public G F(float v) { fParams.put("F", v); return this; }
-        /**
-         * Once arcs are implemented, add these
-         * public G R(float v) { fParams.put("R", v); return this; }
-         * public G I(float v) { fParams.put("I", v); return this; }
-         * public G J(float v) { fParams.put("J", v); return this; }
-         * public G K(float v) { fParams.put("K", v); return this; }
-         *
-         */
 
         /**
          * Returns a string representation of the G-Code instruction.
@@ -377,10 +369,6 @@ public class GCodeGenerator {
 
             return true;
         }
-
-
-
-
 
         public String toString() {
             return emit(null, null);
