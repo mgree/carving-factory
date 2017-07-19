@@ -2,6 +2,7 @@ package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.Picture;
 import android.graphics.PointF;
 import android.media.MediaScannerConnection;
 import android.os.Environment;
@@ -16,7 +17,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Date;
 import java.util.EnumSet;
-import java.util.Iterator;
 
 
 /**
@@ -33,10 +33,18 @@ public class VNCConnection {
     public VNCConnection(final DrawingView dv, final String host, final int port, final String username, final String password) {
         this.dv = dv;
 
+        SdkThread.getInstance().init(dv.getContext().getFilesDir().getAbsolutePath() + "VNC");
+
+        while (!SdkThread.getInstance().initComplete()) {
+            try { Thread.sleep(10); }
+            catch (InterruptedException e) { }
+        }
+
         try {
             viewer = new Viewer();
-            connect(host, port, username, password);
+            viewer.setPictureQuality(Viewer.PictureQuality.AUTO);
 
+            connect(host, port, username, password);
         } catch (Library.VncException e) {
             Log.d("LIVE",e.getMessage());
             throw new RuntimeException(e);
@@ -230,6 +238,32 @@ public class VNCConnection {
             return;
         }
 
+        SdkThread.getInstance().post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Library.enableAddOn("EGvlYZXW1wMWLdzWqAn6baMjUW50w+53E9qDUEseAP72TCJdwkwn2j9o19AyOjIA\n" +
+                            "TYEXxkTZFbo78PkXKOb3MHWyNmyXeqBB3hKDKLQ4ZTReT0A57b4biUBFLu9D4aYU\n" +
+                            "Q3rUk/MlnPusbGL1GPd6W9fDm7LawcSeJINp6/+3scnxO+EVE04EzrRNG1YDxVpL\n" +
+                            "/GiwOGQHyFlBkuBNqIydC5iuTElYbiqzjxQqDpKPugR2Nxn4L9oWKMlF5/5rar9j\n" +
+                            "eg0ImXZ0GKHtfrR8g6J9+C2NzIAZOkD5bqu330bGdX5hEWIHgZ5GL+nXUZ8Dc7zV\n" +
+                            "Cmx6Lzvt5AlU502vqpU3PjMuVWHdsgJlqUt/53q6Zngspz4uIbg9yuoO7/9fWK0s\n" +
+                            "nuSaTSlbSx5vDAp2e2EW9dXTAsIjFLnHAfIoLf9ctegCRmGq7CPOYE8o8GYdc0FV\n" +
+                            "iF9iQNoiB9UUCNJPHb5BHVPcrj5trxnnt+pSe6xj4Q1L+Qp9hKof8WpgpKn/Ai3r\n" +
+                            "ITdSYejDpsmIUN8tcGMMjUub5bk2H5YpEE9FVrAeaA4QXF47cURb8dwdTPuJuutS\n" +
+                            "nvAKGHvqk1Sd5IDz/OHFPiSe6RPyiOQ6LnsjJVpWr9sF1qK9lJwRep+uvcmAizhi\n" +
+                            "e65j0sSA0grDUoj7VK4t13XBYqGvstHSVMnWI9OQ9qo=");
+                } catch (Library.VncException e) {
+                    Log.d("LIVE", "couldn't load TCP add on key");
+                    return;
+                }
+            }
+        });
+
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) { }
+
         // set up handlers for login
         viewer.setConnectionCallback(new Viewer.ConnectionCallback() {
             @Override
@@ -246,14 +280,14 @@ public class VNCConnection {
 
             @Override
             public void disconnected(Viewer viewer, String s, EnumSet<Viewer.DisconnectFlags> enumSet) {
-                Log.d("LIVE","disconnected");
+                Log.d("LIVE","disconnected " + viewer.getDisconnectReason() + " " + viewer.getDisconnectMessage());
+
                 Toast.makeText(dv.getContext(), "Disconnected from " + host, Toast.LENGTH_LONG).show();
                 // TODO notify DrawingView somehow?
             }
         });
 
         viewer.setAuthenticationCallback(new Viewer.AuthenticationCallback() {
-
             @Override
             public void cancelUserCredentialsRequest(Viewer viewer) {
                 Log.d("LIVE", "user credential request canceled (?)");
@@ -262,6 +296,7 @@ public class VNCConnection {
             @Override
             public void requestUserCredentials(Viewer viewer, final boolean needUser, final boolean needPassword) {
                 try {
+                    Log.d("LIVE", "authenticating with " + username + " and " + password); // TODO security leak
                     viewer.sendAuthenticationResponse(true, username, password);
                 } catch (Library.VncException e) {
                     Log.d("LIVE", "authentication failed: " + e.getMessage());
@@ -286,6 +321,7 @@ public class VNCConnection {
                     @Override
                     public void run() {
                         try {
+                            Log.d("LIVE", "verifying peer");
                             viewer.sendPeerVerificationResponse(true);
                         } catch (Library.VncException e) {
                             Log.d("LIVE", e.getMessage());
@@ -296,8 +332,18 @@ public class VNCConnection {
         });
 
         // actually connect
-        tcpConnector = new DirectTcpConnector();
-        tcpConnector.connect(host, port, viewer.getConnectionHandler());
+        SdkThread.getInstance().post(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    tcpConnector = new DirectTcpConnector();
+                    tcpConnector.connect(host, port, viewer.getConnectionHandler());
+                } catch (Library.VncException e) {
+                    Log.d("LIVE", e.getMessage());
+                }
+            }
+        });
     }
 
 

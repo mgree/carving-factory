@@ -50,40 +50,31 @@ public class SdkThread {
 
     private SdkThread() {}
 
-    /**
-     * Callback interface for displaying messages such as errors from the SDK.
-     */
-    public interface Callback {
-        void displayMessage(final int msgId, String error);
-    }
+    public synchronized void init(final String configFile) {
+        if (initComplete()) {
+            return;
+        }
 
-    public void init(final String configFile, final Callback callback) {
-        synchronized (this) {
-            if (initComplete()) {
-                return;
-            }
-
-            try {
-                mThread = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        initSdk(configFile, callback);
-                    }
-                });
-                mThread.start();
-                synchronized (mThread) {
-                    while (!initComplete() && !initFailed) {
-                        mThread.wait();
-                    }
+        try {
+            mThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    initSdk(configFile);
                 }
-
-            } catch (Exception e) {
-                Log.e(TAG, "Connection error", e);
+            });
+            mThread.start();
+            synchronized (mThread) {
+                while (!initComplete() && !initFailed) {
+                    mThread.wait();
+                }
             }
+
+        } catch (Exception e) {
+            Log.e(TAG, "Connection error", e);
         }
     }
 
-    private void initSdk(final String configFile, final Callback callback) {
+    private void initSdk(final String configFile) {
         try {
             // Prepare a looper on current thread.
             Looper.prepare();
@@ -98,7 +89,6 @@ public class SdkThread {
                 // Create the filestore with the absolute path to Android's app files directory
                 DataStore.createFileStore(configFile);
             } catch (Library.VncException e) {
-                //callback.displayMessage(R.string.failed_to_create_datastore, e.getMessage());
                 Log.d("MESSAGE", e.getMessage());
             }
 
@@ -114,7 +104,6 @@ public class SdkThread {
         } catch (Library.VncException e) {
             initFailed = true;
             Log.e(TAG, "Initialisation error: ", e);
-            //callback.displayMessage(R.string.failed_to_initialise_vnc_sdk, e.getMessage());
             Log.d("MESSAGE", e.getMessage());
             mHandler = null;
             synchronized (mThread) {
