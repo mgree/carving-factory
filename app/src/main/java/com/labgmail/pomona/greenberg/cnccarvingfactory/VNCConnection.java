@@ -1,15 +1,23 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
-import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.PointF;
+import android.media.MediaScannerConnection;
+import android.os.Environment;
+import android.text.format.DateFormat;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.realvnc.vncsdk.DirectTcpConnector;
-import com.realvnc.vncsdk.ImmutableDataBuffer;
-import com.realvnc.vncsdk.Library;
-import com.realvnc.vncsdk.Viewer;
+import com.realvnc.vncsdk.*;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Date;
 import java.util.EnumSet;
+import java.util.Iterator;
+
 
 /**
  * Created by soniagrunwald on 7/13/17.
@@ -27,7 +35,6 @@ public class VNCConnection {
 
         try {
             viewer = new Viewer();
-
             connect(host, port, username, password);
 
         } catch (Library.VncException e) {
@@ -46,7 +53,118 @@ public class VNCConnection {
         // TODO navigate to MDI screen
         // TODO send prelude
         // TODO use sendMDI to grab the current tool (per DV) and spin it up, go back to the origin
+
+
+        saveFrameBuffer();
+        sendTestText("HELLOWORLD");
+        saveFrameBuffer();
+
     }
+
+    //Checks if you're on an input page. If so, send the specified command
+    public void sendTestText(final String s) {
+        sdk(new Runnable() {
+            @Override
+            public void run() {
+                //Get the framebuffer and save into the "bitmap" object
+                int width = viewer.getViewerFbWidth();
+                int height = viewer.getViewerFbHeight();
+
+                //IF YOU WANT TO SHOW ON THE SCREEN, USE THE BITMAP FROM DRAWING VIEW (I THINK)
+                Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+                bitmap.setHasAlpha(false);
+
+                try {
+                    // getViewerFbData(int x, int y, int w, int h, Object bitmap, int targetX, int targetY)
+                    viewer.getViewerFbData(0, 0, width, height, bitmap, 0, 0);
+                } catch (Library.VncException e) {
+                    Log.d("BUTTON", "ERROR " + e);
+                }
+
+                // examine and check if it's correct and if so send the string
+                if (isInputPage(bitmap)) {
+                    sdk(new Runnable() {
+                        @Override
+                        public void run() {
+                            sendMDI(s);
+                        }
+                    });
+                } else {
+                    int color =  bitmap.getPixel(300, 75);
+                    Log.d("BUTTON", String.format("Wrong screen. Color detected is (%s, %s, %s)",
+                            (color >> 16) & 0xff, (color >>  8) & 0xff, color & 0xff));
+                }
+            }
+        });
+    }
+
+    //TODO MAKE THIS CHECK BETTER
+    //check you're on the input page
+    private boolean isInputPage(Bitmap bitmap) {
+        return bitmap.getPixel(300, 75) == new Color().rgb(241, 241, 241);
+    }
+
+    private boolean isMDIExecutePage(Bitmap bitmap){
+        return (bitmap.getPixel(300, 50) == new Color().rgb(254, 203, 254)) &&
+                (bitmap.getPixel(360, 280) == new Color().rgb(203, 153,152));
+    }
+
+
+    //Save the image in the framebuffer
+    public void saveFrameBuffer() {
+        sdk(new Runnable() {
+            @Override
+            public void run() {
+                //Get the framebuffer and save into the "bitmap" object
+                int width = viewer.getViewerFbWidth();
+                int height = viewer.getViewerFbHeight();
+
+                //IF YOU WANT TO SHOW ON THE SCREEN, USE THE BITMAP FROM DRAWING VIEW (I THINK)
+                Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+                bitmap.setHasAlpha(false);
+
+                try {
+                    viewer.getViewerFbData(0, 0, width, height, bitmap, 0, 0);
+                    saveImage(bitmap);
+                } catch (Library.VncException e) {
+                    Log.d("BUTTON", "ERROR " + e);
+                }
+            }
+        });
+    }
+
+
+    //Saves a bitmap image to the pictures folder
+    private void saveImage (Bitmap bitmap){
+        File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+
+        try {
+            dir.mkdirs();
+            StringBuilder filename = new StringBuilder();
+            CharSequence timestamp = DateFormat.format("VNC_yyyy-MM-ddThh:mm:ss", new Date());
+            filename.append(timestamp);
+            filename.append("_Image.png");
+
+            File file = new File(dir, filename.toString());
+            FileOutputStream fOut = new FileOutputStream(file);
+
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, fOut);
+            fOut.flush();
+            fOut.close();
+
+            MediaScannerConnection.scanFile(dv.getContext(), new String[]{file.getAbsolutePath()}, null, null);
+
+            Toast.makeText(dv.getContext(), String.format("Saved image to %s", filename.toString()), Toast.LENGTH_SHORT).show();
+
+        } catch (IOException e) {
+            Toast.makeText(dv.getContext(), "Couldn't save image (" + e.getLocalizedMessage() + ")", Toast.LENGTH_SHORT).show();
+            Log.d("IO", e.toString());
+        }
+    }
+
+
+
+
 
     /**
      * Sends a given line of MDI. Only call after startConnection. CNC machine must be on MAN screen for MDI commands.
@@ -56,9 +174,46 @@ public class VNCConnection {
     private void sendMDI(String code) {
         if (!connected) { return; }
 
-        // TODO assuming we're on the MDI screen, click the right buttons to send a single line of G code
-        //enter, clear all, each letter/number, ok, execute
+        // Assuming we're on the INPUT PAGE
+        // click the right buttons to send a single line of G code
+
+        //execute clicking the enter bar, clear all
+        executeClick(new VNCButton(VNCButton.Button.ENTER));
+        executeClick(new VNCButton(VNCButton.Button.CLEARALL));
+
+        //break into character array
+        String newCode = code.toUpperCase();
+        char[] charArray = newCode.toCharArray();
+
+        //for every character, translate it into a VNCButton and execute the click
+        for(char c : charArray){
+            if (Character.isDigit(c)){ //if it's an integer
+                executeClick(new VNCButton(Character.digit(c, 10)));
+            } else { //otherwise use the string version
+                executeClick(new VNCButton(Character.toString(c)));
+            }
+        }
+
+        //execute enter
+        executeClick(new VNCButton(VNCButton.Button.ENTER));
+
     }
+
+
+    private void executeClick (VNCButton button){
+        //do all the clicks necessary in the coordinate list
+        for (PointF p : button.getCoordinates()) {
+            try {
+                viewer.sendPointerEvent(Math.round(p.x), Math.round(p.y), EnumSet.of(Viewer.MouseButton.MOUSE_BUTTON_LEFT), false);
+            } catch (Library.VncException e){
+                Log.d("BUTTON", "ERROR: " + e);
+            }
+            Log.d("BUTTON", "Click at (" + p.x + ", " + p.y + ")" );
+        }
+    }
+
+
+
 
     /**
      * Set up handlers and have the viewer initialize a VNC connection.
@@ -145,11 +300,11 @@ public class VNCConnection {
         tcpConnector.connect(host, port, viewer.getConnectionHandler());
     }
 
+
     public void disconnect() {
         connected = false;
 
-        if (SdkThread.getInstance().initComplete()) {
-            SdkThread.getInstance().post(new Runnable() {
+        sdk(new Runnable() {
                 @Override
                 public void run() {
                     if (viewer != null) {
@@ -165,6 +320,15 @@ public class VNCConnection {
                     }
                 }
             });
+    }
+
+    private boolean sdk(Runnable r) {
+        if (SdkThread.getInstance().initComplete()) {
+            SdkThread.getInstance().post(r);
+            return true;
+        } else {
+            Log.d("LIVE", "SDK thread not initialized, couldn't run " + r.toString());
+            return false;
         }
     }
 

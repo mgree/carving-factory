@@ -601,6 +601,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         return curTool;
     }
 
+    public Bitmap getBitmap() {return drawing; }
+
     public void setDepth(float depth) {
         curDepth = depth;
     }

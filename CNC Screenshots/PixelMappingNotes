@@ -21,3 +21,26 @@ Input Pages:
   1-9: 90 160
   a-p: 90 240
   q-z: 90 320
+
+  Typing bar: 300 75
+    color (241, 241, 241) possibly (237, 237, 237)
+
+MDI COMMAND PAGE
+  Typing bar: 300 50
+    color (254, 203, 254) possibly (253, 186, 255)
+  Middle of screen: 360 280
+    color (203, 153, 152)
+
+  Execute MDI: 320 160
+  Next: 560 450
+  Back: 380 450
+
+MAIN MAN PAGE:
+  Next: 560 453
+  Step Jog: 320 55
+  X-axis: 540 55
+  Y-axis: 540 153
+  Z-axis: 540 250
+
+SPEEDS PAGE
+  560 450
