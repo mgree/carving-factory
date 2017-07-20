@@ -107,6 +107,7 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor> {
         if (points.size() == 0) {
             return new Stroke(tool);
             }
+
         // select every everyN points from the user's input, split into X and Y components
         List<Double> selectedX = new LinkedList<>();
         List<Double> selectedY = new LinkedList<>();
@@ -238,7 +239,9 @@ public class Stroke extends Path implements Serializable, Iterable<Anchor> {
                 selectedTime.add(meanTime / newList.size());
 
             }
+
             //if the last point hasn't been added, add it
+            if (newList.size() == 0) {return new Stroke(tool); }
             if(!(newList.get(newList.size() - 1).equals(points.get(points.size() - 1)))){
                 selectedX.add((double) points.get(points.size() - 1).x);
                 selectedY.add((double) points.get(points.size() - 1).y);

@@ -10,4 +10,5 @@
     <string name="pref_tool_default">.5</string>
     <string name="half_tool">half tool</string>
     <string name="quarter_tool">quarter tool</string>
+    <string name="pref_xoffset_default">"1"</string>
 </resources>

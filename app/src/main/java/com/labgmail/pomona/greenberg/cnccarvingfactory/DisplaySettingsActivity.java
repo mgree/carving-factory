@@ -30,6 +30,7 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
     public static final String KEY_UNIT = "pref_units";
     public static final String KEY_SDEPTH = "pref_spoilB";
     public static final String KEY_TOOL = "pref_tool";
+    public static final String KEY_XOFFSET = "pref_xoffset";
 
     public static class SettingsFragment extends PreferenceFragment implements SharedPreferences.OnSharedPreferenceChangeListener {
 
@@ -47,7 +48,7 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
             mCurUnit = prefs.getString(KEY_UNIT, defaultUnit);
             findPreference(KEY_UNIT).setSummary(mCurUnit);
 
-            for (String key : new String[] { KEY_LENGTH, KEY_WIDTH, KEY_DEPTH, KEY_SDEPTH }) {
+            for (String key : new String[] { KEY_LENGTH, KEY_WIDTH, KEY_DEPTH, KEY_SDEPTH, KEY_XOFFSET }) {
                 findPreference(key).setSummary((prefs.getString(key, "0") + mCurUnit ));
             }
         }
@@ -73,6 +74,9 @@ public class DisplaySettingsActivity extends AppCompatActivity  {
                     pref.setSummary(newUnit);
                     break;
                 case KEY_TOOL:
+                    break;
+                case KEY_XOFFSET:
+                    pref.setSummary(sharedPreferences.getString(key, "0") + mCurUnit);
                     break;
                 default:
                     Log.d("PREF", String.format("unknown key %s", key));

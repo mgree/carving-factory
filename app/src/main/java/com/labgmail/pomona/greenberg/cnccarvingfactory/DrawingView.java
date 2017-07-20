@@ -74,6 +74,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     private float stockWidth = -1;
     private float stockDepth = -1;
     private float spoilDepth = -1;
+    private float xoffset = -1;
+
 
     private Tool curTool = null;
 
@@ -711,7 +713,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             PrintWriter out = new PrintWriter(new FileOutputStream(prg, false));
             GCodeGenerator gcg =
                     GCodeGenerator.singlePass(strokes,stockWidth, stockLength,
-                            stockDepth, stockUnit, cutoffRight, spoilDepth);
+                            stockDepth, stockUnit, cutoffRight, spoilDepth, xoffset);
             out.write(gcg.toString());
             out.close();
 
@@ -788,6 +790,9 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             case DisplaySettingsActivity.KEY_SDEPTH:
                 spoilDepth = Float.parseFloat(sharedPreferences.getString(key, "0"));
                 break;
+            case DisplaySettingsActivity.KEY_XOFFSET:
+                xoffset = Float.parseFloat(sharedPreferences.getString(key, "0"));
+                break;
             default:
                 Log.d("PREF", "unknown preference " + key);
         }
@@ -801,6 +806,9 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         stockWidth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_WIDTH, "-1"));
         stockDepth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_DEPTH, "-1"));
         spoilDepth = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_SDEPTH, "-1"));
+        xoffset = Float.parseFloat(prefs.getString(DisplaySettingsActivity.KEY_XOFFSET, "-1"));
+        stockUnit = prefs.getString(DisplaySettingsActivity.KEY_UNIT, "undefined");
+
     }
 
 

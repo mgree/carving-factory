@@ -1,5 +1,6 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import java.io.IOException;
@@ -14,13 +15,13 @@ import java.util.List;
  * Created by edinameshietedoho on 6/22/17.
  */
 
-public class Tool implements Serializable {
+public class Tool implements Serializable, Comparable {
 
     //TODO ADD RPMS
 
     //Includes Tool Number, Tool Diameter, Max Cut Depth, Insertion Speed, Lateral Speed, and tool name
 
-    private float diameter, cutDepth, inSpeed, latSpeed, toolLength;
+    private float diameter, cutDepth, inSpeed, latSpeed;
     private int toolNum;
     private String toolName;
 
@@ -70,4 +71,21 @@ public class Tool implements Serializable {
 
     public static final long serialVersionUID = 42L;
 
+    @Override
+    public int compareTo(@NonNull Object o) {
+        if (o instanceof Tool){
+            if (  toolNum == ((Tool) o).toolNum &&
+                    diameter == ((Tool) o).diameter &&
+                    cutDepth == ((Tool) o).cutDepth &&
+                    inSpeed == ((Tool) o).inSpeed &&
+                    latSpeed == ((Tool) o).latSpeed &&
+                    toolName.equals(((Tool) o).toolName)){
+                return 0;
+            } else {
+                return -1;
+            }
+        } else {
+            throw new IllegalArgumentException("Object must be a Tool");
+        }
+    }
 }
