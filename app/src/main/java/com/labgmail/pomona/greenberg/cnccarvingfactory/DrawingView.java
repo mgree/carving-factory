@@ -649,7 +649,23 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
     }
 
+    //Calling exportGCode without a filename will make it default to the date/dimensions format
     public void exportGCode() {
+        // compute the filename
+        StringBuilder filename = new StringBuilder();
+        CharSequence timestamp = DateFormat.format("yyyy-MM-ddThh:mm:ss", new Date());
+        filename.append(timestamp);
+        filename.append("_");
+        filename.append(Float.toString(stockWidth));
+        filename.append("x");
+        filename.append(Float.toString(stockLength));
+        filename.append(".txt"); // TODO: change back to prg (associate prg w/ text?)
+
+        exportGCode(filename.toString());
+    }
+
+    //Export Gcode with a filename will save the file as that
+    public void exportGCode(String filename) {
         //If you hit this in the middle of a controller stroke, save that stroke before you export
         if (nowDrawing) {
             saveStroke();
@@ -659,16 +675,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         try {
             dir.mkdirs();
-
-            // compute the filename
-            StringBuilder filename = new StringBuilder();
-            CharSequence timestamp = DateFormat.format("yyyy-MM-ddThh:mm:ss", new Date());
-            filename.append(timestamp);
-            filename.append("_");
-            filename.append(Float.toString(stockWidth));
-            filename.append("x");
-            filename.append(Float.toString(stockLength));
-            filename.append(".txt"); // TODO: change back to prg (associate prg w/ text?)
 
             File prg = new File(dir, filename.toString());
             if (!prg.createNewFile()) {

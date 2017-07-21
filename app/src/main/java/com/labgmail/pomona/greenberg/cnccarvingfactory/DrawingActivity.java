@@ -3,15 +3,12 @@ package com.labgmail.pomona.greenberg.cnccarvingfactory;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.graphics.Canvas;
-import android.graphics.Color;
 import android.hardware.input.InputManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -26,27 +23,26 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
-import android.view.InputDevice;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 
-import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Button;
-import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import org.apache.commons.net.ftp.FTP;
+import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPReply;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 
-import java.io.PrintWriter;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -80,9 +76,9 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
     public List<Tool> tools = new LinkedList<>();
     private InputManager mInputManager;
 
-    private MyFTPClient ftpclient = null;
     private ProgressDialog pd;
-    private String[] fileList;
+    private FTPClient mFTPClient = null;
+
 
     private static final String TAG = "FTP";
     private static final String defaultHost = "192.168.0.100";
@@ -91,6 +87,9 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
     private static final String defaultPassword = "c";
     private static final String defaultDirectory = "F://";
     private static final String defaultFilename = "file";
+
+    private String host, port, username, password, directory, filename;
+
 
 
     private final Runnable mHidePart2Runnable = new Runnable() {
@@ -149,26 +148,6 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
     };
 
 
-    //Handler to deal with FTP Connection messages
-    private Handler handler = new Handler() {
-        public void handleMessage(android.os.Message msg) {
-            if (pd != null && pd.isShowing()) { pd.dismiss(); }
-            if (msg.what == 0) { getFTPFileList(); }
-            else if (msg.what == 1) { showCustomDialog(fileList); }
-            else if (msg.what == 2) {
-                Toast.makeText(DrawingActivity.this, "Uploaded Successfully!",
-                        Toast.LENGTH_LONG).show();
-            } else if (msg.what == 3) {
-                Toast.makeText(DrawingActivity.this, "Disconnected Successfully!",
-                        Toast.LENGTH_LONG).show();
-            } else {
-                Toast.makeText(DrawingActivity.this, "Unable to Perform Action!",
-                        Toast.LENGTH_LONG).show();
-            }
-        }
-    };
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -185,13 +164,11 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
         prefs.registerOnSharedPreferenceChangeListener(mContentView);
         mContentView.initializeStockDimensions(prefs);
 
-        initializeTools();
-
-        ftpclient = new MyFTPClient();
-
-        // tools proper
+        //Set up layout and reference to self
         LinearLayout ll = (LinearLayout) findViewById(R.id.fullscreen_controls);
         final Activity self = this;
+
+        initializeTools();
 
         //Add a button for each tool
         for (int i = 0; i < tools.size(); i++) {
@@ -265,77 +242,55 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
             @Override
             public void onClick(View v) {
                 LayoutInflater li = LayoutInflater.from(self);
-                View ftpLayout = li.inflate(R.layout.ftp_dialog, null);
+                final View ftpLayout = li.inflate(R.layout.ftp_dialog, null);
                 AlertDialog.Builder builder = new AlertDialog.Builder(self);
                 builder.setView(ftpLayout);
                 builder.setCancelable(true);
                 builder.setMessage("Save to Remote File System, enter the following:");
 
-                final EditText hostET = (EditText) ftpLayout.findViewById(R.id.host);
-                final EditText portET = (EditText) ftpLayout.findViewById(R.id.port);
-                final EditText usernameET = (EditText) ftpLayout.findViewById(R.id.username);
-                final EditText passwordET = (EditText) ftpLayout.findViewById(R.id.password);
-                final TextView directoryET = (TextView) ftpLayout.findViewById(R.id.directory);
-                final TextView filenameET = (TextView) ftpLayout.findViewById(R.id.filename);
-
                 builder.setPositiveButton("UPLOAD", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-
-                        //get all inputs
-                        String host = hostET.getText().toString().trim();
-                        String port = portET.getText().toString().trim();
-                        String username = usernameET.getText().toString().trim();
-                        String password = passwordET.getText().toString().trim();
-                        String directory = directoryET.getText().toString().trim();
-                        String filename = filenameET.getText().toString().trim();
-
-                        //If nothing was inputted, use the default values
-                        if (host.equals("")) { host = defaultHost; }
-                        if (port.equals("")) { port = defaultPort; }
-                        if (password.equals("")) { password = defaultPassword; }
-                        if (username.equals("")) { username = defaultUsername; }
-                        if (directory.equals("")) { directory = defaultDirectory; }
-                        if (filename.equals("")) { filename = defaultFilename; }
+                        //get all the fields from the dialog and set them
+                        setCredentials(ftpLayout, true);
 
                         final String theFilename = filename + ".prg";
+                        final String theDirectory = directory;
 
                         //try to connect
-                        if (isOnline(DrawingActivity.this)) {
-                            connectToFTPAddress(host, port, username, password);
+                        if (isOnline(self)) {
+                            ftpConnect(host, port, username, password, self);
                         } else {
-                            Toast.makeText(DrawingActivity.this,
-                                    "Please check your internet connection!",
-                                    Toast.LENGTH_LONG).show();
+                            Toast.makeText(self, "Couldn't connect. Please check your internet connection!", Toast.LENGTH_SHORT).show();
+                            return;
                         }
+
+                        // Generate the file & save the directory it's in
+                        mContentView.exportGCode(theFilename);
+                        final File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
+
                         //upload the file
-                        pd = ProgressDialog.show(DrawingActivity.this, "", "Uploading...", true, false);
+                        pd = ProgressDialog.show(self, "", "Uploading...", true, false);
                         new Thread(new Runnable() {
                             public void run() {
-                                boolean status = false;
-                                status = ftpclient.ftpUpload(Environment.getExternalStorageDirectory()
-                                                + "/TAGFtp/" + theFilename, theFilename, "/", self);
-                                if (status == true) {
-                                    Log.d(TAG, "Upload success");
-                                    handler.sendEmptyMessage(2);
+                                boolean status = ftpUpload(dir.getPath(), theFilename); //DO WE WANT TO PUT IN THE DIRECTORY HERE???
+                                if (status) {
+                                    ftpMessage("Uploaded Successfully!", self);
                                 } else {
-                                    Log.d(TAG, "Upload failed");
-                                    handler.sendEmptyMessage(-1);
+                                    ftpMessage("Upload failed", self);
                                 }
                             }
                         }).start();
 
                         //disconnect
-                        pd = ProgressDialog.show(DrawingActivity.this, "", "Disconnecting...", true, false);
-
+                        pd = ProgressDialog.show(self, "", "Disconnecting...", true, false);
                         new Thread(new Runnable() {
                             public void run() {
-                                ftpclient.ftpDisconnect();
-                                handler.sendEmptyMessage(3);
+                                ftpDisconnect();
+                                ftpMessage("Disconnected Successfully!", self);
                             }
                         }).start();
 
-                        Toast.makeText(DrawingActivity.this, "Gcode saved and uploaded", Toast.LENGTH_SHORT).show();
                     }
                 });
                 builder.setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
@@ -354,32 +309,18 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
             @Override
             public void onClick(View v) {
                 LayoutInflater li = LayoutInflater.from(self);
-                View ftpLayout = li.inflate(R.layout.live_dialog, null);
+                final View liveLayout = li.inflate(R.layout.live_dialog, null);
                 AlertDialog.Builder builder = new AlertDialog.Builder(self);
-                builder.setView(ftpLayout);
+                builder.setView(liveLayout);
                 builder.setCancelable(true);
                 builder.setMessage("Entering Live Mode, enter the following:");
-
-                final EditText hostET = (EditText) ftpLayout.findViewById(R.id.host);
-                final EditText portET = (EditText) ftpLayout.findViewById(R.id.port);
-                final EditText usernameET = (EditText) ftpLayout.findViewById(R.id.username);
-                final EditText passwordET = (EditText) ftpLayout.findViewById(R.id.password);
 
                 builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
+                        setCredentials(liveLayout, false);
+                        //use the values to set up live mode here
 
-                        String host = hostET.getText().toString().trim();
-                        String port = portET.getText().toString().trim();
-                        String username = usernameET.getText().toString().trim();
-                        String password = passwordET.getText().toString().trim();
-
-                        if (host.equals("")) { host = defaultHost; }
-                        if (port.equals("")) { port = defaultPort; }
-                        if (password.equals("")) { password = defaultPassword; }
-                        if (username.equals("")) { username = defaultUsername; }
-
-                        //USE THESE VALUES TO SET UP LIVE MODE
                         dialog.cancel();
                         Toast.makeText(self, "Sorry! Live mode is under construction!", Toast.LENGTH_SHORT).show();
 
@@ -397,34 +338,73 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
 
     }
 
-    private void connectToFTPAddress(final String host, final String port, final String username, final String password) {
-        pd = ProgressDialog.show(DrawingActivity.this, "", "Connecting...", true, false);
+    private void ftpConnect(final String host, final String port, final String username, final String password, final Activity self) {
+        pd = ProgressDialog.show(self, "", "Connecting...", true, false);
 
         new Thread(new Runnable() {
             public void run() {
-                boolean status = ftpclient.ftpConnect(host, Integer.parseInt(port), username, password);
+                boolean status = false;
+                try {
+                    mFTPClient = new FTPClient();
+                    mFTPClient.connect(host, Integer.parseInt(port));
+
+                    // now check the reply code, if positive mean connection success
+                    if (FTPReply.isPositiveCompletion(mFTPClient.getReplyCode())) {
+                        status = mFTPClient.login(username, password);
+                        mFTPClient.setFileType(FTP.ASCII_FILE_TYPE);
+                        mFTPClient.enterLocalPassiveMode();
+                    }
+                } catch (Exception e) {
+                    Log.d(TAG, "Error: could not connect to host " + host);
+                }
+
                 if (status) {
-                    Log.d(TAG, "Connection Success");
-                    handler.sendEmptyMessage(0);
+                    ftpMessage("Connection success", self);
                 } else {
-                    Log.d(TAG, "Connection failed");
-                    handler.sendEmptyMessage(-1);
+                    ftpMessage("Connection failed", self);
                 }
             }
         }).start();
     }
 
-    private void getFTPFileList() {
-        pd = ProgressDialog.show(DrawingActivity.this, "", "Getting Files...",
-                true, false);
+    public boolean ftpDisconnect() {
+        if (mFTPClient == null) {
+            Log.d(TAG, "The FTPClient is null. Check you've connected before you try to disconnect");
+            return false;
+        }
+        try {
+            mFTPClient.logout();
+            mFTPClient.disconnect();
+            return true;
+        } catch (Exception e) {
+            Log.d(TAG, "Error occurred while disconnecting from ftp server.");
+        }
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                fileList = ftpclient.ftpPrintFilesList("/");
-                handler.sendEmptyMessage(1);
-            }
-        }).start();
+        return false;
+    }
+
+    public boolean ftpUpload(String srcFilePath, String desFileName) {
+        if (mFTPClient == null) {
+            Log.d(TAG, "The FTPClient is null. Check you've connected before you try to upload");
+            return false;
+        }
+        boolean status = false;
+        try {
+            FileInputStream srcFileStream = new FileInputStream(srcFilePath);
+            status = mFTPClient.storeFile(desFileName, srcFileStream);
+            srcFileStream.close();
+            return status;
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.d(TAG, "upload failed: " + e);
+        }
+        return status;
+    }
+
+    private void ftpMessage (String msg, Activity self){
+        Log.d(TAG, msg);
+        if (pd != null && pd.isShowing()) { pd.dismiss(); }
+        Toast.makeText(self, msg, Toast.LENGTH_SHORT).show();
     }
 
     private boolean isOnline(Context context) {
@@ -437,38 +417,35 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
         return false;
     }
 
-    private void showCustomDialog(String[] fileList) {
-        // custom dialog
-        final Dialog dialog = new Dialog(DrawingActivity.this);
-        dialog.setContentView(R.layout.custom);
-        dialog.setTitle("/ Directory File List");
+    private void setCredentials(View ftpLayout, boolean ftpMode){
+        //get the edit texts
+        final EditText hostET = (EditText) ftpLayout.findViewById(R.id.host);
+        final EditText portET = (EditText) ftpLayout.findViewById(R.id.port);
+        final EditText usernameET = (EditText) ftpLayout.findViewById(R.id.username);
+        final EditText passwordET = (EditText) ftpLayout.findViewById(R.id.password);
 
-        TextView tvHeading = (TextView) dialog.findViewById(R.id.tvListHeading);
-        tvHeading.setText(":: File List ::");
+        //get inputs
+        host = hostET.getText().toString().trim();
+        port = portET.getText().toString().trim();
+        username = usernameET.getText().toString().trim();
+        password = passwordET.getText().toString().trim();
 
-        if (fileList != null && fileList.length > 0) {
-            ListView listView = (ListView) dialog
-                    .findViewById(R.id.lstItemList);
-            ArrayAdapter<String> fileListAdapter = new ArrayAdapter<String>(
-                    this, android.R.layout.simple_list_item_1, fileList);
-            listView.setAdapter(fileListAdapter);
-        } else {
-            tvHeading.setText(":: No Files ::");
+        //If nothing was inputted, use the default values
+        if (host.equals("")) { host = defaultHost; }
+        if (port.equals("")) { port = defaultPort; }
+        if (password.equals("")) { password = defaultPassword; }
+        if (username.equals("")) { username = defaultUsername; }
+
+        //Deal with the case of live mode (which doesn't take a filename and directory)
+        if (ftpMode) {
+            final TextView directoryET = (TextView) ftpLayout.findViewById(R.id.directory);
+            final TextView filenameET = (TextView) ftpLayout.findViewById(R.id.filename);
+            directory = directoryET.getText().toString().trim();
+            filename = filenameET.getText().toString().trim();
+            if (directory.equals("")) { directory = defaultDirectory; }
+            if (filename.equals("")) { filename = defaultFilename; }
         }
-
-        Button dialogButton = (Button) dialog.findViewById(R.id.btnOK);
-        // if button is clicked, close the custom dialog
-        dialogButton.setOnClickListener(new View.OnClickListener() { //I SWITCHED THIS TO VIEW. HERE AND HAVE NO IDEA IF THAT'S RIGHT
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-            }
-        });
-
-        dialog.show();
     }
-    //END OF FOREIGN CODE
-
 
 
     @Override
@@ -534,8 +511,6 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
         // are available.
         delayedHide(100);
     }
-
-    // TODO: not possible to show system bars without drawing
 
     private void hide() {
         // Hide UI first
