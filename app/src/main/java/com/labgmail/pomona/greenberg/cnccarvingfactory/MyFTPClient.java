@@ -19,14 +19,11 @@ import android.util.Log;
 
 public class MyFTPClient {
 
-    // Now, declare a public FTP client object.
-
     private static final String TAG = "MyFTPClientFunctions";
     public FTPClient mFTPClient = null;
 
     // Method to connect to FTP server:
-    public boolean ftpConnect(String host, String username, String password,
-                              int port) {
+    public boolean ftpConnect(String host, int port, String username, String password) {
         try {
             mFTPClient = new FTPClient();
             // connecting to the host

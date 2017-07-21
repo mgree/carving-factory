@@ -27,6 +27,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.InputDevice;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -82,8 +83,14 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
     private MyFTPClient ftpclient = null;
     private ProgressDialog pd;
     private String[] fileList;
+
     private static final String TAG = "FTP";
-    private static final String TEMP_FILENAME = "tempfilename";
+    private static final String defaultHost = "192.168.0.100";
+    private static final String defaultPort = "5900";
+    private static final String defaultUsername = "";
+    private static final String defaultPassword = "c";
+    private static final String defaultDirectory = "F://";
+    private static final String defaultFilename = "file";
 
 
     private final Runnable mHidePart2Runnable = new Runnable() {
@@ -142,18 +149,13 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
     };
 
 
+    //Handler to deal with FTP Connection messages
     private Handler handler = new Handler() {
-
         public void handleMessage(android.os.Message msg) {
-
-            if (pd != null && pd.isShowing()) {
-                pd.dismiss();
-            }
-            if (msg.what == 0) {
-                getFTPFileList();
-            } else if (msg.what == 1) {
-                showCustomDialog(fileList);
-            } else if (msg.what == 2) {
+            if (pd != null && pd.isShowing()) { pd.dismiss(); }
+            if (msg.what == 0) { getFTPFileList(); }
+            else if (msg.what == 1) { showCustomDialog(fileList); }
+            else if (msg.what == 2) {
                 Toast.makeText(DrawingActivity.this, "Uploaded Successfully!",
                         Toast.LENGTH_LONG).show();
             } else if (msg.what == 3) {
@@ -163,9 +165,7 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
                 Toast.makeText(DrawingActivity.this, "Unable to Perform Action!",
                         Toast.LENGTH_LONG).show();
             }
-
         }
-
     };
 
 
@@ -187,8 +187,11 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
 
         initializeTools();
 
+        ftpclient = new MyFTPClient();
+
         // tools proper
         LinearLayout ll = (LinearLayout) findViewById(R.id.fullscreen_controls);
+        final Activity self = this;
 
         //Add a button for each tool
         for (int i = 0; i < tools.size(); i++) {
@@ -210,6 +213,7 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
         }
 
         // TOOLBAR SETUP
+        //Set up depth swatch to respond to the user. Default to blakc
         DepthSwatch swatch = (DepthSwatch) findViewById(R.id.depth_swatch);
         swatch.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -219,50 +223,29 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
             }
         });
         swatch.setDepth(1.0f);
-
         mContentView.setDepthSwatch(swatch);
 
-        findViewById(R.id.undo_button).setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                mContentView.undo();
-                hide();
-            }
-        });
+        //Create the clear button
         findViewById(R.id.clear_button).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 mContentView.clear();
             }
         });
 
-
-        findViewById(R.id.live_button).setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(DrawingActivity.this);
-                builder.setView(R.layout.live_dialog);
-
-                builder.setCancelable(true);
-                builder.setMessage("Entering Live Mode, enter the following:");
-                builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-
-                    }
-                });
-                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                    }
-                });
-                builder.show();
-            }
-
+        //Create the undo button
+        findViewById(R.id.undo_button).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) { mContentView.undo(); hide(); }
         });
 
-        // SETUP SAVE BUTTON
-        final Activity self = this;
+        //Create settings button
+        findViewById(R.id.settings_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(self, DisplaySettingsActivity.class));
+            }
+        });
+
+        // Create save button
         findViewById(R.id.save_button).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 if (ContextCompat.checkSelfPermission(self, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
@@ -275,40 +258,51 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
             }
         });
 
-        // SETTINGS BUTTON
-        findViewById(R.id.settings_button).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(self, DisplaySettingsActivity.class));
-            }
-        });
 
-
-        //NEW CODE
+        //Create the FTP upload button
         //Hitting upload should login in with the credentials taken from the dialog, upload, then disconnect
         findViewById(R.id.ftp_button).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(DrawingActivity.this);
-                builder.setView(R.layout.ftp_dialog);
+                LayoutInflater li = LayoutInflater.from(self);
+                View ftpLayout = li.inflate(R.layout.ftp_dialog, null);
+                AlertDialog.Builder builder = new AlertDialog.Builder(self);
+                builder.setView(ftpLayout);
                 builder.setCancelable(true);
                 builder.setMessage("Save to Remote File System, enter the following:");
+
+                final EditText hostET = (EditText) ftpLayout.findViewById(R.id.host);
+                final EditText portET = (EditText) ftpLayout.findViewById(R.id.port);
+                final EditText usernameET = (EditText) ftpLayout.findViewById(R.id.username);
+                final EditText passwordET = (EditText) ftpLayout.findViewById(R.id.password);
+                final TextView directoryET = (TextView) ftpLayout.findViewById(R.id.directory);
+                final TextView filenameET = (TextView) ftpLayout.findViewById(R.id.filename);
+
                 builder.setPositiveButton("UPLOAD", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
 
-//                        final String host = edtHostName.getText().toString().trim();
-//                        final String username = edtUserName.getText().toString().trim();
-//                        final String password = edtPassword.getText().toString().trim();
+                        //get all inputs
+                        String host = hostET.getText().toString().trim();
+                        String port = portET.getText().toString().trim();
+                        String username = usernameET.getText().toString().trim();
+                        String password = passwordET.getText().toString().trim();
+                        String directory = directoryET.getText().toString().trim();
+                        String filename = filenameET.getText().toString().trim();
 
-                        final String host = "192.168.0.100";
-                        final String username = "";
-                        final String password = "c";
+                        //If nothing was inputted, use the default values
+                        if (host.equals("")) { host = defaultHost; }
+                        if (port.equals("")) { port = defaultPort; }
+                        if (password.equals("")) { password = defaultPassword; }
+                        if (username.equals("")) { username = defaultUsername; }
+                        if (directory.equals("")) { directory = defaultDirectory; }
+                        if (filename.equals("")) { filename = defaultFilename; }
 
+                        final String theFilename = filename + ".prg";
 
                         //try to connect
                         if (isOnline(DrawingActivity.this)) {
-                            connectToFTPAddress(host, username, password);
+                            connectToFTPAddress(host, port, username, password);
                         } else {
                             Toast.makeText(DrawingActivity.this,
                                     "Please check your internet connection!",
@@ -319,10 +313,8 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
                         new Thread(new Runnable() {
                             public void run() {
                                 boolean status = false;
-                                status = ftpclient.ftpUpload(
-                                        Environment.getExternalStorageDirectory()
-                                                + "/TAGFtp/" + TEMP_FILENAME,
-                                        TEMP_FILENAME, "/", mContentView.getContext());
+                                status = ftpclient.ftpUpload(Environment.getExternalStorageDirectory()
+                                                + "/TAGFtp/" + theFilename, theFilename, "/", self);
                                 if (status == true) {
                                     Log.d(TAG, "Upload success");
                                     handler.sendEmptyMessage(2);
@@ -332,7 +324,6 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
                                 }
                             }
                         }).start();
-
 
                         //disconnect
                         pd = ProgressDialog.show(DrawingActivity.this, "", "Disconnecting...", true, false);
@@ -344,8 +335,7 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
                             }
                         }).start();
 
-
-                        Toast.makeText(mContentView.getContext(), "Gcode saved and uploaded", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(DrawingActivity.this, "Gcode saved and uploaded", Toast.LENGTH_SHORT).show();
                     }
                 });
                 builder.setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
@@ -359,20 +349,61 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
         });
 
 
-        //MAKE A NEW FTPCLIENT
-        ftpclient = new MyFTPClient();
+        //Create the live button and set up the dialog to accept input
+        findViewById(R.id.live_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                LayoutInflater li = LayoutInflater.from(self);
+                View ftpLayout = li.inflate(R.layout.live_dialog, null);
+                AlertDialog.Builder builder = new AlertDialog.Builder(self);
+                builder.setView(ftpLayout);
+                builder.setCancelable(true);
+                builder.setMessage("Entering Live Mode, enter the following:");
+
+                final EditText hostET = (EditText) ftpLayout.findViewById(R.id.host);
+                final EditText portET = (EditText) ftpLayout.findViewById(R.id.port);
+                final EditText usernameET = (EditText) ftpLayout.findViewById(R.id.username);
+                final EditText passwordET = (EditText) ftpLayout.findViewById(R.id.password);
+
+                builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+
+                        String host = hostET.getText().toString().trim();
+                        String port = portET.getText().toString().trim();
+                        String username = usernameET.getText().toString().trim();
+                        String password = passwordET.getText().toString().trim();
+
+                        if (host.equals("")) { host = defaultHost; }
+                        if (port.equals("")) { port = defaultPort; }
+                        if (password.equals("")) { password = defaultPassword; }
+                        if (username.equals("")) { username = defaultUsername; }
+
+                        //USE THESE VALUES TO SET UP LIVE MODE
+                        dialog.cancel();
+                        Toast.makeText(self, "Sorry! Live mode is under construction!", Toast.LENGTH_SHORT).show();
+
+                    }
+                });
+                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+                builder.show();
+            }
+        });
 
     }
 
-
-    private void connectToFTPAddress(final String host, final String username, final String password) {
+    private void connectToFTPAddress(final String host, final String port, final String username, final String password) {
         pd = ProgressDialog.show(DrawingActivity.this, "", "Connecting...", true, false);
 
         new Thread(new Runnable() {
             public void run() {
-                boolean status = false;
-                status = ftpclient.ftpConnect(host, username, password, 21);
-                if (status == true) {
+                boolean status = ftpclient.ftpConnect(host, Integer.parseInt(port), username, password);
+                if (status) {
                     Log.d(TAG, "Connection Success");
                     handler.sendEmptyMessage(0);
                 } else {
@@ -381,7 +412,6 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
                 }
             }
         }).start();
-
     }
 
     private void getFTPFileList() {
@@ -558,5 +588,4 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
     @Override
     public void onInputDeviceChanged(int deviceId) {
     }
-
 }

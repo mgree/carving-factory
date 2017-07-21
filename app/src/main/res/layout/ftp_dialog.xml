@@ -143,7 +143,7 @@
             android:layout_centerVertical="true"
             android:layout_alignBottom="@id/tFilename"
             android:layout_marginStart="5dp"
-            android:text="PASSWORD:"
+            android:text="FILENAME:"
             android:textSize="20dp"/>
         <EditText
             android:id="@+id/filename"
