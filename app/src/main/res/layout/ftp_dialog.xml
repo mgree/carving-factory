@@ -2,6 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent">
+
 <RelativeLayout
     android:layout_width="wrap_content"
     android:layout_height="wrap_content">
@@ -22,12 +23,25 @@
         android:layout_marginBottom="4dp"
         android:layout_marginLeft="4dp"
         android:layout_marginRight="4dp"
-        android:layout_marginTop="16dp"
-        android:paddingStart="60dp"
+        android:layout_marginTop="4dp"
+        android:paddingStart="65dp"
         android:hint="192.168.0.100"
         android:inputType="textNoSuggestions" />
 </RelativeLayout>
 
+<RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+    <TextView
+        android:id="@+id/tPort"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_alignBottom="@id/tPort"
+        android:layout_marginStart="5dp"
+        android:text="PORT:"
+        android:textSize="20dp"/>
     <EditText
         android:id="@+id/port"
         android:layout_width="match_parent"
@@ -35,50 +49,123 @@
         android:layout_marginBottom="4dp"
         android:layout_marginLeft="4dp"
         android:layout_marginRight="4dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="4dp"
+        android:paddingStart="65dp"
         android:hint="5900"
         android:inputType="textNoSuggestions" />
-    <EditText
-        android:id="@+id/username"
-        android:inputType="textNoSuggestions"
-        android:layout_marginTop="16dp"
-        android:layout_marginLeft="4dp"
-        android:layout_marginRight="4dp"
-        android:layout_marginBottom="4dp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint=""
-        />
-    <EditText
-        android:id="@+id/password"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:layout_marginLeft="4dp"
-        android:layout_marginRight="4dp"
-        android:layout_marginBottom="4dp"
-        android:hint="c"
-        />
+</RelativeLayout>
 
-    <EditText
-        android:id="@+id/directory"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="4dp"
-        android:layout_marginLeft="4dp"
-        android:layout_marginRight="4dp"
-        android:layout_marginTop="16dp"
-        android:hint="directory"
-        android:inputType="textNoSuggestions" />
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
 
-    <EditText
-        android:id="@+id/filename"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="4dp"
-        android:layout_marginLeft="4dp"
-        android:layout_marginRight="4dp"
-        android:layout_marginTop="16dp"
-        android:hint="file name"
-        android:inputType="textNoSuggestions" />
+        <TextView
+            android:id="@+id/tUserName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_alignBottom="@id/tUserName"
+            android:layout_marginStart="5dp"
+            android:text="USERNAME:"
+            android:textSize="20dp"/>
+        <EditText
+            android:id="@+id/username"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"
+            android:layout_marginLeft="4dp"
+            android:layout_marginRight="4dp"
+            android:layout_marginTop="4dp"
+            android:paddingStart="120dp"
+            android:hint=""
+            android:inputType="textNoSuggestions" />
+    </RelativeLayout>
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/tPassword"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_alignBottom="@id/tPassword"
+            android:layout_marginStart="5dp"
+            android:text="PASSWORD:"
+            android:textSize="20dp"/>
+        <EditText
+            android:id="@+id/password"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"
+            android:layout_marginLeft="4dp"
+            android:layout_marginRight="4dp"
+            android:layout_marginTop="4dp"
+            android:paddingStart="120dp"
+            android:hint="c"
+            android:inputType="textNoSuggestions" />
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/tDirectory"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_alignBottom="@id/tDirectory"
+            android:layout_marginStart="5dp"
+            android:text="DIRECTORY:"
+            android:textSize="20dp"/>
+        <EditText
+            android:id="@+id/directory"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"
+            android:layout_marginLeft="4dp"
+            android:layout_marginRight="4dp"
+            android:layout_marginTop="4dp"
+            android:paddingStart="120dp"
+            android:hint="F://"
+            android:inputType="textNoSuggestions" />
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/tFilename"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_alignBottom="@id/tFilename"
+            android:layout_marginStart="5dp"
+            android:text="PASSWORD:"
+            android:textSize="20dp"/>
+        <EditText
+            android:id="@+id/filename"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"
+            android:layout_marginLeft="4dp"
+            android:layout_marginRight="4dp"
+            android:layout_marginTop="4dp"
+            android:paddingStart="120dp"
+            android:hint=""
+            android:inputType="textNoSuggestions" />
+        <TextView
+            android:id="@+id/tSuffix"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_alignBottom="@id/tFilename"
+            android:layout_marginStart="5dp"
+            android:text=".prg"
+            android:textSize="20dp"
+            android:paddingStart="475dp"/>
+
+    </RelativeLayout>
 </LinearLayout>

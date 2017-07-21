@@ -3,12 +3,18 @@ package com.labgmail.pomona.greenberg.cnccarvingfactory;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.hardware.input.InputManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
@@ -24,8 +30,12 @@ import android.view.InputDevice;
 import android.view.MotionEvent;
 import android.view.View;
 
+import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Button;
+import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
@@ -69,6 +79,11 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
     public List<Tool> tools = new LinkedList<>();
     private InputManager mInputManager;
 
+    private MyFTPClient ftpclient = null;
+    private ProgressDialog pd;
+    private String[] fileList;
+    private static final String TAG = "FTP";
+    private static final String TEMP_FILENAME = "tempfilename";
 
 
     private final Runnable mHidePart2Runnable = new Runnable() {
@@ -80,12 +95,14 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
             // Note that some of these constants are new as of API 16 (Jelly Bean)
             // and API 19 (KitKat). It is safe to use them, as they are inlined
             // at compile-time and do nothing on earlier devices.
-            mContentView.setSystemUiVisibility( View.SYSTEM_UI_FLAG_FULLSCREEN
+            mContentView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN
                     | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                     | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                     | SYSTEM_UI_FLAG_HIDE_NAVIGATION);
         }
     };
+
+
     private View mControlsView;
     private final Runnable mShowPart2Runnable = new Runnable() {
         @Override
@@ -94,9 +111,8 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
             ActionBar actionBar = getSupportActionBar();
             if (!mContentView.getDrawingState()) {
                 actionBar.show();
-            }
-            else if (mContentView.getDrawingState()) {
-                mContentView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN | SYSTEM_UI_FLAG_HIDE_NAVIGATION );
+            } else if (mContentView.getDrawingState()) {
+                mContentView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN | SYSTEM_UI_FLAG_HIDE_NAVIGATION);
             }
             mControlsView.setVisibility(View.VISIBLE);
 
@@ -118,14 +134,39 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
         public boolean onTouch(View view, MotionEvent motionEvent) {
             if (AUTO_HIDE) {
                 delayedHide(AUTO_HIDE_DELAY_MILLIS);
-            }
-            else if (mContentView.getDrawingState()) {
-                mContentView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN | SYSTEM_UI_FLAG_HIDE_NAVIGATION );
+            } else if (mContentView.getDrawingState()) {
+                mContentView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN | SYSTEM_UI_FLAG_HIDE_NAVIGATION);
             }
             return false;
         }
     };
 
+
+    private Handler handler = new Handler() {
+
+        public void handleMessage(android.os.Message msg) {
+
+            if (pd != null && pd.isShowing()) {
+                pd.dismiss();
+            }
+            if (msg.what == 0) {
+                getFTPFileList();
+            } else if (msg.what == 1) {
+                showCustomDialog(fileList);
+            } else if (msg.what == 2) {
+                Toast.makeText(DrawingActivity.this, "Uploaded Successfully!",
+                        Toast.LENGTH_LONG).show();
+            } else if (msg.what == 3) {
+                Toast.makeText(DrawingActivity.this, "Disconnected Successfully!",
+                        Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(DrawingActivity.this, "Unable to Perform Action!",
+                        Toast.LENGTH_LONG).show();
+            }
+
+        }
+
+    };
 
 
     @Override
@@ -161,11 +202,11 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
                 public void onClick(View v) {
                     Tool theTool = tools.get(index);
                     mContentView.setTool(theTool);
-                    Toast.makeText(v.getContext(),"Selected Tool: " + theTool.getToolName() + " (" +
+                    Toast.makeText(v.getContext(), "Selected Tool: " + theTool.getToolName() + " (" +
                             theTool.getDiameter() + ") ", Toast.LENGTH_SHORT).show();
                 }
             });
-            ll.addView(toolButton,160,200);
+            ll.addView(toolButton, 160, 200);
         }
 
         // TOOLBAR SETUP
@@ -174,7 +215,7 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
             @Override
             public void onClick(View v) {
                 mContentView.setDepth(((DepthSwatch) v).getDepthSelected());
-                Toast.makeText(v.getContext(),"Cutting Depth: " + ((DepthSwatch) v).getDepthSelected()*mContentView.getTool().getMaxCutDepth(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(v.getContext(), "Cutting Depth: " + ((DepthSwatch) v).getDepthSelected() * mContentView.getTool().getMaxCutDepth(), Toast.LENGTH_SHORT).show();
             }
         });
         swatch.setDepth(1.0f);
@@ -184,7 +225,8 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
         findViewById(R.id.undo_button).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 mContentView.undo();
-                hide(); }
+                hide();
+            }
         });
         findViewById(R.id.clear_button).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -192,12 +234,8 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
             }
         });
 
-        findViewById(R.id.live_button).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) { mContentView.startLive(); }
-        });
 
-        findViewById(R.id.dButton).setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.live_button).setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
@@ -223,38 +261,6 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
 
         });
 
-        findViewById(R.id.ftp_button).setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(DrawingActivity.this);
-                builder.setView(R.layout.ftp_dialog);
-
-                builder.setCancelable(true);
-                builder.setMessage("Entering Live Mode, enter the following:");
-                builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-
-                    }
-                });
-                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                    }
-                });
-                builder.show();
-            }
-
-        });
-
-
-        // FULLSCREEN SETUP
-        // Upon interacting with UI controls, delay any scheduled hide()
-        // operations to prevent the jarring behavior of controls going away
-        // while interacting with the UI.
-
         // SETUP SAVE BUTTON
         final Activity self = this;
         findViewById(R.id.save_button).setOnClickListener(new View.OnClickListener() {
@@ -264,7 +270,7 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
                     mContentView.exportImage();
                 } else {
                     pendingSave = true;
-                    ActivityCompat.requestPermissions(self, new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
+                    ActivityCompat.requestPermissions(self, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
                 }
             }
         });
@@ -276,13 +282,169 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
                 startActivity(new Intent(self, DisplaySettingsActivity.class));
             }
         });
-        
+
+
+        //NEW CODE
+        //Hitting upload should login in with the credentials taken from the dialog, upload, then disconnect
+        findViewById(R.id.ftp_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(DrawingActivity.this);
+                builder.setView(R.layout.ftp_dialog);
+                builder.setCancelable(true);
+                builder.setMessage("Save to Remote File System, enter the following:");
+                builder.setPositiveButton("UPLOAD", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+
+//                        final String host = edtHostName.getText().toString().trim();
+//                        final String username = edtUserName.getText().toString().trim();
+//                        final String password = edtPassword.getText().toString().trim();
+
+                        final String host = "192.168.0.100";
+                        final String username = "";
+                        final String password = "c";
+
+
+                        //try to connect
+                        if (isOnline(DrawingActivity.this)) {
+                            connectToFTPAddress(host, username, password);
+                        } else {
+                            Toast.makeText(DrawingActivity.this,
+                                    "Please check your internet connection!",
+                                    Toast.LENGTH_LONG).show();
+                        }
+                        //upload the file
+                        pd = ProgressDialog.show(DrawingActivity.this, "", "Uploading...", true, false);
+                        new Thread(new Runnable() {
+                            public void run() {
+                                boolean status = false;
+                                status = ftpclient.ftpUpload(
+                                        Environment.getExternalStorageDirectory()
+                                                + "/TAGFtp/" + TEMP_FILENAME,
+                                        TEMP_FILENAME, "/", mContentView.getContext());
+                                if (status == true) {
+                                    Log.d(TAG, "Upload success");
+                                    handler.sendEmptyMessage(2);
+                                } else {
+                                    Log.d(TAG, "Upload failed");
+                                    handler.sendEmptyMessage(-1);
+                                }
+                            }
+                        }).start();
+
+
+                        //disconnect
+                        pd = ProgressDialog.show(DrawingActivity.this, "", "Disconnecting...", true, false);
+
+                        new Thread(new Runnable() {
+                            public void run() {
+                                ftpclient.ftpDisconnect();
+                                handler.sendEmptyMessage(3);
+                            }
+                        }).start();
+
+
+                        Toast.makeText(mContentView.getContext(), "Gcode saved and uploaded", Toast.LENGTH_SHORT).show();
+                    }
+                });
+                builder.setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+                builder.show();
+            }
+        });
+
+
+        //MAKE A NEW FTPCLIENT
+        ftpclient = new MyFTPClient();
+
     }
+
+
+    private void connectToFTPAddress(final String host, final String username, final String password) {
+        pd = ProgressDialog.show(DrawingActivity.this, "", "Connecting...", true, false);
+
+        new Thread(new Runnable() {
+            public void run() {
+                boolean status = false;
+                status = ftpclient.ftpConnect(host, username, password, 21);
+                if (status == true) {
+                    Log.d(TAG, "Connection Success");
+                    handler.sendEmptyMessage(0);
+                } else {
+                    Log.d(TAG, "Connection failed");
+                    handler.sendEmptyMessage(-1);
+                }
+            }
+        }).start();
+
+    }
+
+    private void getFTPFileList() {
+        pd = ProgressDialog.show(DrawingActivity.this, "", "Getting Files...",
+                true, false);
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                fileList = ftpclient.ftpPrintFilesList("/");
+                handler.sendEmptyMessage(1);
+            }
+        }).start();
+    }
+
+    private boolean isOnline(Context context) {
+        ConnectivityManager cm = (ConnectivityManager) context
+                .getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+        if (netInfo != null && netInfo.isConnected()) {
+            return true;
+        }
+        return false;
+    }
+
+    private void showCustomDialog(String[] fileList) {
+        // custom dialog
+        final Dialog dialog = new Dialog(DrawingActivity.this);
+        dialog.setContentView(R.layout.custom);
+        dialog.setTitle("/ Directory File List");
+
+        TextView tvHeading = (TextView) dialog.findViewById(R.id.tvListHeading);
+        tvHeading.setText(":: File List ::");
+
+        if (fileList != null && fileList.length > 0) {
+            ListView listView = (ListView) dialog
+                    .findViewById(R.id.lstItemList);
+            ArrayAdapter<String> fileListAdapter = new ArrayAdapter<String>(
+                    this, android.R.layout.simple_list_item_1, fileList);
+            listView.setAdapter(fileListAdapter);
+        } else {
+            tvHeading.setText(":: No Files ::");
+        }
+
+        Button dialogButton = (Button) dialog.findViewById(R.id.btnOK);
+        // if button is clicked, close the custom dialog
+        dialogButton.setOnClickListener(new View.OnClickListener() { //I SWITCHED THIS TO VIEW. HERE AND HAVE NO IDEA IF THAT'S RIGHT
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+
+        dialog.show();
+    }
+    //END OF FOREIGN CODE
+
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode != 0) {
-            Log.d("IO","huh?");
+            Log.d("IO", "huh?");
             return;
         }
 
@@ -350,9 +512,8 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.hide();
-        }
-        else {
-            mContentView.setSystemUiVisibility( View.SYSTEM_UI_FLAG_FULLSCREEN
+        } else {
+            mContentView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN
                     | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                     | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                     | SYSTEM_UI_FLAG_HIDE_NAVIGATION);
@@ -395,6 +556,7 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
     }
 
     @Override
-    public void onInputDeviceChanged(int deviceId) {  }
+    public void onInputDeviceChanged(int deviceId) {
+    }
 
 }

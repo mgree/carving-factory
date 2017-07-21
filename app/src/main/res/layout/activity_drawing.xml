@@ -76,26 +76,20 @@
             app:srcCompat="@android:drawable/ic_menu_save" />
 
         <ImageButton
+            android:id="@+id/ftp_button"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_weight="1"
+            android:contentDescription="Live"
+            app:srcCompat="@android:drawable/ic_menu_set_as" />
+
+        <ImageButton
             android:id="@+id/live_button"
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:layout_weight="1"
             android:contentDescription="Live"
             app:srcCompat="@android:drawable/ic_media_play" />
-
-        <Button
-            android:id="@+id/dButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="0.16"
-            android:text="Button" />
-
-        <Button
-            android:id="@+id/ftp_button"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="0.16"
-            android:text="Button" />
 
         <Space
             android:layout_width="match_parent"
