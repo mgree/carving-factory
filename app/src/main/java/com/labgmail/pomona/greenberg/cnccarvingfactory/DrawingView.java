@@ -118,7 +118,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     private Bitmap drawing;
 
     // TODO make the mode changeable
-    private Mode drawingMode = Mode.OVERDRAW;
+    private Mode drawingMode = Mode.MANUAL_DEPTH;
 
     public DrawingView(Context ctx) {
         this(ctx, null);
@@ -132,7 +132,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         cutoffRight = getWidth();
         cutoffBottom = getHeight();
 
-        //Account for i,,f the app is turned on with a controller plugged in
+        //Account for if the app is turned on with a controller plugged in
         int[] deviceIds = InputDevice.getDeviceIds();
         for (int deviceId : deviceIds) {
             if (isController(deviceId)){ controllerAdded(); }
@@ -195,7 +195,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             drawing = Bitmap.createBitmap(Math.round(cutoffRight), Math.round(cutoffBottom), Bitmap.Config.ARGB_8888);
             redrawAll();
 
-            if (!usingController) {
+            if (!usingController && drawingMode == Mode.OVERDRAW) {
                 depthMap = new DepthMap(stockWidth, stockLength, MIN_RADIUS, scale);
             }
 
@@ -278,9 +278,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             return;
         }
 
-        if (curStroke == null) {
-            curStroke = new Stroke(curTool);
-        }
+        if (curStroke == null) { curStroke = new Stroke(curTool); }
 
         // calculate Z based on drawing mode
         float z = curDepth;
@@ -290,7 +288,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
 
         curStroke.addPoint(x, y, z, time);
-        //Log.d("TICK","added");
     }
 
     /* Saves a fitted stroke to the bitmap and stroke list */
@@ -299,7 +296,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             Stroke fitted = curStroke.fitToNatCubic(SMOOTHING_FACTOR, CURVE_STEPS);
             strokes.add(fitted);
 
-            if (!usingController) {
+            if (!usingController && drawingMode == Mode.OVERDRAW) {
                 for (Anchor a : fitted) {
                     depthMap.addPoint(a);
                 }
@@ -519,7 +516,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                         curStroke = null;
 
                         if (strokes != null) { strokes.clear(); }
-                        if (!usingController && depthMap != null) { depthMap.clear(); }
+                        if (!usingController && drawingMode == Mode.OVERDRAW && depthMap != null) { depthMap.clear(); }
                         Canvas canvas = new Canvas(drawing);
                         canvas.drawColor(Color.WHITE);
 
@@ -541,44 +538,12 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
 
-
-    public void setLive() {
-        DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-//                builder.setView(R.layout.picker_layout);
-                builder.setTitle("View Mode");
-                builder.setMessage("Entering Live Mode, enter the following:");
-                builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-
-                    }
-                });
-
-                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-
-                    }
-                });
-                AlertDialog a1 = builder.create();
-                a1.show();
-                builder.show();
-            }
-        };
-
-
-    }
-
-
     /* Undoes the last stroke (redraws/remakes the bitmap) */
     public void undo() {
         int size = strokes.size();
 
         if (size > 0) {
-            if (!usingController) {
+            if (!usingController && drawingMode == Mode.OVERDRAW) {
                 for (Anchor a : strokes.get(size - 1)) {
                     depthMap.removePoint(a);
                 }
