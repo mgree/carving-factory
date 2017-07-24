@@ -546,24 +546,26 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
     }
 
-    //return the current tool
+    //Return the current tool
     public Tool getTool() {
         return curTool;
     }
 
-    //return the current bitmap
+    //Return the current bitmap
     public Bitmap getBitmap() {return drawing; }
 
-    //set the current depth
+    //Set the current depth
     public void setDepth(float depth) {
         curDepth = depth;
     }
 
+    //Return whether the user is currently drawing
     public boolean getDrawingState() {
         return isDrawing;
     }
 
-
+    //This is used for debugging when in controller mode
+    //It saves things (errors) to a log written to a file on the tablet
     public void appendLog(String text) {
         File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
 
@@ -594,7 +596,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
     }
 
-
+    //Save the current state
     public void saveState(OutputStream state) throws IOException {
         ObjectOutputStream out = new ObjectOutputStream(state);
 
@@ -607,6 +609,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         out.flush();
     }
 
+    //Load the current state
     public void loadState(InputStream state) throws IOException {
         ObjectInputStream in = new ObjectInputStream(state);
 
@@ -690,6 +693,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
     }
 
+    //Export the bitmap as an image and save into the pictures folder on the tablet
     public void exportImage() {
         //If you hit this in the middle of a controller stroke, save that stroke before you export
         if (nowDrawing) {
@@ -780,8 +784,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         final DrawingView dv = this;
 
-        //CREATE A DIALOG TO CHECK THEY WANT TO START LIVE
-        //In the future the inputs will likely be put into this dialog box
         DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {

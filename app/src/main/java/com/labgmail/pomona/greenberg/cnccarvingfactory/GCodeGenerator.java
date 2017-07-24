@@ -90,6 +90,7 @@ public class GCodeGenerator {
 
             Anchor last = null;
             for (Anchor point : s) {
+                //small speed up
                 if (point.equals(last)) {
                     continue;
                 }
@@ -99,7 +100,6 @@ public class GCodeGenerator {
                 gcg.tool(t);
 
                 float maxCutDepth = spoilDepth + stockDepth - t.getMaxCutDepth();
-
 
                 if (!cutting) {
                     // emit G00 moves, move in w/slow feed rate (first iteration)
@@ -243,7 +243,7 @@ public class GCodeGenerator {
         curTool = tool;
     }
 
-
+    //Add code to park the tool
     public void parkTool() {
         if (curTool == null) {
             Log.d("GCODE","asked to park tool when no tool in hand");
