@@ -190,7 +190,7 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
         }
 
         // TOOLBAR SETUP
-        //Set up depth swatch to respond to the user. Default to blakc
+        //Set up depth swatch to respond to the user. Default to black
         DepthSwatch swatch = (DepthSwatch) findViewById(R.id.depth_swatch);
         swatch.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -241,6 +241,7 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
         findViewById(R.id.ftp_button).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //Create the dialog that takes credentials
                 LayoutInflater li = LayoutInflater.from(self);
                 final View ftpLayout = li.inflate(R.layout.ftp_dialog, null);
                 AlertDialog.Builder builder = new AlertDialog.Builder(self);
@@ -338,6 +339,7 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
 
     }
 
+    //Connect to the FTP server
     private void ftpConnect(final String host, final String port, final String username, final String password, final Activity self) {
         pd = ProgressDialog.show(self, "", "Connecting...", true, false);
 
@@ -367,6 +369,7 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
         }).start();
     }
 
+    //Disconnect from the FTP Server
     public boolean ftpDisconnect() {
         if (mFTPClient == null) {
             Log.d(TAG, "The FTPClient is null. Check you've connected before you try to disconnect");
@@ -383,6 +386,7 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
         return false;
     }
 
+    //Upload a file from the client to the FTPServer
     public boolean ftpUpload(String srcFilePath, String desFileName) {
         if (mFTPClient == null) {
             Log.d(TAG, "The FTPClient is null. Check you've connected before you try to upload");
@@ -401,12 +405,14 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
         return status;
     }
 
+    //Method that logs a message, closes the progress dialog, and sends a toast
     private void ftpMessage (String msg, Activity self){
         Log.d(TAG, msg);
         if (pd != null && pd.isShowing()) { pd.dismiss(); }
         Toast.makeText(self, msg, Toast.LENGTH_SHORT).show();
     }
 
+    //Check if there's an online connection
     private boolean isOnline(Context context) {
         ConnectivityManager cm = (ConnectivityManager) context
                 .getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -417,33 +423,52 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
         return false;
     }
 
+    //Get all the information from the dialog
+    //Boolean should be true for ftp mode and false for live mode
+    //(it dictates whether the dialog has a directory/filename option
     private void setCredentials(View ftpLayout, boolean ftpMode){
-        //get the edit texts
-        final EditText hostET = (EditText) ftpLayout.findViewById(R.id.host);
-        final EditText portET = (EditText) ftpLayout.findViewById(R.id.port);
-        final EditText usernameET = (EditText) ftpLayout.findViewById(R.id.username);
-        final EditText passwordET = (EditText) ftpLayout.findViewById(R.id.password);
+        try {
+            //get the edit texts
+            final EditText hostET = (EditText) ftpLayout.findViewById(R.id.host);
+            final EditText portET = (EditText) ftpLayout.findViewById(R.id.port);
+            final EditText usernameET = (EditText) ftpLayout.findViewById(R.id.username);
+            final EditText passwordET = (EditText) ftpLayout.findViewById(R.id.password);
 
-        //get inputs
-        host = hostET.getText().toString().trim();
-        port = portET.getText().toString().trim();
-        username = usernameET.getText().toString().trim();
-        password = passwordET.getText().toString().trim();
+            //get inputs
+            host = hostET.getText().toString().trim();
+            port = portET.getText().toString().trim();
+            username = usernameET.getText().toString().trim();
+            password = passwordET.getText().toString().trim();
 
-        //If nothing was inputted, use the default values
-        if (host.equals("")) { host = defaultHost; }
-        if (port.equals("")) { port = defaultPort; }
-        if (password.equals("")) { password = defaultPassword; }
-        if (username.equals("")) { username = defaultUsername; }
+            //If nothing was inputted, use the default values
+            if (host.equals("")) {
+                host = defaultHost;
+            }
+            if (port.equals("")) {
+                port = defaultPort;
+            }
+            if (password.equals("")) {
+                password = defaultPassword;
+            }
+            if (username.equals("")) {
+                username = defaultUsername;
+            }
 
-        //Deal with the case of live mode (which doesn't take a filename and directory)
-        if (ftpMode) {
-            final TextView directoryET = (TextView) ftpLayout.findViewById(R.id.directory);
-            final TextView filenameET = (TextView) ftpLayout.findViewById(R.id.filename);
-            directory = directoryET.getText().toString().trim();
-            filename = filenameET.getText().toString().trim();
-            if (directory.equals("")) { directory = defaultDirectory; }
-            if (filename.equals("")) { filename = defaultFilename; }
+            //Deal with the case of live mode (which doesn't take a filename and directory)
+            if (ftpMode) {
+                final TextView directoryET = (TextView) ftpLayout.findViewById(R.id.directory);
+                final TextView filenameET = (TextView) ftpLayout.findViewById(R.id.filename);
+                directory = directoryET.getText().toString().trim();
+                filename = filenameET.getText().toString().trim();
+                if (directory.equals("")) {
+                    directory = defaultDirectory;
+                }
+                if (filename.equals("")) {
+                    filename = defaultFilename;
+                }
+            }
+        } catch (NullPointerException e) {
+            Log.d("ERROR", "Looks like you don't have all the required dialog fields.");
         }
     }
 
@@ -548,6 +573,7 @@ public class DrawingActivity extends AppCompatActivity implements InputManager.I
         mContentView.setTool(tools.get(0));
     }
 
+    //Methods to track whether a controller is being used
     @Override
     public void onInputDeviceAdded(int deviceId) {
         if (mContentView.isController(deviceId)) {

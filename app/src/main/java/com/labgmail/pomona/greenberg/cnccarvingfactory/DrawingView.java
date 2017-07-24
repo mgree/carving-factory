@@ -1,14 +1,8 @@
 package com.labgmail.pomona.greenberg.cnccarvingfactory;
 
-import android.app.Dialog;
-import android.app.DialogFragment;
-import android.Manifest;
-import android.app.Activity;
-import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -16,21 +10,15 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
-import android.os.Bundle;
 import android.os.Environment;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
-import android.text.InputType;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.InputDevice;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.Toast;
 import android.graphics.Bitmap;
 
@@ -43,14 +31,8 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-
-import static android.app.PendingIntent.getActivity;
-import static android.support.v4.content.ContextCompat.startActivity;
 
 /**
  * Full-screen drawing view.
@@ -109,7 +91,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
     private Ticker ticker;
 
-
     public enum Mode {
         MANUAL_DEPTH,
         OVERDRAW
@@ -149,6 +130,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         setFocusable(true);
     }
 
+    //Set up the brush
     private void initializeBrush() {
         brush.setStyle(Paint.Style.STROKE);
         brush.setARGB(255, 0, 0, 0);
@@ -169,6 +151,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             return;
         }
 
+        //Set up the drawing environment
         height = canvas.getHeight();
         width = canvas.getWidth();
 
@@ -185,7 +168,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         brush.setStrokeWidth(scale * curTool.getDiameter());
 
 
-        //if in normal tablet drawing mode
+        //if not initialized, do set up work
         if (!initialized) {
             brush.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DARKEN));
 
@@ -195,12 +178,12 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             drawing = Bitmap.createBitmap(Math.round(cutoffRight), Math.round(cutoffBottom), Bitmap.Config.ARGB_8888);
             redrawAll();
 
+            //only create a bit map if in overdraw (with no controller)
             if (!usingController && drawingMode == Mode.OVERDRAW) {
                 depthMap = new DepthMap(stockWidth, stockLength, MIN_RADIUS, scale);
             }
 
             initialized = true;
-
         }
 
         // Draw the cut off rectangles
@@ -223,7 +206,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
             brush.setColor(Color.RED);
             canvas.drawCircle(currX, currY, 20, brush);
         }
-
     }
 
 
@@ -282,7 +264,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
 
         // calculate Z based on drawing mode
         float z = curDepth;
-
         if (drawingMode == Mode.OVERDRAW && !usingController) {
             z = depthMap.updateZ(new Anchor(x, y, z, time), curTool.getDiameter());
         }
@@ -309,6 +290,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
     }
 
 
+    //Handle touch events
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (!usingController) {
@@ -354,12 +336,6 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
                 InputDevice.SOURCE_JOYSTICK &&
                 event.getAction() == MotionEvent.ACTION_MOVE) {
 
-            // Process all historical movement samples in the batch
-            /*final int historySize = event.getHistorySize();
-            for (int i = 0; i < historySize; i++) {
-                processJoystickInput(event, i);
-            } */
-
             // Process the current movement sample in the batch (position -1)
             processJoystickInput(event, -1);
 
@@ -369,8 +345,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         return super.onGenericMotionEvent(event);
     }
 
+    //Get the axis/amount something is pressed (for triggers, joystick, etc non button events)
     private float selectAxis(MotionEvent event, InputDevice device, int[] axes, int historyPos) {
-
         float result = 0;
         for (int i = 0; i < axes.length; i++) {
             if (result == 0) {
@@ -390,6 +366,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         return result;
     }
 
+    //Process joystick input
     private void processJoystickInput(MotionEvent event,  int historyPos) {
         InputDevice mInputDevice = event.getDevice();
 
@@ -431,6 +408,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         return super.onKeyDown(keyCode, event);
     }
 
+    //TICK - get all controller information and update. This will be called several times a second
     public void tick(long deltaTime) {
         if (!usingController) {
             Log.d("TICK","ticked without controller");
@@ -445,6 +423,7 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         currX = Math.max(0, Math.min(currX, cutoffRight));
         currY = Math.max(0, Math.min(currY, cutoffBottom));
 
+        //update current depth
         curDepth += dDepth * DEPTHSPEED * scale;
         curDepth = Math.min(1f, Math.max(0f, curDepth)); //bound at black and white
 
@@ -468,13 +447,16 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         postInvalidate();
     }
 
-    protected void controllerAdded() {
+    //Deal with a controller being added
+    public void controllerAdded() {
         if (usingController || ticker != null) {
             Log.d("CTRL", "too many controllers?!");
         }
 
         setFocusable(true);
         usingController = true;
+
+        //Start new ticker thread
         ticker = new Ticker(this);
         new Thread(ticker).start();
 
@@ -482,7 +464,8 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         Toast.makeText(getContext(), "Controller detected. Touch screen disabled", Toast.LENGTH_SHORT).show();
     }
 
-    protected void controllerRemoved() {
+    //Deal with the removal of a controller
+    public void controllerRemoved() {
         usingController = false;
         if (ticker != null) {
             ticker.stop();
@@ -493,16 +476,13 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         Toast.makeText(getContext(), "No controller detected. Touch screen enabled", Toast.LENGTH_SHORT).show();
     }
 
+    //Check a device is actually a controller
     public boolean isController(int deviceId) {
         InputDevice dev = InputDevice.getDevice(deviceId);
         int sources = dev.getSources();
-        if (((sources & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD)
-                || ((sources & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK)) {
-            return true;
-        }
-        return false;
+        return (((sources & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD)
+                || ((sources & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK));
     }
-
     //End of controller code
 
 
@@ -554,8 +534,10 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
     }
 
+    //Set the depthswatch (this method is so the drawing activity has access)
     public void setDepthSwatch(DepthSwatch ds) { depthSwatch = ds; }
 
+    //Set tool, if in the middle of a stroke, end stroke and start a new one
     public void setTool(Tool tool) {
         curTool = tool;
         if (nowDrawing) {
@@ -564,12 +546,15 @@ public class DrawingView extends View implements SharedPreferences.OnSharedPrefe
         }
     }
 
+    //return the current tool
     public Tool getTool() {
         return curTool;
     }
 
+    //return the current bitmap
     public Bitmap getBitmap() {return drawing; }
 
+    //set the current depth
     public void setDepth(float depth) {
         curDepth = depth;
     }
